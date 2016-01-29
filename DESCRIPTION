@@ -1,0 +1,23 @@
+Package: epimedtools
+Type: Package
+Title: Useful Tools Allowing Multi-Omics Analysis
+Description: A set of useful tools encapsulating some 'GEOquery' functions. This package rely on RC, caching features and memoise to simplify and make consistent multi-omic analysis.
+Version: 0.0.0.9000
+Date: 2016-01-26
+Authors@R: c(
+    person("Florent", "Chuffart", , "florent.chuffart@gmail.com", c("aut", "cre", "cph"))
+    )
+Maintainer: Florent Chuffart <florent.chuffart@gmail.com>
+License: CeCILL
+LazyData: TRUE
+Imports:
+    Biobase,
+    memoise,
+    GEOquery
+Depends:
+    methods
+RoxygenNote: 5.0.1
+Suggests: knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: knitr
