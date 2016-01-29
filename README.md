@@ -1,6 +1,6 @@
 # epimedtools
 
-A package allowing multi-omics analysis using R
+The __epimedtools__ pacakege provides set of useful tools encapsulating some 'GEOquery' functions. This package rely on RC, caching features and memoise to simplify and make consistent multi-omic analysis.
 
 ## Installation
 
