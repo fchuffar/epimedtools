@@ -10,13 +10,13 @@ create_study(cache_filename)
 \item{cache_filename}{A character string that describes the study cache file name.}
 }
 \value{
-It returns an object of the Study class.
+It returns an object that extends the Study_abstract class.
 }
 \description{
 Intanciates an object of the epimedtools internal class Study.
 }
 \details{
-This function intanciates an object of the epimedtools internal class Study. You can learn more about Study class by typing ?epimedtools::Study
+This function intanciates an object that extends the epimedtools internal abstract class Study_abstract. You can learn more about Study_abstract class by typing ?epimedtools::Study_abstract
 }
 \examples{
 # create study and load data from GSE57831_series_matrix.txt.gz contained in the package

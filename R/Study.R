@@ -11,7 +11,9 @@
 #' # foo = mgetGEO("GSE42707", getGPL=FALSE)
 #' @importFrom GEOquery getGEO
 #' @importFrom memoise memoise
-mgetGEO = memoise(getGEO)
+mgetGEO = memoise(function(...) {
+  getGEO(...)
+})
 
 #' An other memoised version of getGEO
 #'
@@ -34,7 +36,7 @@ mtgetGEO = memoise(function(...) {
 #'
 #' Intanciates an object of the epimedtools internal class Study.
 #'
-#' This function intanciates an object of the epimedtools internal class Study. You can learn more about Study class by typing ?epimedtools::Study
+#' This function intanciates an object that extends the epimedtools internal abstract class Study_abstract. You can learn more about Study_abstract class by typing ?epimedtools::Study_abstract
 #' 
 #' @param cache_filename A character string that describes the study cache file name.
 #' @examples
@@ -59,13 +61,13 @@ mtgetGEO = memoise(function(...) {
 #' study$cache_it("/tmp/tmp_cached_study.rds")
 #' # load a cached study
 #' study = create_study("/tmp/tmp_cached_study.rds")
-#' @return It returns an object of the Study class.
+#' @return It returns an object that extends the Study_abstract class.
 #' @export
 create_study = function(cache_filename) {
   if (missing(cache_filename)) {
-    study = Study()
+    study = Study_geo()
   } else {
-    study = Study(cache_filename)
+    study = Study_geo(cache_filename)
   }
   return(study)
 }
@@ -76,25 +78,18 @@ create_study = function(cache_filename) {
 #' This class allow to manipulate useful concepts involved in a multi-omics
 #' study.
 #' 
-#' @field gset The GEO set of data as it is return by getGEO.
 #' @field plaform The Table version of the GEO platform description.
-#' @field gse A character string that describes the GEO accession number.
 #' @field platform_filenames A character string that describes the platform file name.
-#' @field series_matrix_filename A character string that describes the GEO serie matrix family file name.
 #' @field cache_filename A character string that describes the study cache file name.
 #' @export
 #' @importFrom GEOquery Table
 #' @importFrom GEOquery getGEO
-#' @importFrom Biobase exprs
 #' @import methods
-Study = setRefClass(
-  "Study",
+Study_abstract = setRefClass(
+  "Study_abstract",
   fields = list(
-    "gset" = "ANY",
     "platform" = "ANY",
-    "gse" = "character",
     "platform_filename" = "character",
-    "series_matrix_filename" = "character",
     "cache_filename" = "character"
   ),
   methods = list(
@@ -113,7 +108,7 @@ Study = setRefClass(
           print("reifiyng study...")
           s2 = readRDS(.self$cache_filename)
           # print(.self)
-          for (f in names(.self$getRefClass()$fields())) {
+          for (f in names(s2$getRefClass()$fields())) {
             .self[[f]] = s2[[f]]
           }
           .self$cache_filename = cfn
@@ -131,53 +126,6 @@ Study = setRefClass(
         saveRDS(.self, .self$cache_filename)
         print("done.")
       }
-    },
-    get_gset = function(CACHE=TRUE, MEMOISE=FALSE, dest_dir="../../data") {
-      "Computes (if not yet done) and returns the gset field."
-      if (is.null(dim(.self$gset))) {
-        if (length(.self$series_matrix_filename) == 1) {
-          if (file.exists(.self$series_matrix_filename)) {
-            print(paste(
-              "Launching data form ", .self$series_matrix_filename, "...", sep = ""
-            ))
-            if (MEMOISE) {
-              .self$gset = mgetGEO(filename = .self$series_matrix_filename, getGPL = FALSE)
-            } else {
-              .self$gset = getGEO(filename = .self$series_matrix_filename, getGPL = FALSE)
-            }
-            print("done.")
-          } else {
-            stop(paste("No", .self$series_matrix_filename, "file."))
-          }
-        } else if (length(.self$gse) == 1) {
-          print(paste("Launching ", .self$gse, " form GEO...", sep = ""))
-          dest_dir_gse = paste(dest_dir, "/", .self$gse, sep="")
-          dir.create(dest_dir_gse, showWarnings = FALSE, recursive =
-                       TRUE)
-          if (MEMOISE) {
-            tmp_gset = mgetGEO(.self$gse, getGPL = FALSE, destdir=dest_dir_gse)
-          } else {
-            tmp_gset = getGEO(.self$gse, getGPL = FALSE, destdir=dest_dir_gse)
-          }
-          if (length(.self$gset) == 1) {
-            .self$gset = tmp_gset[[1]]
-            .self$series_matrix_filename = paste(dest_dir_gse, "/", names(tmp_gset)[1], sep =
-                                                   "")
-          } else {
-            stop(paste(.self$gse, " is a SuperSeries... Not yet supported.", sep = ""))
-          }
-          print(paste(
-            "done. File locally cached here: ", .self$series_matrix_filename, sep =
-              ""
-          ))
-        } else {
-          stop("You need to define gse (length 1) field to get it from GEO")
-        }
-        if (CACHE) {
-          .self$cache_it()
-        }
-      }
-      return(.self$gset)
     },
     get_platform = function(CACHE = FALSE, MEMOISE = TRUE, dest_dir = "../../data/platforms") {
       "Computes if not and returns the platform field."
@@ -225,6 +173,98 @@ Study = setRefClass(
       return(.self$platform)
     },
     get_platform_name = function(...) {
+      "Abstract method that gives access to the platform name."
+      stop("Call to the abstract method get_platform_name of the class Study_abstract.")
+    },
+    get_exp_grp = function(...) {
+      "Abstract method that gives access to the experimental grouping."
+      stop("Call to the abstract method get_exp_grp of the class Study_abstract.")
+    },
+    get_data = function(...) {
+      "Abstract method that gives access to the data."
+      stop("Call to the abstract method get_data of the class Study_abstract.")
+    },
+    # Analysis method dealing with Study_abstract class intances...
+    plot_qc = function(method = "boxplot", ...) {
+      "Plot the quality control of the study."
+      get(method)(t(na.omit(.self$get_data())) ~ colnames(.self$get_data()), las =
+                    2, ...)
+    }
+  )
+)
+
+
+
+
+#' A Reference Class to represent a multi-omic study.
+#'
+#' This class allow to manipulate useful concepts involved in a multi-omics
+#' study.
+#' 
+#' @field gset The GEO set of data as it is return by getGEO.
+#' @field gse A character string that describes the GEO accession number.
+#' @field series_matrix_filename A character string that describes the GEO serie matrix family file name.
+#' @export
+#' @importFrom GEOquery getGEO
+#' @importFrom Biobase exprs
+#' @import methods
+Study_geo = setRefClass(
+  "Study_geo",
+  fields = list(
+    "gset" = "ANY",
+    "gse" = "character",
+    "series_matrix_filename" = "character"
+  ),
+  contains = "Study_abstract",
+  methods = list(
+    get_gset = function(CACHE=TRUE, MEMOISE=FALSE, dest_dir="../../data") {
+      "Computes (if not yet done) and returns the gset field."
+      if (is.null(dim(.self$gset))) {
+        if (length(.self$series_matrix_filename) == 1) {
+          if (file.exists(.self$series_matrix_filename)) {
+            print(paste(
+              "Launching data form ", .self$series_matrix_filename, "...", sep = ""
+            ))
+            if (MEMOISE) {
+              .self$gset = mgetGEO(filename = .self$series_matrix_filename, getGPL = FALSE)
+            } else {
+              .self$gset = getGEO(filename = .self$series_matrix_filename, getGPL = FALSE)
+            }
+            print("done.")
+          } else {
+            stop(paste("No", .self$series_matrix_filename, "file."))
+          }
+        } else if (length(.self$gse) == 1) {
+          print(paste("Launching ", .self$gse, " form GEO...", sep = ""))
+          dest_dir_gse = paste(dest_dir, "/", .self$gse, sep="")
+          dir.create(dest_dir_gse, showWarnings = FALSE, recursive =
+                       TRUE)
+          if (MEMOISE) {
+            tmp_gset = mgetGEO(.self$gse, getGPL = FALSE, destdir=dest_dir_gse)
+          } else {
+            tmp_gset = getGEO(.self$gse, getGPL = FALSE, destdir=dest_dir_gse)
+          }
+          if (length(.self$gset) == 1) {
+            .self$gset = tmp_gset[[1]]
+            .self$series_matrix_filename = paste(dest_dir_gse, "/", names(tmp_gset)[1], sep =
+                                                   "")
+          } else {
+            stop(paste(.self$gse, " is a SuperSeries... Not yet supported.", sep = ""))
+          }
+          print(paste(
+            "done. File locally cached here: ", .self$series_matrix_filename, sep =
+              ""
+          ))
+        } else {
+          stop("You need to define gse (length 1) field to get it from GEO")
+        }
+        if (CACHE) {
+          .self$cache_it()
+        }
+      }
+      return(.self$gset)
+    },
+    get_platform_name = function(...) {
       "Proxy to annotation hold in gset."
       return(.self$get_gset(...)@annotation)
     },
@@ -243,3 +283,4 @@ Study = setRefClass(
     }
   )
 )
+
