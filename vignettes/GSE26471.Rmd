@@ -48,7 +48,7 @@ Extract experimental grouping dataframe.
 dim(study$get_exp_grp())
 ```
 
-Plot density ox expression for this *1-*sample dataset. 
+Plot density of expression for this *1-*sample dataset. 
 ``` {r, fig.width=7, fig.height=5}
 plot(density(study$get_data()[,1]))
 ```

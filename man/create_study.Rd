@@ -4,16 +4,18 @@
 \alias{create_study}
 \title{Study Factory}
 \usage{
-create_study(cache_filename)
+create_study(cache_filename, Study_RC_name = "Study_geo")
 }
 \arguments{
 \item{cache_filename}{A character string that describes the study cache file name.}
+
+\item{Study_RC_name}{A character string that specify the RC to use to instanciate the object.}
 }
 \value{
 It returns an object that extends the Study_abstract class.
 }
 \description{
-Intanciates an object of the epimedtools internal class Study.
+Intanciates an object that extends the epimedtools internal class Study_abstract.
 }
 \details{
 This function intanciates an object that extends the epimedtools internal abstract class Study_abstract. You can learn more about Study_abstract class by typing ?epimedtools::Study_abstract

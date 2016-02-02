@@ -34,11 +34,12 @@ mtgetGEO = memoise(function(...) {
 
 #' Study Factory
 #'
-#' Intanciates an object of the epimedtools internal class Study.
+#' Intanciates an object that extends the epimedtools internal class Study_abstract.
 #'
 #' This function intanciates an object that extends the epimedtools internal abstract class Study_abstract. You can learn more about Study_abstract class by typing ?epimedtools::Study_abstract
 #' 
 #' @param cache_filename A character string that describes the study cache file name.
+#' @param Study_RC_name A character string that specify the RC to use to instanciate the object.
 #' @examples
 #' # create study and load data from GSE57831_series_matrix.txt.gz contained in the package
 #' study = create_study()
@@ -63,11 +64,11 @@ mtgetGEO = memoise(function(...) {
 #' study = create_study("/tmp/tmp_cached_study.rds")
 #' @return It returns an object that extends the Study_abstract class.
 #' @export
-create_study = function(cache_filename) {
+create_study = function(cache_filename, Study_RC_name="Study_geo") {
   if (missing(cache_filename)) {
-    study = Study_geo()
+    study = get(Study_RC_name)()
   } else {
-    study = Study_geo(cache_filename)
+    study = get(Study_RC_name)(cache_filename)
   }
   return(study)
 }
@@ -76,7 +77,7 @@ create_study = function(cache_filename) {
 #' A Reference Class to represent a multi-omic study.
 #'
 #' This class allow to manipulate useful concepts involved in a multi-omics
-#' study.
+#' study. It an abstract class.
 #' 
 #' @field plaform The Table version of the GEO platform description.
 #' @field platform_filenames A character string that describes the platform file name.
@@ -134,7 +135,7 @@ Study_abstract = setRefClass(
           if (file.exists(.self$platform_filename)) {
             print(
               paste(
-                "Launching platform informations form ", .self$platform_filename, "...", sep =
+                "Launching platform informations from ", .self$platform_filename, "...", sep =
                   ""
               )
             )
@@ -151,7 +152,7 @@ Study_abstract = setRefClass(
           }
         } else {
           print(paste(
-            "Launching ", .self$get_platform_name(CACHE = FALSE), " form GEO...", sep =
+            "Launching ", .self$get_platform_name(), " from GEO...", sep =
               ""
           ))
           dir.create(dest_dir, showWarnings = FALSE, recursive =
@@ -198,8 +199,7 @@ Study_abstract = setRefClass(
 
 #' A Reference Class to represent a multi-omic study.
 #'
-#' This class allow to manipulate useful concepts involved in a multi-omics
-#' study.
+#' This class extends Study_abstract by encapsulation GEO dataset.
 #' 
 #' @field gset The GEO set of data as it is return by getGEO.
 #' @field gse A character string that describes the GEO accession number.
@@ -223,7 +223,7 @@ Study_geo = setRefClass(
         if (length(.self$series_matrix_filename) == 1) {
           if (file.exists(.self$series_matrix_filename)) {
             print(paste(
-              "Launching data form ", .self$series_matrix_filename, "...", sep = ""
+              "Launching data from ", .self$series_matrix_filename, "...", sep = ""
             ))
             if (MEMOISE) {
               .self$gset = mgetGEO(filename = .self$series_matrix_filename, getGPL = FALSE)
@@ -235,7 +235,7 @@ Study_geo = setRefClass(
             stop(paste("No", .self$series_matrix_filename, "file."))
           }
         } else if (length(.self$gse) == 1) {
-          print(paste("Launching ", .self$gse, " form GEO...", sep = ""))
+          print(paste("Launching ", .self$gse, " from GEO...", sep = ""))
           dest_dir_gse = paste(dest_dir, "/", .self$gse, sep="")
           dir.create(dest_dir_gse, showWarnings = FALSE, recursive =
                        TRUE)
@@ -280,6 +280,36 @@ Study_geo = setRefClass(
       "Plot the quality control of the study."
       get(method)(t(na.omit(.self$get_data())) ~ colnames(.self$get_data()), las =
                     2, ...)
+    }
+  )
+)
+
+
+
+#' A Reference Class to represent a multi-omic study.
+#'
+#' This class extends Study_abstract by encapsulation hand made fields: "data", "platform_name", "exp_grp".
+#' 
+#' @field data A matris of experiemental data. Each column is a sample, named by it's sample name, and each row is a probes.
+#' @field platform_name A character string that describes the platform used to perform.
+#' @field exp_grp A data.frame that describe the experimental grouping. Each line is a sample.
+#' @export
+Study_loc = setRefClass("Study_loc",
+  fields = list(
+    "data" = "ANY",
+    "platform_name" = "character",
+    "exp_grp" = "ANY"
+  ),
+  contains = "Study_abstract",
+  methods = list( 
+    get_data = function() {
+      return(data)
+    },
+    get_platform_name = function() {
+      return(platform_name)
+    },
+    get_exp_grp = function() {
+      return(exp_grp)
     }
   )
 )

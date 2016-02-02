@@ -3,6 +3,7 @@
 export(create_study)
 exportClasses(Study_abstract)
 exportClasses(Study_geo)
+exportClasses(Study_loc)
 import(methods)
 importFrom(Biobase,exprs)
 importFrom(GEOquery,Table)
