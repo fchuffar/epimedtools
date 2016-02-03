@@ -2,9 +2,9 @@ language: r
 # warnings_are_errors: true
 sudo: required
 
-# bioc_packages:
-#   - GEOquery
-#   - Biobase
+bioc_packages:
+  - GEOquery
+  - Biobase
 #
 # r_github_packages:
 #   - Rexamine/stringi
