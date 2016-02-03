@@ -5,14 +5,12 @@ sudo: required
 bioc_packages:
   - GEOquery
   - Biobase
-#
-# r_github_packages:
-#   - Rexamine/stringi
-#
+
 # r_packages:
 #   - covr
-#
-#
-# after_success:
-#   - Rscript -e 'covr::codecov()'
 
+r_github_packages:
+  - jimhester/covr
+
+after_success:
+  - Rscript -e 'covr::codecov()'
