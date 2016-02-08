@@ -11,6 +11,21 @@ The __epimedtools__ package provides set of useful tools encapsulating some 'GEO
 To get the current development version from github:
 
 ```R
-# install.packages("devtools")
-devtools::install_github("fchuffar/epimedtools")
+install.packages("devtools")
+devtools::install_github("fchuffar/epimedtools", build_vignettes=TRUE)
 ```
+
+
+## Vignettes
+
+To list available vignettes:
+
+```R
+vignette(package="epimedtools")
+```
+
+To open a vigentte:
+```R
+vignette(topic="GSE26471_local",package="epimedtools")
+```
+
