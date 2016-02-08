@@ -18,14 +18,8 @@ devtools::install_github("fchuffar/epimedtools", build_vignettes=TRUE)
 
 ## Vignettes
 
-To list available vignettes:
+To browse available vignettes:
 
 ```R
-vignette(package="epimedtools")
+browseVignettes(package = 'epimedtools')
 ```
-
-To open a vigentte:
-```R
-vignette(topic="GSE26471_local",package="epimedtools")
-```
-
