@@ -1,0 +1,54 @@
+---
+title: "Micrarray Analysis for Gene Expression from a Local **series_matrix** GEO File (GSE26471, 1 samples)"
+author: "Florent Chuffart"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Loading data using local series_matrix GEO file}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Loading the epimedtools library
+
+``` {r}
+library(epimedtools)
+```
+
+Creating a new study that will be cached in the file /tmp/study_mtrx_.rds
+```{r}
+study = create_study("/tmp/study_mtrx.rds")
+```
+
+This study deals with the GEO accession GSE26471, its series_matrix is distributed with the package
+``` {r}
+study$series_matrix_filename = system.file(
+  "extdata/GSE26471", 
+  "GSE26471_series_matrix.txt.gz", 
+  package = "epimedtools"
+)
+```
+
+Load data associated with this study. Data is even on the hard drive, it is directly load from there.
+``` {r}
+study$get_gset()
+```
+
+Extract data matrix.
+``` {r}
+dim(study$get_data())
+```
+
+Extract experimental grouping dataframe.
+``` {r}
+dim(study$get_exp_grp())
+```
+
+Plot density of expression for this *1-*sample dataset. 
+``` {r, fig.width=7, fig.height=5}
+plot(density(study$get_data()[,1]))
+```

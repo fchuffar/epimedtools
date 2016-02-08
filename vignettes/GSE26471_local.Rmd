@@ -1,10 +1,10 @@
 ---
-title: "Micrarray Analysis for Gene Expression from a Local **series_matrix** File (GSE26471, 1 samples)"
+title: "Micrarray Analysis for Gene Expression from a Local Tabuled Files"
 author: "Florent Chuffart"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Loading data using Local series_matrix File}
+  %\VignetteIndexEntry{Loading data using local tabuled files}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,23 +19,37 @@ Loading the epimedtools library
 library(epimedtools)
 ```
 
-Creating a new study that will be cached in the file /tmp/study.rds
+Creating a new study that will be cached in the file /tmp/study_loc_.rds
 ```{r}
-study = create_study("/tmp/study.rds")
+study = create_study("/tmp/study_loc.rds", Study_RC_name="Study_loc")
 ```
 
-This study deals with the  GEO accession GSE26471, its series_matrix is distributed with the package
+This study deals with data obtained using the **GPL570** platform.
 ``` {r}
-study$series_matrix_filename = system.file(
+study$platform_name = "GPL570"
+```
+
+The experimental grouping is stored into a compressed text file distributed with the package:
+``` {r}
+exp_grp_filename = system.file(
   "extdata/GSE26471", 
-  "GSE26471_series_matrix.txt.gz", 
+  "GSE26471_exp_grp.tab.gz", 
   package = "epimedtools"
 )
+print(exp_grp_filename)
+study$exp_grp = read.table(file=gzfile(exp_grp_filename), stringsAsFactors=FALSE)
 ```
 
-Load data associated with this study. Data is even on the hard drive, it is directly load from there.
+
+The expression data matrix is stored into a compressed text file distributed with the package:
 ``` {r}
-study$get_gset()
+data_filename = system.file(
+  "extdata/GSE26471", 
+  "GSE26471_data.tab.gz", 
+  package = "epimedtools"
+)
+print(data_filename)
+study$data = as.matrix(read.table(file=gzfile(data_filename)))
 ```
 
 Extract data matrix.
