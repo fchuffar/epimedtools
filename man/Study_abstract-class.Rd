@@ -27,10 +27,11 @@ study. It an abstract class.
 
 \item{\code{get_exp_grp(...)}}{Abstract method that gives access to the experimental grouping.}
 
-\item{\code{get_platform(CACHE = FALSE, MEMOISE = TRUE,
-  dest_dir = "../../data/platforms")}}{Computes if not and returns the platform field.}
+\item{\code{get_platform(CACHE = FALSE, MEMOISE = TRUE, dest_dir = "data/platforms")}}{Computes if not and returns the platform field.}
 
 \item{\code{get_platform_name(...)}}{Abstract method that gives access to the platform name.}
+
+\item{\code{get_ratio(ctrl_sample_names, method = "mean", ...)}}{Normalize data accross probes using method *method* according to a reference poulation describe by  *ctrl_sample_names* its sample names vector.}
 
 \item{\code{initialize(cfn)}}{Constructor.}
 

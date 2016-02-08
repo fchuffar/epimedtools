@@ -4,7 +4,6 @@ test_that("Data are Laoded using GSE number", {
   study = create_study()
   study$gse = "GSE26471"
   extdata_dir = system.file("extdata", package = "epimedtools")
-  print(extdata_dir)
   gset = study$get_gset(dest_dir=extdata_dir)
   expect_equal(dim(gset), c(Features=54675, Samples=1))
 })

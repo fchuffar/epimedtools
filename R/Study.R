@@ -128,7 +128,7 @@ Study_abstract = setRefClass(
         print("done.")
       }
     },
-    get_platform = function(CACHE = FALSE, MEMOISE = TRUE, dest_dir = "../../data/platforms") {
+    get_platform = function(CACHE = FALSE, MEMOISE = TRUE, dest_dir = "data/platforms") {
       "Computes if not and returns the platform field."
       if (is.null(dim(.self$platform))) {
         if (length(.self$platform_filename) == 1) {
@@ -190,6 +190,17 @@ Study_abstract = setRefClass(
       "Plot the quality control of the study."
       get(method)(t(na.omit(.self$get_data())) ~ colnames(.self$get_data()), las =
                     2, ...)
+    },
+    get_ratio = function(ctrl_sample_names, method = "mean", ...) {
+      "Normalize data accross probes using method *method* according to a reference poulation describe by  *ctrl_sample_names* its sample names vector."
+      if (missing(ctrl_sample_names)) {
+        d = .self$get_data(...)
+      } else {
+        d = .self$get_data(...)[, ctrl_sample_names]
+      }
+      ctrl_op = apply(d, 1, get(method))        
+      ratio = .self$get_data(...) / ctrl_op
+      return(ratio)
     }
   )
 )
@@ -217,7 +228,7 @@ Study_geo = setRefClass(
   ),
   contains = "Study_abstract",
   methods = list(
-    get_gset = function(CACHE=TRUE, MEMOISE=FALSE, dest_dir="../../data") {
+    get_gset = function(CACHE=TRUE, MEMOISE=FALSE, dest_dir="data") {
       "Computes (if not yet done) and returns the gset field."
       if (is.null(dim(.self$gset))) {
         if (length(.self$series_matrix_filename) == 1) {
@@ -275,11 +286,6 @@ Study_geo = setRefClass(
     get_data = function(...) {
       "Proxy to data hold in gset."
       return(exprs(.self$get_gset(...)))
-    },
-    plot_qc = function(method = "boxplot", ...) {
-      "Plot the quality control of the study."
-      get(method)(t(na.omit(.self$get_data())) ~ colnames(.self$get_data()), las =
-                    2, ...)
     }
   )
 )

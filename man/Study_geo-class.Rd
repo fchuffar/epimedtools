@@ -24,10 +24,8 @@ This class extends Study_abstract by encapsulation GEO dataset.
 
 \item{\code{get_exp_grp(...)}}{Abstract method that gives access to the experimental grouping.}
 
-\item{\code{get_gset(CACHE = TRUE, MEMOISE = FALSE, dest_dir = "../../data")}}{Computes (if not yet done) and returns the gset field.}
+\item{\code{get_gset(CACHE = TRUE, MEMOISE = FALSE, dest_dir = "data")}}{Computes (if not yet done) and returns the gset field.}
 
 \item{\code{get_platform_name(...)}}{Abstract method that gives access to the platform name.}
-
-\item{\code{plot_qc(method = "boxplot", ...)}}{Plot the quality control of the study.}
 }}
 
