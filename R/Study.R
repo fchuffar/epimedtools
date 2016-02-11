@@ -25,7 +25,7 @@
 #' # str(study$get_gset(dest_dir="data"))
 #' 
 #' # cache study
-#' study$cache_it("/tmp/tmp_cached_study.rds")
+#' study$save("/tmp/tmp_cached_study.rds")
 #' # load a cached study
 #' study = create_study("/tmp/tmp_cached_study.rds")
 #' @return It returns an object that extends the Study_abstract class.
@@ -70,7 +70,7 @@ Study_abstract = setRefClass(
           )[-1]), collapse = "/")
           dir.create(cache_dir, showWarnings = FALSE, recursive =
                        TRUE)
-          cache_it()
+          .self$save()
         } else {
           print("reifiyng study...")
           s2 = readRDS(.self$cache_filename)
@@ -83,7 +83,7 @@ Study_abstract = setRefClass(
         }
       }
     },
-    cache_it = function(cache_filename) {
+    save = function(cache_filename) {
       "Writes the study on the disk."
       if (!missing(cache_filename)) {
         .self$cache_filename = cache_filename
@@ -134,7 +134,7 @@ Study_abstract = setRefClass(
           }
         }
         if (CACHE) {
-          cache_it()
+          .self$save()
         }
       }
       return(.self$platform)

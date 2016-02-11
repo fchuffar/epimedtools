@@ -1,0 +1,64 @@
+---
+title: "Micrarray Analysis for Gene Expression from Local .CEL.gz Files"
+author: "Florent Chuffart"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Loading data using local .CEL.gz files}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Loading the epimedtools library
+
+``` {r}
+library(epimedtools)
+```
+
+Creating a new study.
+```{r}
+study = create_study(Study_RC_name="Study_raw_trscr")
+```
+
+This study deals with data obtained using the **GPL570** platform.
+``` {r}
+study$platform_name = "GPL570"
+```
+
+The .CEL.gz files are distributed with the package:
+``` {r}
+kc_cel_filedir = system.file(
+  "extdata/trscr_raw_kc", 
+  package = "epimedtools"
+)
+ctrl_cel_filedir = system.file(
+  "extdata/trscr_raw_ctrl", 
+  package = "epimedtools"
+)
+study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
+print(study$cel_filedirs)
+```
+
+The RMA normalized data matrix is extract using the **get_data** method.
+``` {r}
+head(study$get_data(celfile.path=""))
+```
+
+The origin of samp,le is injected into the experimental grouping thank to the column **orig**.
+``` {r}
+study$get_exp_grp()
+```
+
+Plot density of expression for this *1-*sample dataset. 
+``` {r, fig.width=7, fig.height=5}
+plot(density(study$get_data()[,1]))
+```
+
+Saving the study on the file system.
+```{r}
+study = study$save("/tmp/study.rds")
+````

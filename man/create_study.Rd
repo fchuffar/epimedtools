@@ -39,7 +39,7 @@ study$gse = "GSE26471" # 1 sample, expression
 # str(study$get_gset(dest_dir="data"))
 
 # cache study
-study$cache_it("/tmp/tmp_cached_study.rds")
+study$save("/tmp/tmp_cached_study.rds")
 # load a cached study
 study = create_study("/tmp/tmp_cached_study.rds")
 }

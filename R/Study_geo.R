@@ -60,7 +60,7 @@ Study_geo = setRefClass(
           stop("You need to define gse (length 1) field to get it from GEO")
         }
         if (CACHE) {
-          .self$cache_it()
+          .self$save()
         }
       }
       return(.self$gset)

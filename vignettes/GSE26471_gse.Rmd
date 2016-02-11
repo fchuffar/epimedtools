@@ -19,9 +19,9 @@ Loading the epimedtools library
 library(epimedtools)
 ```
 
-Creating a new study that will be cached in the file **/tmp/study_gse.rds**.
+Creating a new study.
 ```{r}
-study = create_study("/tmp/study_gse.rds")
+study = create_study()
 ```
 
 This study deals with the GEO accession GSE26471, its hosted on the GEO web site.
@@ -48,3 +48,8 @@ Plot density of expression for this *1-*sample dataset.
 ``` {r, fig.width=7, fig.height=5}
 plot(density(study$get_data()[,1]))
 ```
+
+Saving the study on the file system.
+```{r}
+study = study$save("/tmp/study.rds")
+````

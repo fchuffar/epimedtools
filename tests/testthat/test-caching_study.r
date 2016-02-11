@@ -9,7 +9,7 @@ test_that("Caching features work", {
   s1$series_matrix_filename = "../../inst/extdata/GSE26471/GSE26471_series_matrix.txt.gz"
   s1$gse = "GSE26471"
   s1$platform_filename = "foo/bar/baz"
-  s1$cache_it()
+  s1$save()
   s2 = create_study(tmp_cache_filename)
   for (f in names(s2$getRefClass()$fields())) {
     expect_equal(s2[[f]], s1[[f]])    
@@ -18,7 +18,7 @@ test_that("Caching features work", {
   if (file.exists(tmp2_cache_filename)) {
     file.remove(tmp2_cache_filename)
   }
-  s2$cache_it(tmp2_cache_filename)
+  s2$save(tmp2_cache_filename)
   s3 = create_study(tmp2_cache_filename)
   for (f in names(s3$getRefClass()$fields())) {
     expect_equal(s2[[f]], s3[[f]])    

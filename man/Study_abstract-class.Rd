@@ -21,8 +21,6 @@ study. It an abstract class.
 \section{Methods}{
 
 \describe{
-\item{\code{cache_it(cache_filename)}}{Writes the study on the disk.}
-
 \item{\code{get_data(...)}}{Abstract method that gives access to the data.}
 
 \item{\code{get_exp_grp(...)}}{Abstract method that gives access to the experimental grouping.}
@@ -36,5 +34,7 @@ study. It an abstract class.
 \item{\code{initialize(cfn)}}{Constructor.}
 
 \item{\code{plot_qc(method = "boxplot", ...)}}{Plot the quality control of the study.}
+
+\item{\code{save(cache_filename)}}{Writes the study on the disk.}
 }}
 

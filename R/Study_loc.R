@@ -14,7 +14,13 @@ Study_loc = setRefClass("Study_loc",
   ),
   contains = "Study_abstract",
   methods = list( 
-    get_data = function() {
+    get_data = function(CACHE=TRUE, ...) {
+      if (is.null(dim(.self$data))) {
+        .self$set_data(...)
+        if (CACHE) {
+          .self$save()
+        }
+      }
       return(data)
     },
     get_platform_name = function() {

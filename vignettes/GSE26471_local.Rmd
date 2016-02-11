@@ -19,9 +19,9 @@ Loading the epimedtools library
 library(epimedtools)
 ```
 
-Creating a new study that will be cached in the file /tmp/study_loc_.rds
+Creating a new study.
 ```{r}
-study = create_study("/tmp/study_loc.rds", Study_RC_name="Study_loc")
+study = create_study(Study_RC_name="Study_loc")
 ```
 
 This study deals with data obtained using the **GPL570** platform.
@@ -66,3 +66,7 @@ Plot density of expression for this *1-*sample dataset.
 ``` {r, fig.width=7, fig.height=5}
 plot(density(study$get_data()[,1]))
 ```
+Saving the study on the file system.
+```{r}
+study = study$save("/tmp/study.rds")
+````
