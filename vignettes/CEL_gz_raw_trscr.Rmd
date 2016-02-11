@@ -31,21 +31,15 @@ study$platform_name = "GPL570"
 
 The .CEL.gz files are distributed with the package:
 ``` {r}
-kc_cel_filedir = system.file(
-  "extdata/trscr_raw_kc", 
-  package = "epimedtools"
-)
-ctrl_cel_filedir = system.file(
-  "extdata/trscr_raw_ctrl", 
-  package = "epimedtools"
-)
+kc_cel_filedir = "../inst/extdata/trscr_raw_kc"
+ctrl_cel_filedir = "../inst/extdata/trscr_raw_ctrl"
 study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
 print(study$cel_filedirs)
 ```
 
 The RMA normalized data matrix is extract using the **get_data** method.
 ``` {r}
-head(study$get_data(celfile.path=""))
+head(study$get_data())
 ```
 
 The origin of samp,le is injected into the experimental grouping thank to the column **orig**.
@@ -58,7 +52,13 @@ Plot density of expression for this *1-*sample dataset.
 plot(density(study$get_data()[,1]))
 ```
 
+Plot density of expression for this *1-*sample dataset using ratio. 
+``` {r, fig.width=7, fig.height=5}
+ctrl_sample_names = rownames(study$exp_grp)[study$get_exp_grp()$orig == "trscr_raw_ctrl"]
+plot(density(study$get_ratio(ctrl_sample_names)[,1]))
+```
+
 Saving the study on the file system.
 ```{r}
 study = study$save("/tmp/study.rds")
-````
+```
