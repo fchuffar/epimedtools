@@ -1,6 +1,6 @@
-#' Return directory's .CEL.gz files.
+#' Retrieve Directory's .CEL.gz Files.
 #'
-#' This method takes a directory as parameter and return a string vector of the .CEL.gz files 
+#' This function takes a directory as parameter and return a string vector of the .CEL.gz files 
 #' that it contains.
 #'
 #' @param dir A character string to consider.
@@ -15,6 +15,21 @@ get_cel_filenames = function(dir, full.names=TRUE) {
   }
   if (length(cel_filenames) == 0 ) { stop(paste("ERROR! No .CEL.gz file in ", paste(dir, collapse=" "), ".")) }
   return(cel_filenames)
+}
+
+#' Fuse two experimental grouping
+#'
+#' This function tales two experimental grouping as parameter and merge them according to their row names.
+#' @param exp_grp1 The first experimental grouping.
+#' @param exp_grp2 The second experimental grouping. 
+#' @param by Specifications of the columns used for merging. See 'Details' in ?merge. 
+#' @return The fused experimental grouping
+#' @export
+fuse_exp_grp = function(exp_grp1, exp_grp2, by="row.names") {
+  fused_exp_grp = merge(exp_grp1, exp_grp2, by=by, all=TRUE)
+  rownames(fused_exp_grp) = fused_exp_grp[,"Row.names"]
+  fused_exp_grp[,"Row.names"] = NULL  
+  return(fused_exp_grp)
 }
 
 
@@ -48,6 +63,9 @@ Study_raw_trscr = setRefClass("Study_raw_trscr",
       sample_names = cel_files_short[!duplicated(cel_files_short)]
       tmp_exp_grp = data.frame(orig=orig)
       rownames(tmp_exp_grp) = sample_names 
+      if (!is.null(dim(.self$get_exp_grp()))) {
+        tmp_exp_grp = fuse_exp_grp(.self$get_exp_grp(), tmp_exp_grp)
+      }
       .self$exp_grp = tmp_exp_grp
       .self$data = exprs(justRMA(filenames=cel_files, celfile.path=celfile.path))
     }

@@ -37,22 +37,29 @@ study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
 print(study$cel_filedirs)
 ```
 
+The experimental grouping of **kc** samples is laoded before loading data.
+``` {r}
+exp_grp = read.table(file=gzfile("../inst/extdata/trscr_raw_kc/expgrp_kc.csv.gz"), stringsAsFactors=FALSE, sep=";", header=TRUE)
+rownames(exp_grp) = paste(exp_grp$sample, ".CEL.gz", sep="")
+study$exp_grp = exp_grp
+```
+
 The RMA normalized data matrix is extract using the **get_data** method.
 ``` {r}
 head(study$get_data())
 ```
 
-The origin of samp,le is injected into the experimental grouping thank to the column **orig**.
+The origin of sample is injected into the experimental grouping thank to the column **orig**.
 ``` {r}
 study$get_exp_grp()
 ```
 
-Plot density of expression for this *1-*sample dataset. 
+Plot density of expression for this *1-*sample dataset.
 ``` {r, fig.width=7, fig.height=5}
 plot(density(study$get_data()[,1]))
 ```
 
-Plot density of expression for this *1-*sample dataset using ratio. 
+Plot density of expression for this *1-*sample dataset using ratio.
 ``` {r, fig.width=7, fig.height=5}
 ctrl_sample_names = rownames(study$exp_grp)[study$get_exp_grp()$orig == "trscr_raw_ctrl"]
 plot(density(study$get_ratio(ctrl_sample_names)[,1]))

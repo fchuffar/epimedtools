@@ -2,7 +2,7 @@
 % Please edit documentation in R/Study_raw_trscr.R
 \name{get_cel_filenames}
 \alias{get_cel_filenames}
-\title{Return directory's .CEL.gz files.}
+\title{Retrieve Directory's .CEL.gz Files.}
 \usage{
 get_cel_filenames(dir, full.names = TRUE)
 }
@@ -15,7 +15,7 @@ get_cel_filenames(dir, full.names = TRUE)
 It returns a string vector of the .CEL.gz files.
 }
 \description{
-This method takes a directory as parameter and return a string vector of the .CEL.gz files 
+This function takes a directory as parameter and return a string vector of the .CEL.gz files 
 that it contains.
 }
 
