@@ -1,6 +1,6 @@
 context("Study_raw_trscr")
 
-test_that(".CEL.gz files could be retrieve from geo.", {
+test_that(".CEL.gz files could be retrieve from geo and exp_grp properly fused.", {
   # Case_staudy from GEO
   case_study_dir = "/tmp"
   study_case = create_study()
@@ -15,13 +15,9 @@ test_that(".CEL.gz files could be retrieve from geo.", {
   study$cel_filedirs = c(case_cel_dir, ctrl_cel_filedir)
   library(affy)
   data = study$get_data()
-
-
-  # exp_grp = study$get_exp_grp()
-  # ratio = study$get_ratio()
+  exp_grp = study$get_exp_grp()
   expect_equal(dim(data), c(54675,8))
-  # expect_equal(dim(ratio), c(54675,6))
-  # expect_equal(dim(exp_grp), c(6,1))
+  expect_equal(dim(exp_grp), c(8,37))
 })
 
 test_that("Study_raw_trscr$data could be compute from .CEL.gz", {

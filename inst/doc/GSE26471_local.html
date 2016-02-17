@@ -89,7 +89,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
   <span class="dt">package =</span> <span class="st">&quot;epimedtools&quot;</span>
 )
 <span class="kw">print</span>(exp_grp_filename)
-<span class="co">#&gt; [1] &quot;/Users/florent/projects/epimedtools/inst/extdata/GSE26471/GSE26471_exp_grp.tab.gz&quot;</span>
+<span class="co">#&gt; [1] &quot;/Users/florent/Library/R/3.2/library/epimedtools/extdata/GSE26471/GSE26471_exp_grp.tab.gz&quot;</span>
 study$exp_grp =<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">file=</span><span class="kw">gzfile</span>(exp_grp_filename), <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>)</code></pre></div>
 <p>The expression data matrix is stored into a compressed text file distributed with the package:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">data_filename =<span class="st"> </span><span class="kw">system.file</span>(
@@ -98,7 +98,7 @@ study$exp_grp =<span class="st"> </span><span class="kw">read.table</span>(<span
   <span class="dt">package =</span> <span class="st">&quot;epimedtools&quot;</span>
 )
 <span class="kw">print</span>(data_filename)
-<span class="co">#&gt; [1] &quot;/Users/florent/projects/epimedtools/inst/extdata/GSE26471/GSE26471_data.tab.gz&quot;</span>
+<span class="co">#&gt; [1] &quot;/Users/florent/Library/R/3.2/library/epimedtools/extdata/GSE26471/GSE26471_data.tab.gz&quot;</span>
 study$data =<span class="st"> </span><span class="kw">as.matrix</span>(<span class="kw">read.table</span>(<span class="dt">file=</span><span class="kw">gzfile</span>(data_filename)))</code></pre></div>
 <p>Extract data matrix.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(study$<span class="kw">get_data</span>())

@@ -27,6 +27,24 @@ get_cel_filenames = function(dir, full.names=TRUE, ERROR_IF_EMPTY=TRUE) {
 #' @return The fused experimental grouping
 #' @export
 fuse_exp_grp = function(exp_grp1, exp_grp2, by="row.names") {
+  simplify_exp_grp_rownames = function(exp_grp2, exp_grp1) {
+    rownames(exp_grp1) = sub(".CEL.gz", "", rownames(exp_grp1), fixed = TRUE)
+    rownames(exp_grp2) = sub(".CEL.gz", "", rownames(exp_grp2), fixed = TRUE)
+    new_names = sapply(rownames(exp_grp2), function(n) {
+      rownames_grep = unlist(sapply(rownames(exp_grp1), grep, n))
+      if (length(rownames_grep) == 1) {
+        return(names(rownames_grep))
+      } else if (length(rownames_grep) > 1) {
+        stop(paste("More than one rowname match ", n, ".", sep=""))          
+      } else {
+        return(n)
+      }  
+    })
+    return(new_names)
+  }
+  rownames(exp_grp1) = simplify_exp_grp_rownames(exp_grp1, exp_grp2)
+  rownames(exp_grp2) = simplify_exp_grp_rownames(exp_grp2, exp_grp1)
+
   fused_exp_grp = merge(exp_grp1, exp_grp2, by=by, all=TRUE)
   rownames(fused_exp_grp) = fused_exp_grp[,"Row.names"]
   fused_exp_grp[,"Row.names"] = NULL  
@@ -55,6 +73,9 @@ Study_raw_trscr = setRefClass("Study_raw_trscr",
         split1 = unique(unlist(strsplit(.self$cel_filedirs[i], "/")))  
         split2 = unique(unlist(strsplit(.self$cel_filedirs[-i], "/")))  
         n = paste(split1[!(split1 %in% split2)], collapse="_")
+        n = gsub("[.]", "_", n)
+        n = gsub("__*", "_", n)
+        n = gsub("^_", "", n)
         rep(n, length(cel_files[[i]]))
       }))
       cel_files = unlist(cel_files)
@@ -76,6 +97,7 @@ Study_raw_trscr = setRefClass("Study_raw_trscr",
       }
       .self$exp_grp = tmp_exp_grp
       .self$data = exprs(justRMA(filenames=cel_files, celfile.path=""))
+      colnames(.self$data) =  sub(".CEL.gz", "", colnames(.self$data), fixed = TRUE)
     }
   )
 )
