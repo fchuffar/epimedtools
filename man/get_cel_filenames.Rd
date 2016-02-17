@@ -4,12 +4,14 @@
 \alias{get_cel_filenames}
 \title{Retrieve Directory's .CEL.gz Files.}
 \usage{
-get_cel_filenames(dir, full.names = TRUE)
+get_cel_filenames(dir, full.names = TRUE, ERROR_IF_EMPTY = TRUE)
 }
 \arguments{
 \item{dir}{A character string to consider.}
 
 \item{full.names}{A logical value.}
+
+\item{ERROR_IF_EMPTY}{A logical value that allow to not throw an error if dir do not contain any .CEL.gz file.}
 }
 \value{
 It returns a string vector of the .CEL.gz files.

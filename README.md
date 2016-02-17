@@ -12,7 +12,7 @@ To get the current development version from github:
 
 ```R
 install.packages("devtools")
-devtools::install_github("fchuffar/epimedtools", build_vignettes=TRUE)
+devtools::install_github("fchuffar/epimedtools")
 ```
 
 

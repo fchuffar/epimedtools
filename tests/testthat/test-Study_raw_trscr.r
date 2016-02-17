@@ -1,5 +1,29 @@
 context("Study_raw_trscr")
 
+test_that(".CEL.gz files could be retrieve from geo.", {
+  # Case_staudy from GEO
+  case_study_dir = "/tmp"
+  study_case = create_study()
+  study_case$gse = "GSE49506"
+  cel_files = study_case$get_cel_files(dest_dir=case_study_dir)
+  case_exp_grp = study_case$get_exp_grp()
+  case_cel_dir = paste(case_study_dir, "/", study_case$gse, sep="")
+  # Go!
+  study = create_study(Study_RC_name="Study_raw_trscr")
+  study$exp_grp = case_exp_grp
+  ctrl_cel_filedir = "../../inst/extdata/trscr_raw_ctrl"
+  study$cel_filedirs = c(case_cel_dir, ctrl_cel_filedir)
+  library(affy)
+  data = study$get_data()
+
+
+  # exp_grp = study$get_exp_grp()
+  # ratio = study$get_ratio()
+  expect_equal(dim(data), c(54675,8))
+  # expect_equal(dim(ratio), c(54675,6))
+  # expect_equal(dim(exp_grp), c(6,1))
+})
+
 test_that("Study_raw_trscr$data could be compute from .CEL.gz", {
   study = create_study(Study_RC_name="Study_raw_trscr")
   kc_cel_filedir = "../../inst/extdata/trscr_raw_kc"

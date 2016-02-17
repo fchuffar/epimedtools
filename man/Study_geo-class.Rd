@@ -20,6 +20,8 @@ This class extends Study_abstract by encapsulation GEO dataset.
 \section{Methods}{
 
 \describe{
+\item{\code{get_cel_files(dest_dir = "data", ...)}}{Retrieve .CEL.gz from NCBI GEO eweb site}
+
 \item{\code{get_data(...)}}{Abstract method that gives access to the data.}
 
 \item{\code{get_exp_grp(...)}}{Abstract method that gives access to the experimental grouping.}

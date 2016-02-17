@@ -1,5 +1,12 @@
 context("Study_geo")
 
+test_that(".CEL.gz files could be retrieve from geo.", {
+  study = create_study()
+  study$gse = "GSE26471"
+  cel_files = study$get_cel_files()
+  expect_true(length(cel_files)==1)
+})
+
 test_that("Data are Laoded using GSE number", {
   study = create_study()
   study$gse = "GSE26471"

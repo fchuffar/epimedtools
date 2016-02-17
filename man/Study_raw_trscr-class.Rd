@@ -16,6 +16,6 @@ This class extends Study_loc by offering methods allowing to build data from cel
 \section{Methods}{
 
 \describe{
-\item{\code{set_data(celfile.path = getwd())}}{Set the data field and update experiment grouping.}
+\item{\code{set_data()}}{Set the data field and update experiment grouping.}
 }}
 

@@ -6,7 +6,8 @@
 #' @field gse A character string that describes the GEO accession number.
 #' @field series_matrix_filename A character string that describes the GEO serie matrix family file name.
 #' @export
-#' @importFrom GEOquery getGEO
+#' @importFrom GEOquery getGEOSuppFiles
+#' @importFrom GEOquery getGEOSuppFiles
 #' @importFrom Biobase exprs
 #' @import methods
 Study_geo = setRefClass(
@@ -18,6 +19,24 @@ Study_geo = setRefClass(
   ),
   contains = "Study_abstract",
   methods = list(
+    get_cel_files = function(dest_dir="data", ...) {
+      "Retrieve .CEL.gz from NCBI GEO eweb site"
+      gsms = as.character(.self$get_gset(dest_dir=dest_dir, ...)@phenoData@data$geo_accession)
+      basedir = paste(dest_dir, "/", .self$gse, "/raw", sep="")
+      dir.create(path=basedir, showWarnings=FALSE, recursive=TRUE)
+      cel_filenames = get_cel_filenames(basedir, ERROR_IF_EMPTY=FALSE)
+      sapply(gsms, function(gsm)  {
+        gsm_grep = grep(gsm, cel_filenames)
+        if (length(gsm_grep) == 0) {
+          getGEOSuppFiles(gsm, baseDir=basedir, makeDirectory=FALSE)          
+        } else if (length(gsm_grep) != 1) {
+          stop(paste("More than one .CEL.gz file match ", gsm, " in ", basedir, sep=""))          
+        } else {
+          print(paste("Using locally cached version: ", cel_filenames[gsm_grep], " for ", gsm, ".", sep=""))          
+        }
+      })
+      return(get_cel_filenames(basedir))
+    },
     get_gset = function(CACHE=TRUE, MEMOISE=FALSE, dest_dir="data") {
       "Computes (if not yet done) and returns the gset field."
       if (is.null(dim(.self$gset))) {

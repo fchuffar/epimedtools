@@ -5,15 +5,16 @@
 #'
 #' @param dir A character string to consider.
 #' @param full.names A logical value. 
+#' @param ERROR_IF_EMPTY A logical value that allow to not throw an error if dir do not contain any .CEL.gz file. 
 #' @return It returns a string vector of the .CEL.gz files. 
 #' @export
-get_cel_filenames = function(dir, full.names=TRUE) {
+get_cel_filenames = function(dir, full.names=TRUE, ERROR_IF_EMPTY=TRUE) {
   raw_dir = paste(dir, "/raw", sep="")
   cel_filenames = list.files(raw_dir, pattern="*.CEL.gz", full.names=full.names)
   if (length(cel_filenames) == 0) {
     cel_filenames = list.files(dir, pattern="*.CEL.gz", full.names=full.names)
   }
-  if (length(cel_filenames) == 0 ) { stop(paste("ERROR! No .CEL.gz file in ", paste(dir, collapse=" "), ".")) }
+  if (ERROR_IF_EMPTY & length(cel_filenames) == 0 ) { stop(paste("ERROR! No .CEL.gz file in ", paste(dir, collapse=" "), ".")) }
   return(cel_filenames)
 }
 
@@ -47,7 +48,7 @@ Study_raw_trscr = setRefClass("Study_raw_trscr",
   ),
   contains = "Study_loc",
   methods = list( 
-    set_data = function(celfile.path=getwd()) {
+    set_data = function() {
       "Set the data field and update experiment grouping."
       cel_files = lapply(.self$cel_filedirs, get_cel_filenames)
       orig = unlist(sapply(1:length(.self$cel_filedirs), function(i) {
@@ -57,6 +58,13 @@ Study_raw_trscr = setRefClass("Study_raw_trscr",
         rep(n, length(cel_files[[i]]))
       }))
       cel_files = unlist(cel_files)
+      cel_files = sapply(cel_files, function(cel_file) {
+        if (substr(cel_file, 1, 1) != "/") {
+          return(paste(getwd(), "/", cel_file, sep=""))
+        } else {
+          return(cel_file)
+        }
+      })
       cel_files_short = unlist(lapply(.self$cel_filedirs, get_cel_filenames, full.names=FALSE))
       cel_files = cel_files[!duplicated(cel_files_short)]
       orig = orig[!duplicated(cel_files_short)]
@@ -67,7 +75,7 @@ Study_raw_trscr = setRefClass("Study_raw_trscr",
         tmp_exp_grp = fuse_exp_grp(.self$get_exp_grp(), tmp_exp_grp)
       }
       .self$exp_grp = tmp_exp_grp
-      .self$data = exprs(justRMA(filenames=cel_files, celfile.path=celfile.path))
+      .self$data = exprs(justRMA(filenames=cel_files, celfile.path=""))
     }
   )
 )
