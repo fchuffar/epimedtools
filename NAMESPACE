@@ -3,6 +3,7 @@
 export(create_study)
 export(fuse_exp_grp)
 export(get_cel_filenames)
+export(get_gsm)
 exportClasses(Study_abstract)
 exportClasses(Study_geo)
 exportClasses(Study_loc)

@@ -1,3 +1,29 @@
+#' Retrieving .CEL.gz Files from GEO.
+#' 
+#' This function retrieves .CEL.gz files from GEO to the file system. It takes as parameters a character vector of GMSs to be retrived and a targeted directory. It retruns a character vector of .CEL.gz files.
+#' @param gsms A character vector of GMSs to be retrived.
+#' @param basedir A string describing the targeted directory.
+#' @return A character vector of .CEL.gz files.
+#' @export
+#' @importFrom GEOquery getGEOSuppFiles
+
+get_gsm = function(gsms, basedir) {
+  "Retrieve .CEL.gz from NCBI GEO web site using GSM identifiers."
+  dir.create(path=basedir, showWarnings=FALSE, recursive=TRUE)
+  cel_filenames = get_cel_filenames(basedir, ERROR_IF_EMPTY=FALSE)
+  sapply(gsms, function(gsm)  {
+    gsm_grep = grep(gsm, cel_filenames)
+    if (length(gsm_grep) == 0) {
+      getGEOSuppFiles(gsm, baseDir=basedir, makeDirectory=FALSE)          
+    } else if (length(gsm_grep) != 1) {
+      stop(paste("More than one .CEL.gz file match ", gsm, " in ", basedir, sep=""))          
+    } else {
+      print(paste("Using locally cached version: ", cel_filenames[gsm_grep], " for ", gsm, ".", sep=""))          
+    }
+  })
+  return(get_cel_filenames(basedir))
+}
+
 #' A Reference Class to represent a multi-omic study.
 #'
 #' This class extends Study_abstract by encapsulation GEO dataset.
@@ -6,8 +32,7 @@
 #' @field gse A character string that describes the GEO accession number.
 #' @field series_matrix_filename A character string that describes the GEO serie matrix family file name.
 #' @export
-#' @importFrom GEOquery getGEOSuppFiles
-#' @importFrom GEOquery getGEOSuppFiles
+#' @importFrom GEOquery getGEO
 #' @importFrom Biobase exprs
 #' @import methods
 Study_geo = setRefClass(
@@ -23,19 +48,7 @@ Study_geo = setRefClass(
       "Retrieve .CEL.gz from NCBI GEO eweb site"
       gsms = as.character(.self$get_gset(dest_dir=dest_dir, ...)@phenoData@data$geo_accession)
       basedir = paste(dest_dir, "/", .self$gse, "/raw", sep="")
-      dir.create(path=basedir, showWarnings=FALSE, recursive=TRUE)
-      cel_filenames = get_cel_filenames(basedir, ERROR_IF_EMPTY=FALSE)
-      sapply(gsms, function(gsm)  {
-        gsm_grep = grep(gsm, cel_filenames)
-        if (length(gsm_grep) == 0) {
-          getGEOSuppFiles(gsm, baseDir=basedir, makeDirectory=FALSE)          
-        } else if (length(gsm_grep) != 1) {
-          stop(paste("More than one .CEL.gz file match ", gsm, " in ", basedir, sep=""))          
-        } else {
-          print(paste("Using locally cached version: ", cel_filenames[gsm_grep], " for ", gsm, ".", sep=""))          
-        }
-      })
-      return(get_cel_filenames(basedir))
+      return(get_gsm(gsms, basedir))
     },
     get_gset = function(CACHE=TRUE, MEMOISE=FALSE, dest_dir="data") {
       "Computes (if not yet done) and returns the gset field."
