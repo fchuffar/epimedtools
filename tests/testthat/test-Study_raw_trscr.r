@@ -34,6 +34,14 @@ test_that("Study_raw_trscr$data could be compute from .CEL.gz", {
   expect_equal(dim(exp_grp), c(6,1))
 })
 
+test_that("that hooks could be activated.", {
+  study = create_study(Study_RC_name="Study_raw_trscr")
+  kc_cel_filedir = "../../inst/extdata/trscr_raw_kc"
+  ctrl_cel_filedir = "../../inst/extdata/trscr_raw_ctrl"
+  study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
+  expect_error(study$get_data(CACHE=FALSE, hook = "stop", "It's just a hook test!"), regexp="It's just a hook test!")
+})
+
 test_that("exp_grp could be merge", {
   #exp_grp1
   exp_grp1 = read.table(file=gzfile("../../inst/extdata/trscr_raw_kc/expgrp_kc.csv.gz"), stringsAsFactors=FALSE, sep=";", header=TRUE)
