@@ -6,7 +6,7 @@ bioc_packages:
   - GEOquery
   - Biobase
 
- r_packages:
+r_packages:
   - covr
 
 r_github_packages:
