@@ -167,7 +167,30 @@ Study_abstract = setRefClass(
       ctrl_op = apply(d, 1, get(method))        
       ratio = .self$get_data(...) / ctrl_op
       return(ratio)
-    }
+    },
+    plot_boxplot = function(probe_name, factor_name, ylim, bp_function_name="boxplot") {
+      "Draw the box plot for a given `probe_name` and a given `factor_name`."
+    	idx_sample = rownames(.self$get_exp_grp())
+    	# Dealing with ratio data, reduce data to interesting probes and samples
+    	filtred_bp_data = .self$get_data()[probe_name, idx_sample]
+    	# Box plots
+      if (missing(ylim)) {
+    	  ylim = c(min(filtred_bp_data), max(filtred_bp_data))
+      }
+	    gene = "genename"
+	    # boxplot_filename <- paste(study_dirname, "/", gene, "_", probe, "_", factor_name, ".pdf", sep="")
+	    # pdf(file=boxplot_filename, height=10, width=10)# open jpeg device with specified dimensions
+      bp_function = get(bp_function_name)
+	    bp_function(unlist(filtred_bp_data[probe,])~get_exp_grp()[,factor_name], # open boxplot
+          # what=c(1,1,1,0),
+	      ylim = ylim,                  # fixed vertical scale
+	      col = "grey", border = "black",  # colors of inside and border of box
+	      las = 2,                    # written vertically
+	      xlab = factor_name,
+	      main = paste(gene, probe, sep="@") # title
+	    )
+	    # dev.off()
+    }  
   )
 )
 

@@ -6,8 +6,8 @@ bioc_packages:
   - GEOquery
   - Biobase
 
-# r_packages:
-#   - covr
+ r_packages:
+   - covr
 
 r_github_packages:
   - jimhester/covr
