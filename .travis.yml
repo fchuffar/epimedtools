@@ -7,7 +7,7 @@ bioc_packages:
   - Biobase
 
  r_packages:
-   - covr
+  - covr
 
 r_github_packages:
   - jimhester/covr
