@@ -21,6 +21,8 @@ study. It an abstract class.
 \section{Methods}{
 
 \describe{
+\item{\code{do_anova(probe_name, factor_name)}}{Perform anova test for a given `probe_name` and a given `factor_name`.}
+
 \item{\code{get_data(...)}}{Abstract method that gives access to the data.}
 
 \item{\code{get_exp_grp(...)}}{Abstract method that gives access to the experimental grouping.}
@@ -32,6 +34,8 @@ study. It an abstract class.
 \item{\code{get_ratio(ctrl_sample_names, method = "mean", ...)}}{Normalize data accross probes using method *method* according to a reference poulation describe by  *ctrl_sample_names* its sample names vector.}
 
 \item{\code{initialize(cfn)}}{Constructor.}
+
+\item{\code{plot_boxplot(probe_name, factor_name, ylim, bp_function_name = "boxplot")}}{Draw the box plot for a given `probe_name` and a given `factor_name`.}
 
 \item{\code{plot_qc(method = "boxplot", ...)}}{Plot the quality control of the study.}
 

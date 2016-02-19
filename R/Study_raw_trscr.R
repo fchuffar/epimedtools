@@ -124,7 +124,10 @@ Study_raw_trscr = setRefClass("Study_raw_trscr",
       }
       .self$exp_grp = tmp_exp_grp
       .self$data = exprs(justRMA(filenames=cel_files, celfile.path=""))
-      colnames(.self$data) =  sub(".CEL.gz", "", colnames(.self$data), ignore.case = TRUE)
+      colnames(.self$data) = sub(".CEL.gz", "", colnames(.self$data), ignore.case = TRUE)
+      colnames(.self$data) = as.vector(sapply(colnames(.self$data), function(gsm) {
+        strsplit(gsm, "_")[[1]][1]
+      }))
     }
   )
 )

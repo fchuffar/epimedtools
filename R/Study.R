@@ -168,6 +168,20 @@ Study_abstract = setRefClass(
       ratio = .self$get_data(...) / ctrl_op
       return(ratio)
     },
+    do_anova = function(probe_name, factor_name) {
+      "Perform anova test for a given `probe_name` and a given `factor_name`."
+    	idx_sample = rownames(.self$get_exp_grp())
+    	# Dealing with ratio data, reduce data to interesting probes and samples
+    	filtred_bp_data = .self$get_data()[probe_name, idx_sample]
+      m = aov(filtred_bp_data~.self$get_exp_grp()[,factor_name])
+      # tests
+      s = shapiro.test(residuals(m))
+      shap = -log10(s$p.value)
+      f_kc = m$coefficients[2]
+      pval = -log10(summary(m)[[1]][["Pr(>F)"]][1])
+      ret = list(shap=shap, pval=pval) 
+      return(ret)
+    },
     plot_boxplot = function(probe_name, factor_name, ylim, bp_function_name="boxplot") {
       "Draw the box plot for a given `probe_name` and a given `factor_name`."
     	idx_sample = rownames(.self$get_exp_grp())
@@ -177,17 +191,17 @@ Study_abstract = setRefClass(
       if (missing(ylim)) {
     	  ylim = c(min(filtred_bp_data), max(filtred_bp_data))
       }
-	    gene = "genename"
-	    # boxplot_filename <- paste(study_dirname, "/", gene, "_", probe, "_", factor_name, ".pdf", sep="")
+	    gene_name = "gene_name"
+	    # boxplot_filename <- paste(study_dirname, "/", gene, "_", probe_name, "_", factor_name, ".pdf", sep="")
 	    # pdf(file=boxplot_filename, height=10, width=10)# open jpeg device with specified dimensions
       bp_function = get(bp_function_name)
-	    bp_function(unlist(filtred_bp_data[probe,])~get_exp_grp()[,factor_name], # open boxplot
+	    bp_function(filtred_bp_data~.self$get_exp_grp()[,factor_name], # open boxplot
           # what=c(1,1,1,0),
 	      ylim = ylim,                  # fixed vertical scale
 	      col = "grey", border = "black",  # colors of inside and border of box
 	      las = 2,                    # written vertically
 	      xlab = factor_name,
-	      main = paste(gene, probe, sep="@") # title
+	      main = paste(gene_name, probe_name, sep="@") # title
 	    )
 	    # dev.off()
     }  
