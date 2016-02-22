@@ -168,8 +168,20 @@ Study_abstract = setRefClass(
       ratio = .self$get_data(...) / ctrl_op
       return(ratio)
     },
-    do_anova = function(probe_name, factor_name) {
-      "Perform anova test for a given `probe_name` and a given `factor_name`."
+    do_sw = function(sample_names, probe_names) {
+      "Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `factor_name`."
+      data = .self$get_data()
+      if (missing(probe_names)) {
+        probe_names = rownames(data)
+      }
+      bar = data[probe_names, sample_names]
+      apply()
+
+      foo = msapply(probe_names, function(probe_name) {
+        s = shapiro.test(data[probe_name, sample_names])
+        s_pval = -log10(s$p.value)
+        return(s_pval)
+      })
     	idx_sample = rownames(.self$get_exp_grp())
     	# Dealing with ratio data, reduce data to interesting probes and samples
     	filtred_bp_data = .self$get_data()[probe_name, idx_sample]
@@ -182,7 +194,21 @@ Study_abstract = setRefClass(
       ret = list(shap=shap, pval=pval) 
       return(ret)
     },
-    plot_boxplot = function(probe_name, factor_name, ylim, bp_function_name="boxplot") {
+    do_anova = function(probe_name, factor_name) {
+      "Performs anova test for a given `probe_name` and a given `factor_name`."
+    	idx_sample = rownames(.self$get_exp_grp())
+    	# Dealing with ratio data, reduce data to interesting probes and samples
+    	filtred_bp_data = .self$get_data()[probe_name, idx_sample]
+      m = aov(filtred_bp_data~.self$get_exp_grp()[,factor_name])
+      # tests
+      s = shapiro.test(residuals(m))
+      shap = -log10(s$p.value)
+      f_kc = m$coefficients[2]
+      pval = -log10(summary(m)[[1]][["Pr(>F)"]][1])
+      ret = list(shap=shap, pval=pval) 
+      return(ret)
+    },
+    plot_boxplot = function(probe_name, factor_name, ylim, las=2, col="grey", border="black", bp_function_name="boxplot", ...) {
       "Draw the box plot for a given `probe_name` and a given `factor_name`."
     	idx_sample = rownames(.self$get_exp_grp())
     	# Dealing with ratio data, reduce data to interesting probes and samples
@@ -197,11 +223,12 @@ Study_abstract = setRefClass(
       bp_function = get(bp_function_name)
 	    bp_function(filtred_bp_data~.self$get_exp_grp()[,factor_name], # open boxplot
           # what=c(1,1,1,0),
-	      ylim = ylim,                  # fixed vertical scale
-	      col = "grey", border = "black",  # colors of inside and border of box
-	      las = 2,                    # written vertically
+	      ylim = ylim,                     # fixed vertical scale
+	      col = col, border = border,  # colors of inside and border of box
+	      las = las,                         # written vertically
 	      xlab = factor_name,
-	      main = paste(gene_name, probe_name, sep="@") # title
+	      main = paste(gene_name, probe_name, sep="@"), # title
+        ...
 	    )
 	    # dev.off()
     }  

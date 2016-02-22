@@ -21,7 +21,9 @@ study. It an abstract class.
 \section{Methods}{
 
 \describe{
-\item{\code{do_anova(probe_name, factor_name)}}{Perform anova test for a given `probe_name` and a given `factor_name`.}
+\item{\code{do_anova(probe_name, factor_name)}}{Performs anova test for a given `probe_name` and a given `factor_name`.}
+
+\item{\code{do_sw(sample_names, probe_names)}}{Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `factor_name`.}
 
 \item{\code{get_data(...)}}{Abstract method that gives access to the data.}
 
@@ -35,7 +37,8 @@ study. It an abstract class.
 
 \item{\code{initialize(cfn)}}{Constructor.}
 
-\item{\code{plot_boxplot(probe_name, factor_name, ylim, bp_function_name = "boxplot")}}{Draw the box plot for a given `probe_name` and a given `factor_name`.}
+\item{\code{plot_boxplot(probe_name, factor_name, ylim, las = 2, col = "grey",
+  border = "black", bp_function_name = "boxplot", ...)}}{Draw the box plot for a given `probe_name` and a given `factor_name`.}
 
 \item{\code{plot_qc(method = "boxplot", ...)}}{Plot the quality control of the study.}
 

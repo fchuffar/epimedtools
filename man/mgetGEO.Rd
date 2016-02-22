@@ -13,7 +13,7 @@ mgetGEO(...)
 GEO content.
 }
 \description{
-This fucntion offer a memoised version of getGEO. It is used to get GEO data 
+This function offer a memoised version of getGEO. It is used to get GEO data 
 from GEO portal or a local file.
 }
 \examples{
