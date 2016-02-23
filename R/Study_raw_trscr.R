@@ -118,18 +118,32 @@ Study_raw_trscr = setRefClass("Study_raw_trscr",
       orig = orig[!duplicated(cel_files_short)]
       sample_names = cel_files_short[!duplicated(cel_files_short)]
       tmp_exp_grp = data.frame(orig=orig)
-      rownames(tmp_exp_grp) = sample_names 
+      rownames(tmp_exp_grp) = simplify_sample_names(sample_names) 
       if (!is.null(dim(.self$get_exp_grp()))) {
         tmp_exp_grp = fuse_exp_grp(.self$get_exp_grp(), tmp_exp_grp)
       }
       .self$exp_grp = tmp_exp_grp
       .self$data = exprs(justRMA(filenames=cel_files, celfile.path=""))
-      colnames(.self$data) = sub(".CEL.gz", "", colnames(.self$data), ignore.case = TRUE)
-      colnames(.self$data) = as.vector(sapply(colnames(.self$data), function(gsm) {
-        strsplit(gsm, "_")[[1]][1]
-      }))
+      colnames(.self$data) = simplify_sample_names(colnames(.self$data))
     }
   )
 )
 
-
+#' A Function That Simplify Sample Names.
+#'
+#' This function simplfy sample names.
+#' 
+#' @param sample_names A characyer vector that describes the sample names.
+#' @return A characyer vector that describes simplified sample names.
+#' @export
+simplify_sample_names = function(sample_names) {
+  sample_names = sub(".CEL.gz", "", sample_names, ignore.case = TRUE)
+  tmp_sample_names = as.vector(sapply(sample_names, function(gsm) {
+    as.list(strsplit(gsm, "_")[[1]][1])
+  }))
+  if (sum(duplicated(tmp_sample_names)) == 0) {
+    sample_names = tmp_sample_names
+  }
+  # sample_names = do.call(cbind, t(sample_names))
+  return(sample_names)
+}

@@ -8,9 +8,6 @@ library(epimedtools)
 study = create_study(Study_RC_name="Study_raw_trscr")
 
 ## ------------------------------------------------------------------------
-study$platform_name = "GPL570"
-
-## ------------------------------------------------------------------------
 kc_cel_filedir = "../inst/extdata/trscr_raw_kc"
 ctrl_cel_filedir = "../inst/extdata/trscr_raw_ctrl"
 study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
@@ -26,6 +23,9 @@ head(study$get_data())
 
 ## ------------------------------------------------------------------------
 study$get_exp_grp()
+
+## ------------------------------------------------------------------------
+study$platform_name = "GPL570"
 
 ## ---- fig.width=7, fig.height=5------------------------------------------
 plot(density(study$get_data()[,1]))

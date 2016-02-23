@@ -27,11 +27,18 @@ test_that("Study_raw_trscr$data could be compute from .CEL.gz", {
   study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
   library(affy)
   data = study$get_data()
-  exp_grp = study$get_exp_grp()
-  ratio = study$get_ratio()
   expect_equal(dim(data), c(54675,6))
-  expect_equal(dim(ratio), c(54675,6))
+  exp_grp = study$get_exp_grp()
   expect_equal(dim(exp_grp), c(6,1))
+  expect_equal(sum(rownames(exp_grp) %in% colnames(data)), 6)
+  ratio = study$get_ratio()
+  expect_equal(dim(ratio), c(54675,6))
+  probe_names=rownames(data)[1:10]
+  exp_grp_key="orig"
+  ctrl_name="trscr_raw_ctrl"
+  nb_perm=10
+  m2s = study$do_m2s_analysis(probe_names=probe_names, exp_grp_key=exp_grp_key, ctrl_name=ctrl_name, nb_perm=nb_perm)
+  expect_equal(dim(m2s), c(10,7))
 })
 
 test_that("that hooks could be activated.", {

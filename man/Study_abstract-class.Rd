@@ -23,6 +23,9 @@ study. It an abstract class.
 \describe{
 \item{\code{do_anova(probe_name, factor_name)}}{Performs anova test for a given `probe_name` and a given `factor_name`.}
 
+\item{\code{do_m2s_analysis(probe_names, exp_grp_key, ctrl_name, nb_perm = 1000,
+  MONITORED = FALSE, ...)}}{Performs permutation test to detect right shifted exprtession groups for a given `probe_name` and a given `factor_name`.}
+
 \item{\code{do_sw(sample_names, probe_names)}}{Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `factor_name`.}
 
 \item{\code{get_data(...)}}{Abstract method that gives access to the data.}

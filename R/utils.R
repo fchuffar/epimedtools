@@ -32,7 +32,7 @@ mtgetGEO = memoise(function(...) {
 })
 
 
-#' A Monitored Version of `apply``
+#' A Monitored Version of `apply`
 #'
 #' This function offer a monitored version of `apply`.
 #'
@@ -40,8 +40,8 @@ mtgetGEO = memoise(function(...) {
 #' @param marg An integer describing the marginal to use, usualy gives as  `apply` second parameter.
 #' @param func A function usualy gives as `sapply` third parameter.
 #' @param mod An integer that define the frequency of the monitoring.
-#' @param ... parameters passed to `func` function.
-#' @return a vector of the application of the `func` function to each element of the `vec` vector.
+#' @param ... Parameters passed to `func` function.
+#' @return A vector of the application of the `func` function to each element of the `vec` vector.
 # ' @examples
 # ' # foo = monitored_apply(matrix(rnorm(50), 10), 1, function(v) {print(length(v)); Sys.sleep(1); return(c(mean(v), sd(v)))}, mod = 1)
 #' @export
@@ -76,8 +76,8 @@ monitored_apply = function(mat, marg=1, func, mod=100, ...) {
 #'
 #' @param vec A vector usualy gives as `sapply` first parameter.
 #' @param func A function usualy gives as `sapply` second parameter.
-#' @param ... parameters passed to `monitored_apply` function.
-#' @return a vector of the application of the `func` function to each element of the `vec` vector.
+#' @param ... Parameters passed to `monitored_apply` function.
+#' @return A vector of the application of the `func` function to each element of the `vec` vector.
 # ' @examples
 # ' # foo = monitored_sapply(1:10, function(i) {print(i); Sys.sleep(1); return(c(i*i, i+i))}, mod = 1)
 #' @export

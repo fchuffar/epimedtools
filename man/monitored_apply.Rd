@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{monitored_apply}
 \alias{monitored_apply}
-\title{A Monitored Version of `apply``}
+\title{A Monitored Version of `apply`}
 \usage{
 monitored_apply(mat, marg = 1, func, mod = 100, ...)
 }
@@ -15,10 +15,10 @@ monitored_apply(mat, marg = 1, func, mod = 100, ...)
 
 \item{mod}{An integer that define the frequency of the monitoring.}
 
-\item{...}{parameters passed to `func` function.}
+\item{...}{Parameters passed to `func` function.}
 }
 \value{
-a vector of the application of the `func` function to each element of the `vec` vector.
+A vector of the application of the `func` function to each element of the `vec` vector.
 }
 \description{
 This function offer a monitored version of `apply`.

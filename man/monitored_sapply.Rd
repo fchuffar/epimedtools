@@ -11,10 +11,10 @@ monitored_sapply(vec, func, ...)
 
 \item{func}{A function usualy gives as `sapply` second parameter.}
 
-\item{...}{parameters passed to `monitored_apply` function.}
+\item{...}{Parameters passed to `monitored_apply` function.}
 }
 \value{
-a vector of the application of the `func` function to each element of the `vec` vector.
+A vector of the application of the `func` function to each element of the `vec` vector.
 }
 \description{
 This function offer a monitored version of `sapply`.
