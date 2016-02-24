@@ -36,7 +36,12 @@ study. It an abstract class.
 
 \item{\code{get_platform_name(...)}}{Abstract method that gives access to the platform name.}
 
+\item{\code{get_probe_gene_tab(gene, DEEP_SEARCH = FALSE, pf_col_name = "Gene Symbol",
+  ...)}}{Build a gene / probe table from a gene list.}
+
 \item{\code{get_ratio(ctrl_sample_names, method = "mean", ...)}}{Normalize data accross probes using method *method* according to a reference poulation describe by  *ctrl_sample_names* its sample names vector.}
+
+\item{\code{gs_to_probe(gene, ALL_PF_COL = FALSE, pf_col_name = "Gene Symbol", ...)}}{Return probes name for a given gene.}
 
 \item{\code{initialize(cfn)}}{Constructor.}
 

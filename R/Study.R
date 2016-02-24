@@ -168,6 +168,34 @@ Study_abstract = setRefClass(
       ratio = .self$get_data(...) / ctrl_op
       return(ratio)
     },
+    gs_to_probe = function(gene, ALL_PF_COL=FALSE, pf_col_name="Gene Symbol", ...) {
+      "Return probes name for a given gene."
+      pf = .self$get_platform(...)
+      if (ALL_PF_COL) {
+        probes = unique(unlist(sapply(colnames(pf), function(cn) {
+          as.character(pf[grep(gene, pf[[cn]]), ]$ID)
+        })))
+      } else {
+        probes = as.character(pf[grep(gene, pf[[pf_col_name]]), ]$ID)    
+      }
+    },
+    get_probe_gene_tab = function(gene, DEEP_SEARCH=FALSE, pf_col_name="Gene Symbol", ...) {
+      "Build a gene / probe table from a gene list."
+      pf = .self$get_platform(...)
+      probe_gene_tab = lapply(genes, function(gene) {
+        probe = gs_to_probe(gene, pf_col_name=pf_col_name, ...)
+        if (length(probe) == 0 & DEEP_SEARCH) {
+            probe = gs_to_probe(gene, ALL_PF_COL=TRUE, ...)
+        }
+        if (length(probe) == 0) {
+          return(NULL)
+        }      
+        df = data.frame(probe=probe)
+        df$gene = gene
+        return(df)
+      })
+      probe_gene_tab = do.call(rbind,probe_gene_tab)
+    },
     do_sw = function(sample_names, probe_names) {
       "Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `factor_name`."
       data = .self$get_data()

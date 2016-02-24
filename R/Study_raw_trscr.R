@@ -138,6 +138,7 @@ Study_raw_trscr = setRefClass("Study_raw_trscr",
 #' @export
 simplify_sample_names = function(sample_names) {
   sample_names = sub(".CEL.gz", "", sample_names, ignore.case = TRUE)
+  sample_names = sub(".CEL", "", sample_names, ignore.case = TRUE)
   tmp_sample_names = as.vector(sapply(sample_names, function(gsm) {
     as.list(strsplit(gsm, "_")[[1]][1])
   }))
