@@ -195,6 +195,9 @@ Study_abstract = setRefClass(
         return(df)
       })
       probe_gene_tab = do.call(rbind,probe_gene_tab)
+      probe_gene_tab$probe = as.character(probe_gene_tab$probe)
+      probe_gene_tab$gene = as.character(probe_gene_tab$gene)
+      return(probe_gene_tab)
     },
     do_sw = function(sample_names, probe_names) {
       "Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `factor_name`."
@@ -222,19 +225,31 @@ Study_abstract = setRefClass(
       ret = list(shap=shap, pval=pval) 
       return(ret)
     },
-    plot_m2s_analysis = function(m2s, histo, ...) {
+    plot_m2s_analysis = function(m2s, histo, label_col_names="gene", xlim, ...) {
       h = histo
       nsd = m2s[[paste(h, "nsd", sep="_")]]
-      idx = nsd > 0
-      nsd = nsd[idx]
       pval = m2s[[paste(h, "p_nsd", sep="_")]]
       pval[pval==0] = 1/(1/min(pval[pval!=0]) + 1)
-      pval = pval[idx]
-      plot(log2(nsd), -log10(pval), main=h, pch=16, ...)
+      # idx = nsd > 0
+      # nsd = nsd[idx]
+      # pval = pval[idx]
+      # if (label_col_names %in% colnames(m2s)) {
+      #   col = as.factor(m2s[[label_col_names]])
+      #   col = col[idx]
+      # } else {
+      #   col=1
+      # }
+      if (missing(xlim)) {
+        xlim = c(-4, log2(max(nsd)))
+      }
+      plot(log2(nsd), -log10(pval), main=h, pch=16, xlim=xlim, ...)
+      # if (label_col_names %in% colnames(m2s)) {
+      #   legend("bottomright", col=unique(col), legend=unique(col), pch=16)
+      # }
       abline(v=log2(c(2,3)))
       abline(h=-log10(0.05))      
     }, 
-    do_m2s_analysis = function(probe_names, exp_grp_key, ctrl_name, nb_perm=1000, MONITORED=FALSE, ...) {
+    do_m2s_analysis = function(probe_names, exp_grp_key, ctrl_name, nb_perm=1000, MONITORED=FALSE, col=col, ...) {
       "Performs permutation test to detect right shifted exprtession groups for a given `probe_name` and a given `factor_name`."
       # Before starting...
       exp_grp = .self$get_exp_grp()
