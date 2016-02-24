@@ -222,7 +222,7 @@ Study_abstract = setRefClass(
       ret = list(shap=shap, pval=pval) 
       return(ret)
     },
-    plot_m2s_analysis = function(m2s, histo) {
+    plot_m2s_analysis = function(m2s, histo, ...) {
       h = histo
       nsd = m2s[[paste(h, "nsd", sep="_")]]
       idx = nsd > 0
@@ -230,7 +230,7 @@ Study_abstract = setRefClass(
       pval = m2s[[paste(h, "p_nsd", sep="_")]]
       pval[pval==0] = 1/(1/min(pval[pval!=0]) + 1)
       pval = pval[idx]
-      plot(log2(nsd), -log10(pval), main=h, pch=16, col=adjustcolor(1, alpha.f=0.4))
+      plot(log2(nsd), -log10(pval), main=h, pch=16, ...)
       abline(v=log2(c(2,3)))
       abline(h=-log10(0.05))      
     }, 
