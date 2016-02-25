@@ -9,7 +9,7 @@ test_that(".CEL.gz files could be retrieve from geo and exp_grp properly fused."
   case_exp_grp = study_case$get_exp_grp()
   case_cel_dir = paste(case_study_dir, "/", study_case$gse, sep="")
   # Go!
-  study = create_study(Study_RC_name="Study_raw_trscr")
+  study = create_study()
   study$exp_grp = case_exp_grp
   ctrl_cel_filedir = "../../inst/extdata/trscr_raw_ctrl"
   study$cel_filedirs = c(case_cel_dir, ctrl_cel_filedir)
@@ -21,7 +21,7 @@ test_that(".CEL.gz files could be retrieve from geo and exp_grp properly fused."
 })
 
 test_that("Study_raw_trscr$data could be compute from .CEL.gz", {
-  study = create_study(Study_RC_name="Study_raw_trscr")
+  study = create_study()
   kc_cel_filedir = "../../inst/extdata/trscr_raw_kc"
   ctrl_cel_filedir = "../../inst/extdata/trscr_raw_ctrl"
   study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
@@ -42,7 +42,7 @@ test_that("Study_raw_trscr$data could be compute from .CEL.gz", {
 })
 
 test_that("that hooks could be activated.", {
-  study = create_study(Study_RC_name="Study_raw_trscr")
+  study = create_study()
   kc_cel_filedir = "../../inst/extdata/trscr_raw_kc"
   ctrl_cel_filedir = "../../inst/extdata/trscr_raw_ctrl"
   study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
@@ -56,7 +56,7 @@ test_that("exp_grp could be merge", {
   #exp_grp2
   kc_cel_filedir = "../../inst/extdata/trscr_raw_kc"
   ctrl_cel_filedir = "../../inst/extdata/trscr_raw_ctrl"
-  study = create_study(Study_RC_name="Study_raw_trscr")
+  study = create_study()
   study$exp_grp = exp_grp1
   study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
   data = study$get_data()

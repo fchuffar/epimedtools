@@ -17,24 +17,30 @@ study. It an abstract class.
 \item{\code{platform_filenames}}{A character string that describes the platform file name.}
 
 \item{\code{cache_filename}}{A character string that describes the study cache file name.}
+
+\item{\code{gset}}{The GEO set of data as it is return by getGEO.}
+
+\item{\code{gse}}{A character string that describes the GEO accession number.}
+
+\item{\code{series_matrix_filename}}{A character string that describes the GEO serie matrix family file name.}
+
+\item{\code{data}}{A matris of experiemental data. Each column is a sample, named by it's sample name, and each row is a probes.}
+
+\item{\code{platform_name}}{A character string that describes the platform used to perform.}
+
+\item{\code{exp_grp}}{A data.frame that describe the experimental grouping. Each line is a sample.}
 }}
 \section{Methods}{
 
 \describe{
-\item{\code{do_anova(probe_name, factor_name)}}{Performs anova test for a given `probe_name` and a given `factor_name`.}
+\item{\code{do_m2s_analysis(probe_names, exp_grp_key, ctrl_name, nb_perm = 100,
+  MONITORED = FALSE, ...)}}{Performs permutation test to detect right shifted exprtession groups for a given `probe_name` and a given `factor_name`.}
 
-\item{\code{do_m2s_analysis(probe_names, exp_grp_key, ctrl_name, nb_perm = 1000,
-  MONITORED = FALSE, col = col, ...)}}{Performs permutation test to detect right shifted exprtession groups for a given `probe_name` and a given `factor_name`.}
+\item{\code{get_cel_files(dest_dir = "data", ...)}}{Retrieve .CEL.gz from NCBI GEO eweb site}
 
-\item{\code{do_sw(sample_names, probe_names)}}{Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `factor_name`.}
-
-\item{\code{get_data(...)}}{Abstract method that gives access to the data.}
-
-\item{\code{get_exp_grp(...)}}{Abstract method that gives access to the experimental grouping.}
+\item{\code{get_gset(CACHE = TRUE, MEMOISE = FALSE, dest_dir = "data")}}{Computes (if not yet done) and returns the gset field.}
 
 \item{\code{get_platform(CACHE = FALSE, MEMOISE = TRUE, dest_dir = "data/platforms")}}{Computes if not and returns the platform field.}
-
-\item{\code{get_platform_name(...)}}{Abstract method that gives access to the platform name.}
 
 \item{\code{get_probe_gene_tab(gene, DEEP_SEARCH = FALSE, pf_col_name = "Gene Symbol",
   ...)}}{Build a gene / probe table from a gene list.}

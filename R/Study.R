@@ -30,7 +30,7 @@
 #' study = create_study("/tmp/tmp_cached_study.rds")
 #' @return It returns an object that extends the Study_abstract class.
 #' @export
-create_study = function(cache_filename, Study_RC_name="Study_geo") {
+create_study = function(cache_filename, Study_RC_name="Study_raw_trscr") {
   if (missing(cache_filename)) {
     study = get(Study_RC_name)()
   } else {
@@ -48,6 +48,12 @@ create_study = function(cache_filename, Study_RC_name="Study_geo") {
 #' @field plaform The Table version of the GEO platform description.
 #' @field platform_filenames A character string that describes the platform file name.
 #' @field cache_filename A character string that describes the study cache file name.
+#' @field gset The GEO set of data as it is return by getGEO.
+#' @field gse A character string that describes the GEO accession number.
+#' @field series_matrix_filename A character string that describes the GEO serie matrix family file name.
+#' @field data A matris of experiemental data. Each column is a sample, named by it's sample name, and each row is a probes.
+#' @field platform_name A character string that describes the platform used to perform.
+#' @field exp_grp A data.frame that describe the experimental grouping. Each line is a sample.
 #' @export
 #' @importFrom GEOquery Table
 #' @importFrom GEOquery getGEO
@@ -55,11 +61,51 @@ create_study = function(cache_filename, Study_RC_name="Study_geo") {
 Study_abstract = setRefClass(
   "Study_abstract",
   fields = list(
+    "data" = "ANY",
+    "exp_grp" = "ANY",
     "platform" = "ANY",
     "platform_filename" = "character",
-    "cache_filename" = "character"
+    "platform_name" = "character",
+    "cache_filename" = "character",
+    "gset" = "ANY",
+    "gse" = "character",
+    "series_matrix_filename" = "character", 
+    "stuffs" = "ANY"
   ),
   methods = list(
+    get_data = function(CACHE=TRUE, ...) {
+      if (is.null(dim(.self$data))) {
+        if (length(.self$gse) != 0) {
+          .self$get_gset()
+        } else {
+          .self$set_data(...)          
+        }
+        if (CACHE) {
+          .self$save()
+        }
+      }
+      return(data)
+    },
+    get_platform_name = function(...) {
+      if (length(.self$platform_name) == 0) {
+        if (is.null(dim(.self$gset))) {
+          if (length(.self$gse) != 0) {
+            .self$get_gset(...)
+          }
+        }
+      }
+      return(platform_name)
+    },
+    get_exp_grp = function(...) {
+      if (is.null(dim(.self$exp_grp))) {
+        if (is.null(dim(.self$gset))) {
+          if (length(.self$gse) != 0) {
+            .self$get_gset(...)
+          }
+        }
+      }
+      return(exp_grp)
+    },
     initialize = function(cfn) {
       "Constructor."
       if (!missing(cfn)) {
@@ -99,12 +145,7 @@ Study_abstract = setRefClass(
       if (is.null(dim(.self$platform))) {
         if (length(.self$platform_filename) == 1) {
           if (file.exists(.self$platform_filename)) {
-            print(
-              paste(
-                "Launching platform informations from ", .self$platform_filename, "...", sep =
-                  ""
-              )
-            )
+            print(paste("Launching platform informations from ", .self$platform_filename, "...", sep = ""))
             if (MEMOISE) {
               .self$platform = mtgetGEO(filename = .self$platform_filename, getGPL = FALSE)
             } else {
@@ -139,23 +180,65 @@ Study_abstract = setRefClass(
       }
       return(.self$platform)
     },
-    get_platform_name = function(...) {
-      "Abstract method that gives access to the platform name."
-      stop("Call to the abstract method get_platform_name of the class Study_abstract.")
-    },
-    get_exp_grp = function(...) {
-      "Abstract method that gives access to the experimental grouping."
-      stop("Call to the abstract method get_exp_grp of the class Study_abstract.")
-    },
-    get_data = function(...) {
-      "Abstract method that gives access to the data."
-      stop("Call to the abstract method get_data of the class Study_abstract.")
-    },
     # Analysis method dealing with Study_abstract class intances...
     plot_qc = function(method = "boxplot", ...) {
       "Plot the quality control of the study."
       get(method)(t(na.omit(.self$get_data())) ~ colnames(.self$get_data()), las =
                     2, ...)
+    },
+    get_cel_files = function(dest_dir="data", ...) {
+      "Retrieve .CEL.gz from NCBI GEO eweb site"
+      gsms = as.character(.self$get_gset(dest_dir=dest_dir, ...)@phenoData@data$geo_accession)
+      basedir = paste(dest_dir, "/", .self$gse, "/raw", sep="")
+      return(get_gsm(gsms, basedir))
+    },
+    get_gset = function(CACHE=TRUE, MEMOISE=FALSE, dest_dir="data") {
+      "Computes (if not yet done) and returns the gset field."
+      if (is.null(dim(.self$gset))) {
+        if (length(.self$series_matrix_filename) == 1) {
+          if (file.exists(.self$series_matrix_filename)) {
+            print(paste(
+              "Launching data from ", .self$series_matrix_filename, "...", sep = ""
+            ))
+            if (MEMOISE) {
+              .self$gset = mgetGEO(filename = .self$series_matrix_filename, getGPL = FALSE)
+            } else {
+              .self$gset = getGEO(filename = .self$series_matrix_filename, getGPL = FALSE)
+            }
+            print("done.")
+          } else {
+            stop(paste("No", .self$series_matrix_filename, "file."))
+          }
+        } else if (length(.self$gse) == 1) {
+          print(paste("Launching ", .self$gse, " from GEO...", sep = ""))
+          dest_dir_gse = paste(dest_dir, "/", .self$gse, sep="")
+          dir.create(dest_dir_gse, showWarnings = FALSE, recursive = TRUE)
+          if (MEMOISE) {
+            tmp_gset = mgetGEO(.self$gse, getGPL = FALSE, destdir=dest_dir_gse)
+          } else {
+            tmp_gset = getGEO(.self$gse, getGPL = FALSE, destdir=dest_dir_gse)
+          }
+          if (length(tmp_gset) == 1) {
+            .self$gset = tmp_gset[[1]]
+            .self$series_matrix_filename = paste(dest_dir_gse, "/", names(tmp_gset)[1], sep = "")
+          } else {
+            stop(paste(.self$gse, " is a SuperSeries... Not yet supported.", sep = ""))
+          }
+          print(paste(
+            "done. File locally cached here: ", .self$series_matrix_filename, sep =
+              ""
+          ))
+        } else {
+          stop("You need to define gse (length 1) field to get it from GEO")
+        }
+        .self$platform_name = .self$gset@annotation
+        .self$exp_grp = .self$gset@phenoData@data
+        .self$data = exprs(.self$gset)
+        if (CACHE) {
+          .self$save()
+        }
+      }
+      return(.self$gset)
     },
     get_ratio = function(ctrl_sample_names, method = "mean", ...) {
       "Normalize data accross probes using method *method* according to a reference poulation describe by  *ctrl_sample_names* its sample names vector."
@@ -199,32 +282,32 @@ Study_abstract = setRefClass(
       probe_gene_tab$gene = as.character(probe_gene_tab$gene)
       return(probe_gene_tab)
     },
-    do_sw = function(sample_names, probe_names) {
-      "Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `factor_name`."
-      data = .self$get_data()
-      if (missing(probe_names)) {
-        probe_names = rownames(data)
-      }
-      bar = data[probe_names, sample_names]
-      apply()
-
-      foo = msapply(probe_names, function(probe_name) {
-        s = shapiro.test(data[probe_name, sample_names])
-        s_pval = -log10(s$p.value)
-        return(s_pval)
-      })
-    	idx_sample = rownames(.self$get_exp_grp())
-    	# Dealing with ratio data, reduce data to interesting probes and samples
-    	filtred_bp_data = .self$get_data()[probe_name, idx_sample]
-      m = aov(filtred_bp_data~.self$get_exp_grp()[,factor_name])
-      # tests
-      s = shapiro.test(residuals(m))
-      shap = -log10(s$p.value)
-      f_kc = m$coefficients[2]
-      pval = -log10(summary(m)[[1]][["Pr(>F)"]][1])
-      ret = list(shap=shap, pval=pval) 
-      return(ret)
-    },
+    # do_sw = function(sample_names, probe_names) {
+    #   "Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `factor_name`."
+    #   # data = .self$get_data()
+    #   if (missing(probe_names)) {
+    #     probe_names = rownames(data)
+    #   }
+    #   bar = data[probe_names, sample_names]
+    #   apply()
+    #
+    #   foo = msapply(probe_names, function(probe_name) {
+    #     s = shapiro.test(data[probe_name, sample_names])
+    #     s_pval = -log10(s$p.value)
+    #     return(s_pval)
+    #   })
+    #   idx_sample = rownames(.self$get_exp_grp())
+    #   # Dealing with ratio data, reduce data to interesting probes and samples
+    #   filtred_bp_data = .self$get_data()[probe_name, idx_sample]
+    #   m = aov(filtred_bp_data~.self$get_exp_grp()[,factor_name])
+    #   # tests
+    #   s = shapiro.test(residuals(m))
+    #   shap = -log10(s$p.value)
+    #   f_kc = m$coefficients[2]
+    #   pval = -log10(summary(m)[[1]][["Pr(>F)"]][1])
+    #   ret = list(shap=shap, pval=pval)
+    #   return(ret)
+    # },
     plot_m2s_analysis = function(m2s, histo, label_col_names="gene", xlim, ...) {
       h = histo
       nsd = m2s[[paste(h, "nsd", sep="_")]]
@@ -249,19 +332,19 @@ Study_abstract = setRefClass(
       abline(v=log2(c(2,3)))
       abline(h=-log10(0.05))      
     }, 
-    do_m2s_analysis = function(probe_names, exp_grp_key, ctrl_name, nb_perm=1000, MONITORED=FALSE, col=col, ...) {
+    do_m2s_analysis = function(probe_names, exp_grp_key, ctrl_name, nb_perm=100, MONITORED=FALSE, ...) {
       "Performs permutation test to detect right shifted exprtession groups for a given `probe_name` and a given `factor_name`."
       # Before starting...
-      exp_grp = .self$get_exp_grp()
-      data = .self$get_data()
-      data = data[probe_names,rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]]
+      # exp_grp = .self$get_exp_grp()
+      tmp_data = .self$get_data()
+      tmp_data = tmp_data[probe_names,rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]]
       # histos
       histo_names = na.omit(unique(exp_grp[[exp_grp_key]]))
       histo_names = histo_names[-which(histo_names == ctrl_name)]
       # perm_sample_names
       perm_sample_names = sapply(1:nb_perm, function(i) {
         set.seed(i)
-        sample(colnames(data))
+        sample(colnames(tmp_data))
       })
       # do permutations
       if (MONITORED) {
@@ -270,7 +353,7 @@ Study_abstract = setRefClass(
         apply_function_name = "apply"        
       }
       m2s_perm_data = get(apply_function_name)(t(0:nb_perm), 2, function(perm){
-        cur_data = data
+        cur_data = tmp_data
         if (perm > 0) {
           colnames(cur_data) = perm_sample_names[,perm] 
         }
@@ -342,20 +425,20 @@ Study_abstract = setRefClass(
       m2s = m2s[,sort(colnames(m2s))]
       return(m2s)
     },
-    do_anova = function(probe_name, factor_name) {
-      "Performs anova test for a given `probe_name` and a given `factor_name`."
-    	idx_sample = rownames(.self$get_exp_grp())
-    	# Dealing with ratio data, reduce data to interesting probes and samples
-    	filtred_bp_data = .self$get_data()[probe_name, idx_sample]
-      m = aov(filtred_bp_data~.self$get_exp_grp()[,factor_name])
-      # tests
-      s = shapiro.test(residuals(m))
-      shap = -log10(s$p.value)
-      f_kc = m$coefficients[2]
-      pval = -log10(summary(m)[[1]][["Pr(>F)"]][1])
-      ret = list(shap=shap, pval=pval) 
-      return(ret)
-    },
+    # do_anova = function(probe_name, factor_name) {
+    #   "Performs anova test for a given `probe_name` and a given `factor_name`."
+    #   idx_sample = rownames(.self$get_exp_grp())
+    #   # Dealing with ratio data, reduce data to interesting probes and samples
+    #   filtred_bp_data = .self$get_data()[probe_name, idx_sample]
+    #   m = aov(filtred_bp_data~.self$get_exp_grp()[,factor_name])
+    #   # tests
+    #   s = shapiro.test(residuals(m))
+    #   shap = -log10(s$p.value)
+    #   f_kc = m$coefficients[2]
+    #   pval = -log10(summary(m)[[1]][["Pr(>F)"]][1])
+    #   ret = list(shap=shap, pval=pval)
+    #   return(ret)
+    # },
     plot_boxplot = function(probe_name, factor_name, ylim, las=2, col="grey", border="black", bp_function_name="boxplot", ...) {
       "Draw the box plot for a given `probe_name` and a given `factor_name`."
     	idx_sample = rownames(.self$get_exp_grp())

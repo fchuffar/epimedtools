@@ -4,7 +4,7 @@
 \alias{create_study}
 \title{Study Factory}
 \usage{
-create_study(cache_filename, Study_RC_name = "Study_geo")
+create_study(cache_filename, Study_RC_name = "Study_raw_trscr")
 }
 \arguments{
 \item{cache_filename}{A character string that describes the study cache file name.}

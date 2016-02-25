@@ -15,22 +15,25 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
 Loading the epimedtools library
 
-``` {r}
+```{r}
 library(epimedtools)
 ```
 
 Creating a new study.
+
 ```{r}
-study = create_study(Study_RC_name="Study_loc")
+study = create_study()
 ```
 
 This study deals with data obtained using the **GPL570** platform.
-``` {r}
+
+```{r}
 study$platform_name = "GPL570"
 ```
 
 The experimental grouping is stored into a compressed text file distributed with the package:
-``` {r}
+
+```{r}
 exp_grp_filename = system.file(
   "extdata/GSE26471", 
   "GSE26471_exp_grp.tab.gz", 
@@ -42,7 +45,8 @@ study$exp_grp = read.table(file=gzfile(exp_grp_filename), stringsAsFactors=FALSE
 
 
 The expression data matrix is stored into a compressed text file distributed with the package:
-``` {r}
+
+```{r}
 data_filename = system.file(
   "extdata/GSE26471", 
   "GSE26471_data.tab.gz", 
@@ -53,21 +57,25 @@ study$data = as.matrix(read.table(file=gzfile(data_filename)))
 ```
 
 Extract data matrix.
-``` {r}
+
+```{r}
 dim(study$get_data())
 ```
 
 Extract experimental grouping dataframe.
-``` {r}
+
+```{r}
 dim(study$get_exp_grp())
 ```
 
 Plot density of expression for this *1-*sample dataset. 
-``` {r, fig.width=7, fig.height=5}
+
+```{r, fig.width=7, fig.height=5}
 plot(density(study$get_data()[,1]))
 ```
 
 Saving the study on the file system.
+
 ```{r}
 study$save("/tmp/study.rds")
 ````

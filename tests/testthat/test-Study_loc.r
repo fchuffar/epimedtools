@@ -1,14 +1,14 @@
 context("Study_loc")
 
 test_that("Platform name could be retrieved", {
-  study = create_study(Study_RC_name="Study_loc")
+  study = create_study()
   study$platform_name = "GPL570"
   platform_name = study$get_platform_name()
   expect_equal(platform_name, "GPL570")
 })
 
 test_that("Experimental grouping could be retrieved", {
-  study = create_study(Study_RC_name="Study_loc")
+  study = create_study()
   exp_grp_filename = system.file(
     "extdata/GSE26471", 
     "GSE26471_exp_grp.tab.gz", 
@@ -20,7 +20,7 @@ test_that("Experimental grouping could be retrieved", {
 })
 
 test_that("Data could be retrieved", {
-  study = create_study(Study_RC_name="Study_loc")
+  study = create_study()
   data_filename = system.file(
     "extdata/GSE26471", 
     "GSE26471_data.tab.gz", 
@@ -32,13 +32,13 @@ test_that("Data could be retrieved", {
 })
 
 # test_that("Platform description could be retrieved", {
-#   study = create_study(Study_RC_name="Study_loc")
+#   study = create_study()
 #   study$platform_filename = "../../inst/extdata/GSE26471/GPL570.soft.gz"
 #   expect_equal(dim(study$get_platform()), c(54675,16))
 # })
 
 test_that("Study_loc objects could be plot", {
-  study = create_study(Study_RC_name="Study_loc")
+  study = create_study()
   study$platform_name = "GPL570"
   exp_grp_filename = system.file(
     "extdata/GSE26471", 

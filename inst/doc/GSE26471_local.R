@@ -5,7 +5,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(epimedtools)
 
 ## ------------------------------------------------------------------------
-study = create_study(Study_RC_name="Study_loc")
+study = create_study()
 
 ## ------------------------------------------------------------------------
 study$platform_name = "GPL570"

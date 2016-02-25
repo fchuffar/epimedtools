@@ -5,7 +5,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(epimedtools)
 
 ## ------------------------------------------------------------------------
-study = create_study(Study_RC_name="Study_raw_trscr")
+study = create_study()
 
 ## ------------------------------------------------------------------------
 kc_cel_filedir = "../inst/extdata/trscr_raw_kc"
