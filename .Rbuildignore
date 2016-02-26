@@ -1,5 +1,7 @@
+GSE7846_gse_raw.Rmd
 trscr_raw_ctrl
 trscr_raw_kc
 test-Study_raw_trscr.r
 CEL_gz_raw_trscr.Rmd
+Mann-Whitney_trscr_analysis.Rmd
 ^\.travis\.yml$

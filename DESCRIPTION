@@ -12,6 +12,7 @@ License: CeCILL
 LazyData: TRUE
 Imports:
     Biobase,
+    beanplot,
     memoise,
     affy,
     GEOquery

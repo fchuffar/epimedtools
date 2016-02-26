@@ -57,6 +57,7 @@ create_study = function(cache_filename, Study_RC_name="Study_raw_trscr") {
 #' @export
 #' @importFrom GEOquery Table
 #' @importFrom GEOquery getGEO
+#' @importFrom beanplot beanplot
 #' @import methods
 Study_abstract = setRefClass(
   "Study_abstract",
@@ -280,10 +281,11 @@ Study_abstract = setRefClass(
       probe_gene_tab = do.call(rbind,probe_gene_tab)
       probe_gene_tab$probe = as.character(probe_gene_tab$probe)
       probe_gene_tab$gene = as.character(probe_gene_tab$gene)
+      probe_gene_tab = data.frame(probe_gene_tab, stringsAsFactor = FALSE)
       return(probe_gene_tab)
     },
     # do_sw = function(sample_names, probe_names) {
-    #   "Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `factor_name`."
+    #   "Performs the Shapiro-Wilk test of normality over for each probe names.Perform shaanova test for a given `probe_name` and a given `exp_grp_key`."
     #   # data = .self$get_data()
     #   if (missing(probe_names)) {
     #     probe_names = rownames(data)
@@ -299,7 +301,7 @@ Study_abstract = setRefClass(
     #   idx_sample = rownames(.self$get_exp_grp())
     #   # Dealing with ratio data, reduce data to interesting probes and samples
     #   filtred_bp_data = .self$get_data()[probe_name, idx_sample]
-    #   m = aov(filtred_bp_data~.self$get_exp_grp()[,factor_name])
+    #   m = aov(filtred_bp_data~.self$get_exp_grp()[,exp_grp_key])
     #   # tests
     #   s = shapiro.test(residuals(m))
     #   shap = -log10(s$p.value)
@@ -308,6 +310,55 @@ Study_abstract = setRefClass(
     #   ret = list(shap=shap, pval=pval)
     #   return(ret)
     # },
+    plot_pca_eig = function(acp_res, xlim, ...) {
+      if (missing(xlim)) {
+        xlim=c(0, min(length(acp_res$var), 50))
+      }
+      barplot(acp_res$pvar, xlab="PC", ylab="% of var", xlim=xlim)
+      barplot(acp_res$bs[,2], add=TRUE, col=adjustcolor(2, alpha.f=0.1))
+      legend("topright", col=c(1,2), legend=c("eigenvalues", "broken-stick"), pch=15)
+      # abline(h=acp_res$kaiser_crit)
+    },
+    plot_pca_pc = function(acp_res, pc1, pc2, exp_grp_key, ...) {
+      col = as.factor(.self$get_exp_grp()[rownames(acp_res$x),][[exp_grp_key]])
+      plot(acp_res$x[,c(pc1, pc2)], col=col, pch=16, 
+        xlab = paste("PC", pc1, " (", round(acp_res$pvar[pc1]*100,2),"%)", sep=""), 
+        ylab = paste("PC", pc2, " (", round(acp_res$pvar[pc2]*100,2),"%)", sep="")
+      )
+      legend("topright", legend=unique(col), col=unique(col), pch=16)
+    },
+    do_pca = function(probe_names, ...) {
+      sample_idx = rownames(.self$get_exp_grp())[!is.na(exp_grp[[exp_grp_key]])]
+      acp_data = .self$get_data()[probe_names, sample_idx]
+      # acp_res = FactoMineR::PCA(t(acp_data), graph=FALSE, ncp=8)
+      acp_res = prcomp(t(acp_data), scale. = TRUE, ...)
+      acp_res$var = acp_res$sdev * acp_res$sdev
+      acp_res$pvar = acp_res$var/ sum(acp_res$var)
+      acp_res$bs = broken_stick(length(acp_res$pvar))
+      acp_res$bs_crit = min(which(acp_res$pvar < acp_res$bs[,2])) - 1
+      acp_res$kaiser_crit = 1/length(acp_res$var)      
+      return(acp_res)
+    },
+    do_mw_test = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, alternative="less", PLOT=FALSE) {
+      " Perform a Mann-Whitney test to detect right shifted (`alternative='less'`) exprtession groups for a given `probe_name` and a given `exp_grp_key`."  
+      # data
+      tmp_data = .self$get_data()
+      tmp_data = tmp_data[probe_names,]
+      # sample
+      ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_exp_grp_key]] == ctrl_factor_name)]
+      case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_exp_grp_key]] == case_factor_name)]
+      # go!
+      ret = apply(tmp_data[, unique(c(ctrl_samples, case_samples))], 1, function(line) {
+        ctrl = line[ctrl_samples]
+        case = line[case_samples]
+        bar = wilcox.test(ctrl, case, alternative=alternative)
+        if (PLOT) {
+          beanplot(ctrl, case, col=(bar$p.value < 0.05) + 1, main = bar$p.value, log="")
+        }
+        return(bar$p.value)
+      })
+      return(ret)
+    },
     plot_m2s_analysis = function(m2s, histo, label_col_names="gene", xlim, ...) {
       h = histo
       nsd = m2s[[paste(h, "nsd", sep="_")]]
@@ -332,9 +383,47 @@ Study_abstract = setRefClass(
       abline(v=log2(c(2,3)))
       abline(h=-log10(0.05))      
     }, 
+    do_gm2sd_analysis = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE) {
+      "Performs permutation test to detect right shifted expression groups for two given groups."
+      # samples
+      ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_exp_grp_key]] == ctrl_factor_name)]
+      case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_exp_grp_key]] == case_factor_name)]
+      # data
+      tmp_data = .self$get_data()
+      tmp_data = tmp_data[probe_names, unique(c(ctrl_samples, case_samples))]
+      # do permutations
+      if (MONITORED) {
+        apply_function_name = "monitored_apply"
+      } else {
+        apply_function_name = "apply"        
+      }
+      # go!
+      perm_data = get(apply_function_name)(t(0:nb_perm), 2, function(perm){
+        cur_data = tmp_data
+        if (perm > 0) {
+          set.seed(perm)
+          colnames(cur_data) = sample(colnames(cur_data)) 
+        }
+        # ctrl
+        ret = apply(cur_data, 1, function(line) {
+          ctrl = line[ctrl_samples]
+          case = line[case_samples]
+          ctrl_thres = ctrl_thres_func(ctrl)
+          case_value = case_value_func(case)
+          ret = comp_func(ctrl_thres, case_value)
+          # ret = ctrl_thres < case_value
+          return(ret)
+        })
+        return(ret)
+      })
+      idx = perm_data[,1]
+      pval = apply(t(perm_data[,2:(nb_perm+1)]), 2, sum)/nb_perm
+      pval[pval == 0] = 1/ (10*nb_perm)
+      return(data.frame(idx=idx, pval=pval))
+    },
     do_m2s_analysis = function(probe_names, exp_grp_key, ctrl_name, nb_perm=100, MONITORED=FALSE, ...) {
-      "Performs permutation test to detect right shifted exprtession groups for a given `probe_name` and a given `factor_name`."
-      # Before starting...
+      "Performs permutation test to detect right shifted expression groups for a given `probe_name` and a given `exp_grp_key`."
+      # Before starting...  
       # exp_grp = .self$get_exp_grp()
       tmp_data = .self$get_data()
       tmp_data = tmp_data[probe_names,rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]]
@@ -425,12 +514,12 @@ Study_abstract = setRefClass(
       m2s = m2s[,sort(colnames(m2s))]
       return(m2s)
     },
-    # do_anova = function(probe_name, factor_name) {
-    #   "Performs anova test for a given `probe_name` and a given `factor_name`."
+    # do_anova = function(probe_name, exp_grp_key) {
+    #   "Performs anova test for a given `probe_name` and a given `exp_grp_key`."
     #   idx_sample = rownames(.self$get_exp_grp())
     #   # Dealing with ratio data, reduce data to interesting probes and samples
     #   filtred_bp_data = .self$get_data()[probe_name, idx_sample]
-    #   m = aov(filtred_bp_data~.self$get_exp_grp()[,factor_name])
+    #   m = aov(filtred_bp_data~.self$get_exp_grp()[,exp_grp_key])
     #   # tests
     #   s = shapiro.test(residuals(m))
     #   shap = -log10(s$p.value)
@@ -439,8 +528,8 @@ Study_abstract = setRefClass(
     #   ret = list(shap=shap, pval=pval)
     #   return(ret)
     # },
-    plot_boxplot = function(probe_name, factor_name, ylim, las=2, col="grey", border="black", bp_function_name="boxplot", ...) {
-      "Draw the box plot for a given `probe_name` and a given `factor_name`."
+    plot_boxplot = function(probe_name, exp_grp_key,  gene_name, ylim, las=2, col="grey", border="black", bp_function_name="boxplot", ...) {
+      "Draw the box plot for a given `probe_name` and a given `exp_grp_key`."
     	idx_sample = rownames(.self$get_exp_grp())
     	# Dealing with ratio data, reduce data to interesting probes and samples
     	filtred_bp_data = .self$get_data()[probe_name, idx_sample]
@@ -448,17 +537,21 @@ Study_abstract = setRefClass(
       if (missing(ylim)) {
     	  ylim = c(min(filtred_bp_data), max(filtred_bp_data))
       }
-	    gene_name = "gene_name"
-	    # boxplot_filename <- paste(study_dirname, "/", gene, "_", probe_name, "_", factor_name, ".pdf", sep="")
+      if (missing(gene_name)) {
+        main = probe_name
+      } else {
+        main = paste(gene_name, probe_name, sep="@")
+      }
+	    # boxplot_filename <- paste(study_dirname, "/", gene, "_", probe_name, "_", exp_grp_key, ".pdf", sep="")
 	    # pdf(file=boxplot_filename, height=10, width=10)# open jpeg device with specified dimensions
       bp_function = get(bp_function_name)
-	    bp_function(filtred_bp_data~.self$get_exp_grp()[,factor_name], # open boxplot
+	    bp_function(filtred_bp_data~.self$get_exp_grp()[,exp_grp_key], # open boxplot
           # what=c(1,1,1,0),
 	      ylim = ylim,                     # fixed vertical scale
 	      col = col, border = border,  # colors of inside and border of box
 	      las = las,                         # written vertically
-	      xlab = factor_name,
-	      main = paste(gene_name, probe_name, sep="@"), # title
+	      xlab = exp_grp_key,
+	      main = main, # title
         ...
 	    )
 	    # dev.off()

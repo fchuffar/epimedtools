@@ -1,9 +1,19 @@
+#' A Function That Computes `mean` + 2 * `sd` on a Numeric Vector.
+#'
+#' This function compute `mean` + 2 * `sd` on a numeric vector.
+#' 
+#' @param ctrl A numeric vector
+#' @return `mean` + 2 * `sd` of the inpuit vector
+#' @export
+m2sd = function(ctrl) {
+  mean(ctrl) + 2 * sd(ctrl)
+}
 #' A Function That Simplify Sample Names.
 #'
 #' This function simplfy sample names.
 #' 
-#' @param sample_names A characyer vector that describes the sample names.
-#' @return A characyer vector that describes simplified sample names.
+#' @param sample_names A character vector that describes the sample names.
+#' @return A character vector that describes simplified sample names.
 #' @export
 simplify_sample_names = function(sample_names) {
   sample_names = sub(".CEL.gz", "", sample_names, ignore.case = TRUE)

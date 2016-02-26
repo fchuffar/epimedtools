@@ -7,10 +7,10 @@
 simplify_sample_names(sample_names)
 }
 \arguments{
-\item{sample_names}{A characyer vector that describes the sample names.}
+\item{sample_names}{A character vector that describes the sample names.}
 }
 \value{
-A characyer vector that describes simplified sample names.
+A character vector that describes simplified sample names.
 }
 \description{
 This function simplfy sample names.

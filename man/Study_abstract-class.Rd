@@ -33,8 +33,16 @@ study. It an abstract class.
 \section{Methods}{
 
 \describe{
+\item{\code{do_gm2sd_analysis(probe_names, ctrl_exp_grp_key, case_exp_grp_key,
+  ctrl_factor_name, case_factor_name, ctrl_thres_func = m2sd,
+  case_value_func = mean, comp_func = get("<"), nb_perm = 100,
+  MONITORED = FALSE)}}{Performs permutation test to detect right shifted expression groups for two given groups.}
+
 \item{\code{do_m2s_analysis(probe_names, exp_grp_key, ctrl_name, nb_perm = 100,
-  MONITORED = FALSE, ...)}}{Performs permutation test to detect right shifted exprtession groups for a given `probe_name` and a given `factor_name`.}
+  MONITORED = FALSE, ...)}}{Performs permutation test to detect right shifted expression groups for a given `probe_name` and a given `exp_grp_key`.}
+
+\item{\code{do_mw_test(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name,
+  case_factor_name, alternative = "less", PLOT = FALSE)}}{Perform a Mann-Whitney test to detect right shifted (`alternative='less'`) exprtession groups for a given `probe_name` and a given `exp_grp_key`.}
 
 \item{\code{get_cel_files(dest_dir = "data", ...)}}{Retrieve .CEL.gz from NCBI GEO eweb site}
 
@@ -51,8 +59,8 @@ study. It an abstract class.
 
 \item{\code{initialize(cfn)}}{Constructor.}
 
-\item{\code{plot_boxplot(probe_name, factor_name, ylim, las = 2, col = "grey",
-  border = "black", bp_function_name = "boxplot", ...)}}{Draw the box plot for a given `probe_name` and a given `factor_name`.}
+\item{\code{plot_boxplot(probe_name, exp_grp_key, gene_name, ylim, las = 2,
+  col = "grey", border = "black", bp_function_name = "boxplot", ...)}}{Draw the box plot for a given `probe_name` and a given `exp_grp_key`.}
 
 \item{\code{plot_qc(method = "boxplot", ...)}}{Plot the quality control of the study.}
 
