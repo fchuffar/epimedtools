@@ -4,7 +4,60 @@
 [![Coverage Status](https://img.shields.io/codecov/c/github/fchuffar/epimedtools/master.svg)](https://codecov.io/github/fchuffar/epimedtools?branch=master)
 
 
-The __epimedtools__ package provides set of useful tools encapsulating some 'GEOquery' functions. This package rely on RC, caching features and memoisation to simplify, homogenize and speed up multi-omic analysis.
+The __epimedtools__ package provides set of useful statistical functions. This package rely on 'GEOquery' and 'affy' packages, R Reference Classes, caching features and memoisation to simplify, homogenize and speed up multi-omic analysis.
+
+## Data Struture
+
+The __epimedtools__ package aims to manage a `study` object composed of the three data structure: the `data` matrix and the two `exp_grp` and `platform` dataframe.
+
+```R
+> study
+$data
+      ctrl1 ctrl2 ctrl3 ctrl4 ctrl5 ctrl6 case1 case2 case3 case4 case5 case6
+prb1  1.801 3.036 1.856 2.717 2.374 3.755 0.000 3.656 0.725 5.043 3.265 3.539
+prb2  4.369 3.190 3.025 3.591 2.363 2.120 3.503 3.685 2.948 2.751 3.656 2.525
+prb3  2.650 3.198 2.660 1.827 4.225 3.284 0.677 1.382 3.741 1.568 3.287 2.930
+prb4  3.546 3.589 1.904 1.925 2.968 2.349 2.608 3.467 2.098 3.541 2.854 1.796
+prb5  1.721 2.419 3.216 1.936 3.419 2.881 1.959 2.040 2.325 2.973 4.222 2.918
+prb6  3.963 4.579 4.468 3.106 4.373 3.699 2.575 2.107 3.588 3.329 3.626 0.257
+prb7  3.305 2.019 4.151 3.240 3.758 3.150 5.418 1.672 3.073 3.425 2.434 0.734
+prb8  3.657 1.829 5.768 2.217 3.377 2.493 4.815 2.900 4.521 4.502 2.144 3.973
+prb9  2.158 3.413 3.564 2.754 2.634 2.556 2.868 1.514 2.705 4.202 2.030 1.197
+prb10 3.390 2.958 2.204 4.523 2.152 4.561 1.629 0.891 2.519 2.783 1.541 2.375
+
+$exp_grp
+         sex age      tabac treatment histo
+ctrl1 Female  23     Smoker      0 ug  lung
+ctrl2   Male  28     Smoker      0 ug  lung
+ctrl3 Female  26     Smoker      0 ug  lung
+ctrl4 Female  30 Non Smoker      0 ug  lung
+ctrl5   Male  22 Non Smoker      0 ug  lung
+ctrl6   Male  23 Non Smoker      0 ug  lung
+case1   Male  25     Smoker     15 ug  lung
+case2 Female  27     Smoker     15 ug  lung
+case3   Male  29     Smoker     15 ug  lung
+case4 Female  23 Non Smoker     15 ug  lung
+case5   Male  23 Non Smoker     15 ug  lung
+case6   Male  25 Non Smoker     15 ug  lung
+
+$platform
+        GB_ACC      Species Gene Symbol ENTREZ_GENE_ID
+prb1   1U48705 Homo sapiens        DDR1            780
+prb2   2M87338 Homo sapiens        RFC2           5982
+prb3   3X51757 Homo sapiens       HSPA6           3310
+prb4   4X69699 Homo sapiens        PAX8           7849
+prb5   5L36861 Homo sapiens      GUCA1A           2978
+prb6   6L13852 Homo sapiens        UBA7           7318
+prb7   7X55005 Homo sapiens        THRA           7067
+prb8   8X79510 Homo sapiens      PTPN21          11099
+prb9   9M21121 Homo sapiens        CCL5           6352
+prb10  1J02843 Homo sapiens      CYP2E1           1571
+
+```
+
+## Treatment and Analysis Features
+
+The __epimedtools__ package provides not only a set of treatment features like data fetching or normalization, but also genome and genes anlysis tools.
 
 ## Installation
 
@@ -24,51 +77,3 @@ To browse available vignettes:
 browseVignettes(package = 'epimedtools')
 ```
 
-## Data Struture
-
-The `epimedtools` package manage a `study` object composed of the three data structure: `data`, `exp_grp` and `platform`.
-
-```R
-> study
-$data
-      ctrl1 ctrl2 ctrl3 ctrl4 ctrl5 ctrl6 case1 case2 case3 case4 case5 case6
-prb1  3.773 0.016 3.040 1.356 3.196 3.457 2.539 1.092 2.244 0.000 4.056 2.595
-prb2  3.194 3.813 3.519 0.821 3.535 1.454 1.265 4.435 2.541 1.275 2.270 2.336
-prb3  3.074 3.098 2.000 1.657 1.874 3.567 3.876 0.313 3.974 5.980 4.072 2.730
-prb4  3.743 4.026 2.285 1.631 2.184 2.930 2.975 3.069 2.605 3.533 3.415 1.984
-prb5  2.226 3.780 3.081 2.025 2.465 2.610 3.132 3.242 2.255 3.837 3.413 2.373
-prb6  3.302 3.323 1.569 3.059 2.212 2.877 3.114 1.632 3.817 2.955 1.943 1.481
-prb7  1.857 2.852 2.293 3.708 2.975 5.154 2.461 3.699 2.249 2.662 0.778 3.696
-prb8  2.412 3.330 2.970 2.807 2.071 3.148 2.364 2.163 4.072 0.000 3.122 2.198
-prb9  2.831 2.611 4.469 3.053 2.237 4.002 1.983 2.724 2.380 2.797 3.132 2.017
-prb10 3.244 3.322 3.490 0.788 1.955 3.345 0.280 4.069 3.259 2.175 1.150 3.355
-
-$exp_grp
-      sex age tabac treatment histo   orig
-ctrl1   F  28   Smk      0 ug  lung France
-ctrl2   F  21   Smk      0 ug  lung France
-ctrl3   F  20   Smk      0 ug  lung France
-ctrl4   F  23 N-Smk      0 ug  lung France
-ctrl5   M  21 N-Smk      0 ug  lung France
-ctrl6   F  20 N-Smk      0 ug  lung France
-case1   M  21   Smk     15 ug  lung France
-case2   M  26   Smk     15 ug  lung France
-case3   F  21   Smk     15 ug  lung France
-case4   F  28 N-Smk     15 ug  lung France
-case5   F  21 N-Smk     15 ug  lung France
-case6   M  22 N-Smk     15 ug  lung France
-
-$platform
-      gene_name GOID
-prb1        ...  ...
-prb2        ...  ...
-prb3        ...  ...
-prb4        ...  ...
-prb5        ...  ...
-prb6        ...  ...
-prb7        ...  ...
-prb8        ...  ...
-prb9        ...  ...
-prb10       ...  ...
-
-```
