@@ -242,3 +242,17 @@ monitored_apply = function(mat, marg=1, func, mod=100, ...) {
 monitored_sapply = function(vec, func, ...) {
   return(monitored_apply(t(vec), 2, func, ...))
 }
+
+#' A memoised version of readRDS
+#'
+#' This function offer a memoised version of readRDS. It is used to get GEO data 
+#' from GEO portal or a local file.
+#' 
+#' @param ... parameters passed to readRDS function.
+#' @return RDS content.
+#' @examples
+#' # foo = mreadRDS("GSE42707", getGPL=FALSE)
+#' @importFrom memoise memoise
+mreadRDS = memoise(function(...) {
+  readRDS(...)
+})

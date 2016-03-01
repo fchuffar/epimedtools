@@ -57,7 +57,7 @@ study. It an abstract class.
 
 \item{\code{gs_to_probe(gene, ALL_PF_COL = FALSE, pf_col_name = "Gene Symbol", ...)}}{Return probes name for a given gene.}
 
-\item{\code{initialize(cfn)}}{Constructor.}
+\item{\code{initialize(cfn, MEMOISATION = FALSE)}}{Constructor.}
 
 \item{\code{plot_boxplot(probe_name, exp_grp_key, gene_name, ylim, las = 2,
   col = "grey", border = "black", bp_function_name = "boxplot", ...)}}{Draw the box plot for a given `probe_name` and a given `exp_grp_key`.}

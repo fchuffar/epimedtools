@@ -108,7 +108,7 @@ Study_abstract = setRefClass(
       }
       return(exp_grp)
     },
-    initialize = function(cfn) {
+    initialize = function(cfn, MEMOISATION=FALSE) {
       "Constructor."
       if (!missing(cfn)) {
         .self$cache_filename = cfn
@@ -120,8 +120,13 @@ Study_abstract = setRefClass(
                        TRUE)
           .self$save()
         } else {
+          if (MEMOISATION) {
+            readRDS_funcname = "mreadRDS"            
+          } else {
+            readRDS_funcname = "readRDS"
+          }
           print("reifiyng study...")
-          s2 = readRDS(.self$cache_filename)
+          s2 = get(readRDS_funcname)(.self$cache_filename)
           # print(.self)
           for (f in names(s2$getRefClass()$fields())) {
             .self[[f]] = s2[[f]]
@@ -164,8 +169,7 @@ Study_abstract = setRefClass(
             "Launching ", .self$get_platform_name(), " from GEO...", sep =
               ""
           ))
-          dir.create(dest_dir, showWarnings = FALSE, recursive =
-                       FALSE)
+          dir.create(dest_dir, showWarnings = FALSE, recursive =TRUE)
           if (MEMOISE) {
             .self$platform = mtgetGEO(.self$get_platform_name(), getGPL = FALSE, destdir =
                                         dest_dir)
@@ -291,7 +295,7 @@ Study_abstract = setRefClass(
       probe_gene_tab = do.call(rbind,probe_gene_tab)
       probe_gene_tab$probe = as.character(probe_gene_tab$probe)
       probe_gene_tab$gene = as.character(probe_gene_tab$gene)
-      probe_gene_tab = data.frame(probe_gene_tab, stringsAsFactor = FALSE)
+      probe_gene_tab = data.frame(probe_gene_tab, stringsAsFactors = FALSE)
       return(probe_gene_tab)
     },
     # do_sw = function(sample_names, probe_names) {
