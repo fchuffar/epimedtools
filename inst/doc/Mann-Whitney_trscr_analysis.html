@@ -11,7 +11,7 @@
 
 <meta name="author" content="Florent Chuffart" />
 
-<meta name="date" content="2016-02-26" />
+<meta name="date" content="2016-03-01" />
 
 <title>Mann-Whitney Gene Expression analysis</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title">Mann-Whitney Gene Expression analysis</h1>
 <h4 class="author"><em>Florent Chuffart</em></h4>
-<h4 class="date"><em>2016-02-26</em></h4>
+<h4 class="date"><em>2016-03-01</em></h4>
 
 </div>
 
@@ -80,11 +80,22 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>Creating a new study.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">study =<span class="st"> </span><span class="kw">create_study</span>()</code></pre></div>
 <p>The .CEL.gz files are stored into two directories the <em>ctrl</em> directory and the <em>kc</em> directory:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">kc_cel_filedir =<span class="st"> &quot;../inst/extdata/trscr_raw_kc&quot;</span>
-ctrl_cel_filedir =<span class="st"> &quot;../inst/extdata/trscr_raw_ctrl&quot;</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">kc_cel_filedir =<span class="st"> </span><span class="kw">system.file</span>(
+  <span class="st">&quot;extdata/trscr_raw_kc&quot;</span>, 
+  <span class="dt">package =</span> <span class="st">&quot;epimeddata&quot;</span>
+)
+<span class="kw">print</span>(kc_cel_filedir)
+<span class="co">#&gt; [1] &quot;/Users/florent/Library/R/3.2/library/epimeddata/extdata/trscr_raw_kc&quot;</span>
+ctrl_cel_filedir =<span class="st"> </span><span class="kw">system.file</span>(
+  <span class="st">&quot;extdata/trscr_raw_ctrl&quot;</span>, 
+  <span class="dt">package =</span> <span class="st">&quot;epimeddata&quot;</span>
+)
+<span class="kw">print</span>(ctrl_cel_filedir)
+<span class="co">#&gt; [1] &quot;/Users/florent/Library/R/3.2/library/epimeddata/extdata/trscr_raw_ctrl&quot;</span>
 study$cel_filedirs =<span class="st"> </span><span class="kw">c</span>(kc_cel_filedir, ctrl_cel_filedir)
 <span class="kw">print</span>(study$cel_filedirs)
-<span class="co">#&gt; [1] &quot;../inst/extdata/trscr_raw_kc&quot;   &quot;../inst/extdata/trscr_raw_ctrl&quot;</span></code></pre></div>
+<span class="co">#&gt; [1] &quot;/Users/florent/Library/R/3.2/library/epimeddata/extdata/trscr_raw_kc&quot;  </span>
+<span class="co">#&gt; [2] &quot;/Users/florent/Library/R/3.2/library/epimeddata/extdata/trscr_raw_ctrl&quot;</span></code></pre></div>
 <p>The RMA normalized data matrix is extract using the <strong>get_data</strong> method.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(study$<span class="kw">get_data</span>())
 <span class="co">#&gt;           GSM748053 GSM748054 GSM748055 GSM80562 GSM80576 GSM80577</span>

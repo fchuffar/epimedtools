@@ -12,7 +12,7 @@ test_that("Experimental grouping could be retrieved", {
   exp_grp_filename = system.file(
     "extdata/GSE26471", 
     "GSE26471_exp_grp.tab.gz", 
-    package = "epimedtools"
+    package = "epimeddata"
   )
   study$exp_grp = read.table(file=gzfile(exp_grp_filename), stringsAsFactors=FALSE)
   exp_grp = study$get_exp_grp()
@@ -24,7 +24,7 @@ test_that("Data could be retrieved", {
   data_filename = system.file(
     "extdata/GSE26471", 
     "GSE26471_data.tab.gz", 
-    package = "epimedtools"
+    package = "epimeddata"
   )
   study$data = as.matrix(read.table(file=gzfile(data_filename)))
   data = study$get_data()
@@ -43,13 +43,13 @@ test_that("Study_loc objects could be plot", {
   exp_grp_filename = system.file(
     "extdata/GSE26471", 
     "GSE26471_exp_grp.tab.gz", 
-    package = "epimedtools"
+    package = "epimeddata"
   )
   study$exp_grp = read.table(file=gzfile(exp_grp_filename), stringsAsFactors=FALSE)
   data_filename = system.file(
     "extdata/GSE26471", 
     "GSE26471_data.tab.gz", 
-    package = "epimedtools"
+    package = "epimeddata"
   )
   study$data = as.matrix(read.table(file=gzfile(data_filename)))
   expect_silent(study$plot_qc())

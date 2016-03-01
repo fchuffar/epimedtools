@@ -13,6 +13,6 @@ m2sd(ctrl)
 `mean` + 2 * `sd` of the inpuit vector
 }
 \description{
-This function compute `mean` + 2 * `sd` on a numeric vector.
+This function computes `mean` + 2 * `sd` on a numeric vector.
 }
 

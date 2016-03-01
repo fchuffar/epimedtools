@@ -1,6 +1,34 @@
+#' A Function That Builds a Fake Study.
+#'
+#' This function builds a fake study.
+#' 
+#' @param nb_samples An integer that describes the number of samples.
+#' @param nb_probes An integer that describes the number of probes.
+#' @return a fake study.
+#' @export
+get_fake_study = function(nb_samples = 12, nb_probes = 10) {
+  data = matrix(round(rnorm(nb_probes * nb_samples),3), nb_probes)
+  data = data - min(data)
+  colnames(data) = c(paste(rep("ctrl", nb_samples/2), 1:(nb_samples/2), sep=""), paste(rep("case", nb_samples/2), 1:(nb_samples/2), sep=""))
+  rownames(data) = paste(rep("prb", nb_probes), 1:nb_probes, sep="")
+  exp_grp = data.frame(
+    sex=ifelse(runif(nb_samples)>0.5, "Male", "Female"), 
+    age=round(runif(nb_samples,20,30)), 
+    tabac=rep(c(rep("Smoker", nb_samples/4), rep("Non Smoker", nb_samples/4)), 2), 
+    treatment = c(rep("0 ug", nb_samples/2), rep("15 ug", nb_samples/2)),
+    histo=rep("lung", nb_samples)
+  )
+  rownames(exp_grp) = colnames(data) 
+  platform = data.frame(
+    gene_name = rep("...",nb_probes),
+    GOID = rep("...",nb_probes)
+  )
+  rownames(platform) = rownames(data) 
+  return(list(data=data, exp_grp=exp_grp, platform=platform))
+}
 #' A Function That Computes `mean` + 2 * `sd` on a Numeric Vector.
 #'
-#' This function compute `mean` + 2 * `sd` on a numeric vector.
+#' This function computes `mean` + 2 * `sd` on a numeric vector.
 #' 
 #' @param ctrl A numeric vector
 #' @return `mean` + 2 * `sd` of the inpuit vector

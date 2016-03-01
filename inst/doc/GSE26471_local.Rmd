@@ -37,7 +37,7 @@ The experimental grouping is stored into a compressed text file distributed with
 exp_grp_filename = system.file(
   "extdata/GSE26471", 
   "GSE26471_exp_grp.tab.gz", 
-  package = "epimedtools"
+  package = "epimeddata"
 )
 print(exp_grp_filename)
 study$exp_grp = read.table(file=gzfile(exp_grp_filename), stringsAsFactors=FALSE)
@@ -50,7 +50,7 @@ The expression data matrix is stored into a compressed text file distributed wit
 data_filename = system.file(
   "extdata/GSE26471", 
   "GSE26471_data.tab.gz", 
-  package = "epimedtools"
+  package = "epimeddata"
 )
 print(data_filename)
 study$data = as.matrix(read.table(file=gzfile(data_filename)))

@@ -8,13 +8,26 @@ library(epimedtools)
 study = create_study()
 
 ## ------------------------------------------------------------------------
-kc_cel_filedir = "../inst/extdata/trscr_raw_kc"
-ctrl_cel_filedir = "../inst/extdata/trscr_raw_ctrl"
+kc_cel_filedir = system.file(
+  "extdata/trscr_raw_kc", 
+  package = "epimeddata"
+)
+print(kc_cel_filedir)
+ctrl_cel_filedir = system.file(
+  "extdata/trscr_raw_ctrl", 
+  package = "epimeddata"
+)
+print(ctrl_cel_filedir)
 study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
 print(study$cel_filedirs)
 
 ## ------------------------------------------------------------------------
-exp_grp = read.table(file=gzfile("../inst/extdata/trscr_raw_kc/expgrp_kc.csv.gz"), stringsAsFactors=FALSE, sep=";", header=TRUE)
+exp_grp_filename = system.file(
+  "extdata/trscr_raw_kc", 
+  "expgrp_kc.csv.gz", 
+  package = "epimeddata"
+)
+exp_grp = read.table(file=gzfile(exp_grp_filename), stringsAsFactors=FALSE, sep=";", header=TRUE)
 rownames(exp_grp) = paste(exp_grp$sample, ".CEL.gz", sep="")
 study$exp_grp = exp_grp
 

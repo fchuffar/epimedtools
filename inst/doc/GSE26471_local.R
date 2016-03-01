@@ -14,7 +14,7 @@ study$platform_name = "GPL570"
 exp_grp_filename = system.file(
   "extdata/GSE26471", 
   "GSE26471_exp_grp.tab.gz", 
-  package = "epimedtools"
+  package = "epimeddata"
 )
 print(exp_grp_filename)
 study$exp_grp = read.table(file=gzfile(exp_grp_filename), stringsAsFactors=FALSE)
@@ -23,7 +23,7 @@ study$exp_grp = read.table(file=gzfile(exp_grp_filename), stringsAsFactors=FALSE
 data_filename = system.file(
   "extdata/GSE26471", 
   "GSE26471_data.tab.gz", 
-  package = "epimedtools"
+  package = "epimeddata"
 )
 print(data_filename)
 study$data = as.matrix(read.table(file=gzfile(data_filename)))

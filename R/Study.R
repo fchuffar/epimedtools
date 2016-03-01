@@ -62,6 +62,7 @@ create_study = function(cache_filename, Study_RC_name="Study_raw_trscr") {
 Study_abstract = setRefClass(
   "Study_abstract",
   fields = list(
+    "dest_dir" = "character",
     "data" = "ANY",
     "exp_grp" = "ANY",
     "platform" = "ANY",
@@ -310,34 +311,44 @@ Study_abstract = setRefClass(
     #   ret = list(shap=shap, pval=pval)
     #   return(ret)
     # },
-    plot_pca_eig = function(acp_res, xlim, ...) {
+    plot_pca_eig = function(pca_res, xlim, ...) {
       if (missing(xlim)) {
-        xlim=c(0, min(length(acp_res$var), 50))
+        xlim=c(0, min(length(pca_res$var), 50))
       }
-      barplot(acp_res$pvar, xlab="PC", ylab="% of var", xlim=xlim)
-      barplot(acp_res$bs[,2], add=TRUE, col=adjustcolor(2, alpha.f=0.1))
+      barplot(pca_res$pvar, xlab="PC", ylab="% of var", xlim=xlim)
+      barplot(pca_res$bs[,2], add=TRUE, col=adjustcolor(2, alpha.f=0.1))
       legend("topright", col=c(1,2), legend=c("eigenvalues", "broken-stick"), pch=15)
-      # abline(h=acp_res$kaiser_crit)
+      # abline(h=pca_res$kaiser_crit)
     },
-    plot_pca_pc = function(acp_res, pc1, pc2, exp_grp_key, ...) {
-      col = as.factor(.self$get_exp_grp()[rownames(acp_res$x),][[exp_grp_key]])
-      plot(acp_res$x[,c(pc1, pc2)], col=col, pch=16, 
-        xlab = paste("PC", pc1, " (", round(acp_res$pvar[pc1]*100,2),"%)", sep=""), 
-        ylab = paste("PC", pc2, " (", round(acp_res$pvar[pc2]*100,2),"%)", sep="")
+    plot_pca_pc = function(pca_res, pc1, pc2, exp_grp_key, col, LEGEND=TRUE, ...) {
+      if (missing(col)) {
+        col = as.factor(.self$get_exp_grp()[rownames(pca_res$x),][[exp_grp_key]])        
+      }
+      plot(pca_res$x[,c(pc1, pc2)], col=col, pch=16, 
+        xlab = paste("PC", pc1, " (", round(pca_res$pvar[pc1]*100,2),"%)", sep=""), 
+        ylab = paste("PC", pc2, " (", round(pca_res$pvar[pc2]*100,2),"%)", sep=""), 
+        ...
       )
-      legend("topright", legend=unique(col), col=unique(col), pch=16)
+      if (LEGEND) {
+        legend("topright", legend=unique(col), col=unique(col), pch=16)        
+      }
     },
-    do_pca = function(probe_names, ...) {
-      sample_idx = rownames(.self$get_exp_grp())[!is.na(exp_grp[[exp_grp_key]])]
-      acp_data = .self$get_data()[probe_names, sample_idx]
-      # acp_res = FactoMineR::PCA(t(acp_data), graph=FALSE, ncp=8)
-      acp_res = prcomp(t(acp_data), scale. = TRUE, ...)
-      acp_res$var = acp_res$sdev * acp_res$sdev
-      acp_res$pvar = acp_res$var/ sum(acp_res$var)
-      acp_res$bs = broken_stick(length(acp_res$pvar))
-      acp_res$bs_crit = min(which(acp_res$pvar < acp_res$bs[,2])) - 1
-      acp_res$kaiser_crit = 1/length(acp_res$var)      
-      return(acp_res)
+    do_pca = function(probe_names, sample_names, ...) {
+      if (missing(probe_names)) {
+        probe_names = rownames(.self$get_data())
+      }
+      if (missing(sample_names)) {
+        sample_names = colnames(.self$get_data())
+      }
+      pca_data = .self$get_data()[probe_names, sample_names]
+      # pca_res = FactoMineR::PCA(t(pca_data), graph=FALSE, ncp=8)
+      pca_res = prcomp(t(pca_data), scale. = TRUE, ...)
+      pca_res$var = pca_res$sdev * pca_res$sdev
+      pca_res$pvar = pca_res$var/ sum(pca_res$var)
+      pca_res$bs = broken_stick(length(pca_res$pvar))
+      pca_res$bs_crit = min(which(pca_res$pvar < pca_res$bs[,2])) - 1
+      pca_res$kaiser_crit = 1/length(pca_res$var)      
+      return(pca_res)
     },
     do_mw_test = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, alternative="less", PLOT=FALSE) {
       " Perform a Mann-Whitney test to detect right shifted (`alternative='less'`) exprtession groups for a given `probe_name` and a given `exp_grp_key`."  
@@ -410,6 +421,7 @@ Study_abstract = setRefClass(
           case = line[case_samples]
           ctrl_thres = ctrl_thres_func(ctrl)
           case_value = case_value_func(case)
+          # freq = sum(comp_func(ctrl_thres, case)) / length(case)
           ret = comp_func(ctrl_thres, case_value)
           # ret = ctrl_thres < case_value
           return(ret)

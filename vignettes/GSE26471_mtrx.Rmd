@@ -28,11 +28,13 @@ study = create_study()
 This study deals with the GEO accession GSE26471, its series_matrix is distributed with the package
 
 ```{r}
-study$series_matrix_filename = system.file(
+series_matrix_filename = system.file(
   "extdata/GSE26471", 
   "GSE26471_series_matrix.txt.gz", 
-  package = "epimedtools"
+  package = "epimeddata"
 )
+print(series_matrix_filename)
+study$series_matrix_filename = series_matrix_filename
 ```
 
 Load data associated with this study. Data is even on the hard drive, it is directly load from there.

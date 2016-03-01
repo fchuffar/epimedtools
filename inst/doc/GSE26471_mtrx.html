@@ -11,7 +11,7 @@
 
 <meta name="author" content="Florent Chuffart" />
 
-<meta name="date" content="2016-02-26" />
+<meta name="date" content="2016-03-01" />
 
 <title>Micrarray Analysis for Gene Expression from a Local series_matrix GEO File (GSE26471, 1 samples)</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title">Micrarray Analysis for Gene Expression from a Local <strong>series_matrix</strong> GEO File (GSE26471, 1 samples)</h1>
 <h4 class="author"><em>Florent Chuffart</em></h4>
-<h4 class="date"><em>2016-02-26</em></h4>
+<h4 class="date"><em>2016-03-01</em></h4>
 
 </div>
 
@@ -80,14 +80,17 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>Creating a new study.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">study =<span class="st"> </span><span class="kw">create_study</span>()</code></pre></div>
 <p>This study deals with the GEO accession GSE26471, its series_matrix is distributed with the package</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">study$series_matrix_filename =<span class="st"> </span><span class="kw">system.file</span>(
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">series_matrix_filename =<span class="st"> </span><span class="kw">system.file</span>(
   <span class="st">&quot;extdata/GSE26471&quot;</span>, 
   <span class="st">&quot;GSE26471_series_matrix.txt.gz&quot;</span>, 
-  <span class="dt">package =</span> <span class="st">&quot;epimedtools&quot;</span>
-)</code></pre></div>
+  <span class="dt">package =</span> <span class="st">&quot;epimeddata&quot;</span>
+)
+<span class="kw">print</span>(series_matrix_filename)
+<span class="co">#&gt; [1] &quot;/Users/florent/Library/R/3.2/library/epimeddata/extdata/GSE26471/GSE26471_series_matrix.txt.gz&quot;</span>
+study$series_matrix_filename =<span class="st"> </span>series_matrix_filename</code></pre></div>
 <p>Load data associated with this study. Data is even on the hard drive, it is directly load from there.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">study$<span class="kw">get_gset</span>()
-<span class="co">#&gt; [1] &quot;Launching data from /Users/florent/projects/epimedtools/inst/extdata/GSE26471/GSE26471_series_matrix.txt.gz...&quot;</span>
+<span class="co">#&gt; [1] &quot;Launching data from /Users/florent/Library/R/3.2/library/epimeddata/extdata/GSE26471/GSE26471_series_matrix.txt.gz...&quot;</span>
 <span class="co">#&gt; [1] &quot;done.&quot;</span>
 <span class="co">#&gt; ExpressionSet (storageMode: lockedEnvironment)</span>
 <span class="co">#&gt; assayData: 54675 features, 1 samples </span>

@@ -8,8 +8,16 @@ library(epimedtools)
 study = create_study()
 
 ## ------------------------------------------------------------------------
-kc_cel_filedir = "../inst/extdata/trscr_raw_kc"
-ctrl_cel_filedir = "../inst/extdata/trscr_raw_ctrl"
+kc_cel_filedir = system.file(
+  "extdata/trscr_raw_kc", 
+  package = "epimeddata"
+)
+print(kc_cel_filedir)
+ctrl_cel_filedir = system.file(
+  "extdata/trscr_raw_ctrl", 
+  package = "epimeddata"
+)
+print(ctrl_cel_filedir)
 study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
 print(study$cel_filedirs)
 

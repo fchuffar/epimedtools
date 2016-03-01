@@ -8,11 +8,13 @@ library(epimedtools)
 study = create_study()
 
 ## ------------------------------------------------------------------------
-study$series_matrix_filename = system.file(
+series_matrix_filename = system.file(
   "extdata/GSE26471", 
   "GSE26471_series_matrix.txt.gz", 
-  package = "epimedtools"
+  package = "epimeddata"
 )
+print(series_matrix_filename)
+study$series_matrix_filename = series_matrix_filename
 
 ## ------------------------------------------------------------------------
 study$get_gset()

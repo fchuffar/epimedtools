@@ -6,7 +6,11 @@ test_that("Caching features work", {
     file.remove(tmp_cache_filename)
   }
   s1 = create_study(tmp_cache_filename)
-  s1$series_matrix_filename = "../../inst/extdata/GSE26471/GSE26471_series_matrix.txt.gz"
+  s1$series_matrix_filename = system.file(
+    "extdata/GSE26471", 
+    "GSE26471_exp_grp.tab.gz", 
+    package = "epimeddata"
+  )
   s1$gse = "GSE26471"
   s1$platform_filename = "foo/bar/baz"
   s1$save()
