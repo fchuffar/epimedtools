@@ -224,12 +224,21 @@ Study_abstract = setRefClass(
             .self$gset = tmp_gset[[1]]
             .self$series_matrix_filename = paste(dest_dir_gse, "/", names(tmp_gset)[1], sep = "")
           } else {
-            stop(paste(.self$gse, " is a SuperSeries... Not yet supported.", sep = ""))
+            if (length(.self$platform_name) != 0) {
+              grep_pf = grep(.self$platform_name, names(tmp_gset))
+              if (length(grep_pf) == 1) {
+                warning(paste(.self$gse, " is a SuperSeries.", sep = ""))
+                .self$gset = tmp_gset[[grep_pf]]
+                tmp_series_matrix_filename = names(tmp_gset)[grep_pf]
+                .self$series_matrix_filename = paste(dest_dir_gse, "/", tmp_series_matrix_filename, sep = "")                
+              } else {
+                stop(paste(.self$gse, " is a SuperSeries with a format that is not yet supported.", sep = ""))                
+              }
+            } else {
+              stop(paste(.self$gse, " is a SuperSeries, platform_name needs to be define to avoid any ambiguity.", sep = ""))
+            }
           }
-          print(paste(
-            "done. File locally cached here: ", .self$series_matrix_filename, sep =
-              ""
-          ))
+          print(paste("done. File locally cached here: ", .self$series_matrix_filename, sep=""))
         } else {
           stop("You need to define gse (length 1) field to get it from GEO")
         }
