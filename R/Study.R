@@ -6,6 +6,7 @@
 #' 
 #' @param cache_filename A character string that describes the study cache file name.
 #' @param Study_RC_name A character string that specify the RC to use to instanciate the object.
+#' @param ... Parameters that are given to the Study contructor
 #' @examples
 #' # create study and load data from GSE57831_series_matrix.txt.gz contained in the package
 #' study = create_study()
@@ -30,11 +31,11 @@
 #' study = create_study("/tmp/tmp_cached_study.rds")
 #' @return It returns an object that extends the Study_abstract class.
 #' @export
-create_study = function(cache_filename, Study_RC_name="Study_raw_trscr") {
+create_study = function(cache_filename, Study_RC_name="Study_raw_trscr", ...) {
   if (missing(cache_filename)) {
     study = get(Study_RC_name)()
   } else {
-    study = get(Study_RC_name)(cache_filename)
+    study = get(Study_RC_name)(cache_filename, ...)
   }
   return(study)
 }

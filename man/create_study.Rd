@@ -4,12 +4,14 @@
 \alias{create_study}
 \title{Study Factory}
 \usage{
-create_study(cache_filename, Study_RC_name = "Study_raw_trscr")
+create_study(cache_filename, Study_RC_name = "Study_raw_trscr", ...)
 }
 \arguments{
 \item{cache_filename}{A character string that describes the study cache file name.}
 
 \item{Study_RC_name}{A character string that specify the RC to use to instanciate the object.}
+
+\item{...}{Parameters that are given to the Study contructor}
 }
 \value{
 It returns an object that extends the Study_abstract class.
