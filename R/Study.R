@@ -409,6 +409,14 @@ Study_abstract = setRefClass(
         apply_function_name = "apply"        
       }
       # go!
+      # freq
+      freq = apply(cur_data, 1, function(line) {
+        ctrl = line[ctrl_samples]
+        case = line[case_samples]
+        ctrl_thres = ctrl_thres_func(ctrl)
+        freq = sum(comp_func(ctrl_thres, case)) / length(case)
+        return(freq)
+      })
       perm_data = get(apply_function_name)(t(0:nb_perm), 2, function(perm){
         cur_data = tmp_data
         if (perm > 0) {
@@ -421,17 +429,15 @@ Study_abstract = setRefClass(
           case = line[case_samples]
           ctrl_thres = ctrl_thres_func(ctrl)
           case_value = case_value_func(case)
-          # freq = sum(comp_func(ctrl_thres, case)) / length(case)
-          ret = comp_func(ctrl_thres, case_value)
-          # ret = ctrl_thres < case_value
-          return(ret)
+          comp = comp_func(ctrl_thres, case_value)
+          return(comp)
         })
         return(ret)
       })
       idx = perm_data[,1]
       pval = apply(t(perm_data[,2:(nb_perm+1)]), 2, sum)/nb_perm
       pval[pval == 0] = 1/ (10*nb_perm)
-      return(data.frame(idx=idx, pval=pval))
+      return(data.frame(idx=idx, pval=pval, freq=freq))
     },
     do_m2s_analysis = function(probe_names, exp_grp_key, ctrl_name, nb_perm=100, MONITORED=FALSE, ...) {
       "Performs permutation test to detect right shifted expression groups for a given `probe_name` and a given `exp_grp_key`."
