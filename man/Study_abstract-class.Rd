@@ -42,7 +42,7 @@ study. It an abstract class.
   MONITORED = FALSE, ...)}}{Performs permutation test to detect right shifted expression groups for a given `probe_name` and a given `exp_grp_key`.}
 
 \item{\code{do_mw_test(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name,
-  case_factor_name, alternative = "less", PLOT = FALSE)}}{Perform a Mann-Whitney test to detect right shifted (`alternative='less'`) exprtession groups for a given `probe_name` and a given `exp_grp_key`.}
+  case_factor_name, alternative, PLOT = FALSE)}}{Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) exprtession groups for a given `probe_name` and a given `exp_grp_key`.}
 
 \item{\code{get_cel_files(dest_dir = "data", ...)}}{Retrieve .CEL.gz from NCBI GEO eweb site}
 

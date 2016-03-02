@@ -219,6 +219,12 @@ Study_abstract = setRefClass(
         } else if (length(.self$gse) == 1) {
           print(paste("Launching ", .self$gse, " from GEO...", sep = ""))
           dest_dir_gse = paste(dest_dir, "/", .self$gse, sep="")
+          l = list.files(dest_dir_gse)
+          l_grep = grep("series_matrix.txt.gz", l)[1]
+          if (length(l_grep) > 0) {
+            .self$series_matrix_filename = paste(dest_dir_gse, "/", l[l_grep[1]], sep="")
+            return(.self$get_gset(CACHE=CACHE, MEMOISE=MEMOISE, dest_dir=dest_dir)) 
+          }          
           dir.create(dest_dir_gse, showWarnings = FALSE, recursive = TRUE)
           if (MEMOISE) {
             tmp_gset = mgetGEO(.self$gse, getGPL = FALSE, destdir=dest_dir_gse)
@@ -334,7 +340,7 @@ Study_abstract = setRefClass(
       legend("topright", col=c(1,2), legend=c("eigenvalues", "broken-stick"), pch=15)
       # abline(h=pca_res$kaiser_crit)
     },
-    plot_pca_pc = function(pca_res, pc1, pc2, exp_grp_key, col, LEGEND=TRUE, ...) {
+    plot_pca_pc = function(pca_res, pc1=1, pc2=2, exp_grp_key, col, LEGEND=TRUE, ...) {
       if (missing(col)) {
         col = as.factor(.self$get_exp_grp()[rownames(pca_res$x),][[exp_grp_key]])        
       }
@@ -364,8 +370,11 @@ Study_abstract = setRefClass(
       pca_res$kaiser_crit = 1/length(pca_res$var)      
       return(pca_res)
     },
-    do_mw_test = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, alternative="less", PLOT=FALSE) {
-      " Perform a Mann-Whitney test to detect right shifted (`alternative='less'`) exprtession groups for a given `probe_name` and a given `exp_grp_key`."  
+    do_mw_test = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, alternative, PLOT=FALSE) {
+      " Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) exprtession groups for a given `probe_name` and a given `exp_grp_key`." 
+      if (missing(alternative)) {
+        alternative = NULL
+      }
       # data
       tmp_data = .self$get_data()
       tmp_data = tmp_data[probe_names,]
@@ -373,41 +382,58 @@ Study_abstract = setRefClass(
       ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_exp_grp_key]] == ctrl_factor_name)]
       case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_exp_grp_key]] == case_factor_name)]
       # go!
-      ret = apply(tmp_data[, unique(c(ctrl_samples, case_samples))], 1, function(line) {
+      foo = apply(tmp_data[, unique(c(ctrl_samples, case_samples))], 1, function(line, alternative) {
         ctrl = line[ctrl_samples]
         case = line[case_samples]
-        bar = wilcox.test(ctrl, case, alternative=alternative)
-        if (PLOT) {
-          beanplot(ctrl, case, col=(bar$p.value < 0.05) + 1, main = bar$p.value, log="")
+        ctrl_median = median(ctrl)
+        ctrl_mean = mean(ctrl)
+        case_median = median(case)
+        case_mean = mean(case)
+        s = sign(case_mean - ctrl_mean)
+        # print(s)
+        fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
+        d_med = case_median - ctrl_median
+        if (is.null(alternative)) {
+          if (s >= 0) {            
+            alternative="less"
+          } else {
+            alternative="greater"            
+          }
         }
-        return(bar$p.value)
-      })
-      return(ret)
+        mw = wilcox.test(ctrl, case, alternative=alternative)
+        if (PLOT) {
+          beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
+        }
+        return(list(mw_pval = mw$p.value, fc=fc, d_med = d_med))
+      }, alternative)
+      foo = do.call(rbind, foo)
+      foo = data.frame(lapply(data.frame(foo, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
+      return(foo)
     },
-    plot_m2s_analysis = function(m2s, histo, label_col_names="gene", xlim, ...) {
-      h = histo
-      nsd = m2s[[paste(h, "nsd", sep="_")]]
-      pval = m2s[[paste(h, "p_nsd", sep="_")]]
-      pval[pval==0] = 1/(1/min(pval[pval!=0]) + 1)
-      # idx = nsd > 0
-      # nsd = nsd[idx]
-      # pval = pval[idx]
-      # if (label_col_names %in% colnames(m2s)) {
-      #   col = as.factor(m2s[[label_col_names]])
-      #   col = col[idx]
-      # } else {
-      #   col=1
-      # }
-      if (missing(xlim)) {
-        xlim = c(-4, log2(max(nsd)))
-      }
-      plot(log2(nsd), -log10(pval), main=h, pch=16, xlim=xlim, ...)
-      # if (label_col_names %in% colnames(m2s)) {
-      #   legend("bottomright", col=unique(col), legend=unique(col), pch=16)
-      # }
-      abline(v=log2(c(2,3)))
-      abline(h=-log10(0.05))      
-    }, 
+    # plot_m2s_analysis = function(m2s, histo, label_col_names="gene", xlim, ...) {
+    #   h = histo
+    #   nsd = m2s[[paste(h, "nsd", sep="_")]]
+    #   pval = m2s[[paste(h, "p_nsd", sep="_")]]
+    #   pval[pval==0] = 1/(1/min(pval[pval!=0]) + 1)
+    #   # idx = nsd > 0
+    #   # nsd = nsd[idx]
+    #   # pval = pval[idx]
+    #   # if (label_col_names %in% colnames(m2s)) {
+    #   #   col = as.factor(m2s[[label_col_names]])
+    #   #   col = col[idx]
+    #   # } else {
+    #   #   col=1
+    #   # }
+    #   if (missing(xlim)) {
+    #     xlim = c(-4, log2(max(nsd)))
+    #   }
+    #   plot(log2(nsd), -log10(pval), main=h, pch=16, xlim=xlim, ...)
+    #   # if (label_col_names %in% colnames(m2s)) {
+    #   #   legend("bottomright", col=unique(col), legend=unique(col), pch=16)
+    #   # }
+    #   abline(v=log2(c(2,3)))
+    #   abline(h=-log10(0.05))
+    # },
     do_gm2sd_analysis = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE) {
       "Performs permutation test to detect right shifted expression groups for two given groups."
       # samples
@@ -424,7 +450,7 @@ Study_abstract = setRefClass(
       }
       # go!
       # freq
-      freq = apply(cur_data, 1, function(line) {
+      freq = apply(tmp_data, 1, function(line) {
         ctrl = line[ctrl_samples]
         case = line[case_samples]
         ctrl_thres = ctrl_thres_func(ctrl)
@@ -449,8 +475,12 @@ Study_abstract = setRefClass(
         return(ret)
       })
       idx = perm_data[,1]
-      pval = apply(t(perm_data[,2:(nb_perm+1)]), 2, sum)/nb_perm
-      pval[pval == 0] = 1/ (10*nb_perm)
+      if (nb_perm > 0) {
+        pval = apply(t(perm_data[,2:(nb_perm+1)]), 2, sum)/nb_perm        
+        pval[pval == 0] = 1/ (10*nb_perm)
+      } else {
+        pval = rep(1, length(idx))
+      }
       return(data.frame(idx=idx, pval=pval, freq=freq))
     },
     do_m2s_analysis = function(probe_names, exp_grp_key, ctrl_name, nb_perm=100, MONITORED=FALSE, ...) {
