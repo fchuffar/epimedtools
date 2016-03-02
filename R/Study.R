@@ -220,7 +220,7 @@ Study_abstract = setRefClass(
           print(paste("Launching ", .self$gse, " from GEO...", sep = ""))
           dest_dir_gse = paste(dest_dir, "/", .self$gse, sep="")
           l = list.files(dest_dir_gse)
-          l_grep = grep("series_matrix.txt.gz", l)[1]
+          l_grep = grep("series_matrix.txt.gz", l)
           if (length(l_grep) > 0) {
             .self$series_matrix_filename = paste(dest_dir_gse, "/", l[l_grep[1]], sep="")
             return(.self$get_gset(CACHE=CACHE, MEMOISE=MEMOISE, dest_dir=dest_dir)) 
@@ -372,6 +372,19 @@ Study_abstract = setRefClass(
     },
     do_mw_test = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, alternative, PLOT=FALSE) {
       " Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) exprtession groups for a given `probe_name` and a given `exp_grp_key`." 
+      # Check exp_grp
+      if (!(ctrl_exp_grp_key %in% colnames(.self$get_exp_grp()))) {
+        stop(paste(ctrl_exp_grp_key, " is not a column name of exp_grp.", sep=""))
+      }
+      if (!(ctrl_factor_name %in% unique(.self$get_exp_grp()[[ctrl_exp_grp_key]]))) {
+        stop(paste(ctrl_factor_name, " is not a factor of ", ctrl_exp_grp_key, " exp_grp column.", sep=""))
+      }
+      if (!(case_exp_grp_key %in% colnames(.self$get_exp_grp()))) {
+        stop(paste(ctrl_exp_grp_key, " is not a column name of exp_grp.", sep=""))
+      }
+      if (!(case_factor_name %in% unique(.self$get_exp_grp()[[case_exp_grp_key]]))) {
+        stop(paste(case_factor_name, " is not a factor of ", case_exp_grp_key, " exp_grp column.", sep=""))
+      }
       if (missing(alternative)) {
         alternative = NULL
       }
@@ -392,7 +405,7 @@ Study_abstract = setRefClass(
         s = sign(case_mean - ctrl_mean)
         # print(s)
         fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
-        d_med = case_median - ctrl_median
+        # d_med = case_median - ctrl_median
         if (is.null(alternative)) {
           if (s >= 0) {            
             alternative="less"
@@ -404,7 +417,7 @@ Study_abstract = setRefClass(
         if (PLOT) {
           beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
         }
-        return(list(mw_pval = mw$p.value, fc=fc, d_med = d_med))
+        return(list(mw_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
       }, alternative)
       foo = do.call(rbind, foo)
       foo = data.frame(lapply(data.frame(foo, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)

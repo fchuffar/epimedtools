@@ -37,7 +37,7 @@ test_that("do_mw_test works", {
   # case_factor_name = "Placenta"
 
   mw = study$do_mw_test(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name)
-  expect_equal(dim(mw), c(10,3))
+  expect_equal(dim(mw), c(10,2))
 })
 
 test_that("do_pca works", {
