@@ -1,3 +1,22 @@
+#' A Function That Computes de False Discovery Rate.
+#'
+#' This function computes the false discovery rate from a vector of independent p-values. 
+#' It extracts the cutoff corresponding to the specified FDR. See Benjamini & Hochberg 1995 paper.
+#' @param x A vector of independent p-values.
+#' @param FDR The false discovery rate.
+#' @return The corresponding cutoff.
+#' @export
+FDR = function (x, FDR) 
+{
+    x <- sort(na.omit(x))
+    N = length(x)
+    i = 1
+    while (N * x[i]/i < FDR & i <= N) i = i + 1
+    if (i == 1) 
+        return(NA)
+    else return(x[i - 1])
+}
+
 #' A Function That Builds a Fake Study.
 #'
 #' This function builds a fake study.

@@ -370,8 +370,66 @@ Study_abstract = setRefClass(
       pca_res$kaiser_crit = 1/length(pca_res$var)      
       return(pca_res)
     },
+    # pretreat_test = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, ...) {
+    #   # Check data
+    #   tmp_data = .self$get_data()
+    #   if (missing(probe_names)) {
+    #     probe_names = rownames(tmp_data)
+    #   }
+    #   tmp_data = tmp_data[probe_names,]
+    #   # Check exp_grp
+    #   if (!(ctrl_exp_grp_key %in% colnames(.self$get_exp_grp()))) {
+    #     stop(paste(ctrl_exp_grp_key, " is not a column name of exp_grp.", sep=""))
+    #   }
+    #   if (!(ctrl_factor_name %in% unique(.self$get_exp_grp()[[ctrl_exp_grp_key]]))) {
+    #     stop(paste(ctrl_factor_name, " is not a factor of ", ctrl_exp_grp_key, " exp_grp column.", sep=""))
+    #   }
+    #   if (!(case_exp_grp_key %in% colnames(.self$get_exp_grp()))) {
+    #     stop(paste(ctrl_exp_grp_key, " is not a column name of exp_grp.", sep=""))
+    #   }
+    #   if (!(case_factor_name %in% unique(.self$get_exp_grp()[[case_exp_grp_key]]))) {
+    #     stop(paste(case_factor_name, " is not a factor of ", case_exp_grp_key, " exp_grp column.", sep=""))
+    #   }
+    #   # sample
+    #   ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_exp_grp_key]] == ctrl_factor_name)]
+    #   case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_exp_grp_key]] == case_factor_name)]
+    #   # go!
+    #   foo = apply(tmp_data[, unique(c(ctrl_samples, case_samples))], 1, function(line, alternative, ) {
+    #     ctrl = line[ctrl_samples]
+    #     case = line[case_samples]
+    #     ctrl_median = median(ctrl)
+    #     ctrl_mean = mean(ctrl)
+    #     case_median = median(case)
+    #     case_mean = mean(case)
+    #     s = sign(case_mean - ctrl_mean)
+    #     # print(s)
+    #     fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
+    #     # d_med = case_median - ctrl_median
+    #     if (is.null(alternative)) {
+    #       if (s >= 0) {
+    #         alternative="less"
+    #       } else {
+    #         alternative="greater"
+    #       }
+    #     }
+    #     mw = wilcox.test(ctrl, case, alternative=alternative)
+    #     if (PLOT) {
+    #       beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
+    #     }
+    #     return(list(mw_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
+    #   }, alternative)
+    #   foo = do.call(rbind, foo)
+    #   foo = data.frame(lapply(data.frame(foo, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
+    #   return(foo)
+    # },
     do_mw_test = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, alternative, PLOT=FALSE) {
       " Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) exprtession groups for a given `probe_name` and a given `exp_grp_key`." 
+      # Check data
+      tmp_data = .self$get_data()
+      if (missing(probe_names)) {
+        probe_names = rownames(tmp_data)
+      }
+      tmp_data = tmp_data[probe_names,]
       # Check exp_grp
       if (!(ctrl_exp_grp_key %in% colnames(.self$get_exp_grp()))) {
         stop(paste(ctrl_exp_grp_key, " is not a column name of exp_grp.", sep=""))
@@ -388,13 +446,10 @@ Study_abstract = setRefClass(
       if (missing(alternative)) {
         alternative = NULL
       }
-      # data
-      tmp_data = .self$get_data()
-      tmp_data = tmp_data[probe_names,]
-      # sample
+      # Get samples
       ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_exp_grp_key]] == ctrl_factor_name)]
       case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_exp_grp_key]] == case_factor_name)]
-      # go!
+      # Go!
       foo = apply(tmp_data[, unique(c(ctrl_samples, case_samples))], 1, function(line, alternative) {
         ctrl = line[ctrl_samples]
         case = line[case_samples]
@@ -417,36 +472,35 @@ Study_abstract = setRefClass(
         if (PLOT) {
           beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
         }
-        return(list(mw_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
+        return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
       }, alternative)
       foo = do.call(rbind, foo)
       foo = data.frame(lapply(data.frame(foo, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
       return(foo)
     },
-    # plot_m2s_analysis = function(m2s, histo, label_col_names="gene", xlim, ...) {
-    #   h = histo
-    #   nsd = m2s[[paste(h, "nsd", sep="_")]]
-    #   pval = m2s[[paste(h, "p_nsd", sep="_")]]
-    #   pval[pval==0] = 1/(1/min(pval[pval!=0]) + 1)
-    #   # idx = nsd > 0
-    #   # nsd = nsd[idx]
-    #   # pval = pval[idx]
-    #   # if (label_col_names %in% colnames(m2s)) {
-    #   #   col = as.factor(m2s[[label_col_names]])
-    #   #   col = col[idx]
-    #   # } else {
-    #   #   col=1
-    #   # }
-    #   if (missing(xlim)) {
-    #     xlim = c(-4, log2(max(nsd)))
-    #   }
-    #   plot(log2(nsd), -log10(pval), main=h, pch=16, xlim=xlim, ...)
-    #   # if (label_col_names %in% colnames(m2s)) {
-    #   #   legend("bottomright", col=unique(col), legend=unique(col), pch=16)
-    #   # }
-    #   abline(v=log2(c(2,3)))
-    #   abline(h=-log10(0.05))
-    # },
+    do_anova = function(probe_names, samples_names, exp_grp_key) {
+      "Performs anova test for a given `probe_name` and a given `exp_grp_key`."
+      # Check data
+      tmp_data = .self$get_data()
+      if (missing(probe_names)) {
+        probe_names = rownames(tmp_data)
+      }
+      if (missing(samples_names)) {
+        samples_names = colnames(tmp_data)
+      }
+      tmp_data = tmp_data[probe_names, samples_names]
+      histo = .self$get_exp_grp()[samples_names,exp_grp_key]
+      anova_res = apply(tmp_data, 1, function(line){
+        m = aov(line~histo)
+        # tests
+        s = shapiro.test(residuals(m))
+        shap_pval = s$p.value
+        f_kc = m$coefficients[2]
+        pval = -log10(summary(m)[[1]][["Pr(>F)"]][1])
+        ret = list(shap=shap, pval=pval)
+        return(ret)        
+      })
+    },
     do_gm2sd_analysis = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE) {
       "Performs permutation test to detect right shifted expression groups for two given groups."
       # samples
@@ -496,112 +550,122 @@ Study_abstract = setRefClass(
       }
       return(data.frame(idx=idx, pval=pval, freq=freq))
     },
-    do_m2s_analysis = function(probe_names, exp_grp_key, ctrl_name, nb_perm=100, MONITORED=FALSE, ...) {
-      "Performs permutation test to detect right shifted expression groups for a given `probe_name` and a given `exp_grp_key`."
-      # Before starting...  
-      # exp_grp = .self$get_exp_grp()
-      tmp_data = .self$get_data()
-      tmp_data = tmp_data[probe_names,rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]]
-      # histos
-      histo_names = na.omit(unique(exp_grp[[exp_grp_key]]))
-      histo_names = histo_names[-which(histo_names == ctrl_name)]
-      # perm_sample_names
-      perm_sample_names = sapply(1:nb_perm, function(i) {
-        set.seed(i)
-        sample(colnames(tmp_data))
-      })
-      # do permutations
-      if (MONITORED) {
-        apply_function_name = "monitored_apply"
-      } else {
-        apply_function_name = "apply"        
-      }
-      m2s_perm_data = get(apply_function_name)(t(0:nb_perm), 2, function(perm){
-        cur_data = tmp_data
-        if (perm > 0) {
-          colnames(cur_data) = perm_sample_names[,perm] 
-        }
-        # ctrl
-        ctrl = t(apply(cur_data[probe_names, na.omit(rownames(exp_grp)[exp_grp[[exp_grp_key]] == ctrl_name])], 1, function(line) {
-          mean = mean(line)
-          sd = sd(line)
-          return(c(mean, sd))
-        }))
-        colnames(ctrl) = c("ctrl_m", "ctrl_sd")
-        # mean of histos
-        means = sapply(histo_names, function(h) {
-          sample_names = na.omit(rownames(exp_grp)[exp_grp[[exp_grp_key]] == h])
-          ret = apply(cur_data[probe_names, sample_names], 1, mean)
-          return(ret)
-        })
-        colnames(means) = paste(histo_names, "m", sep="_")
-        m2s = cbind(ctrl, means)
-        # nb of sd
-        nsd = sapply(histo_names, function(h) {
-          (m2s[,paste(h, "m", sep="_")] - m2s[,"ctrl_m"]) / m2s[,"ctrl_sd"]
-        })
-        colnames(nsd) = paste(histo_names, "nsd", sep="_")
-        m2s = cbind(m2s, nsd)
-        # fold change
-        if (perm < 0) {
-          fc = sapply(histo_names, function(h) {
-            s = sign(m2s[,paste(h, "m", sep="_")] - m2s[,"ctrl_m"])
-            ret = s * apply(cbind(m2s[,paste(h, "m", sep="_")] / m2s[,"ctrl_m"], m2s[,"ctrl_m"] / m2s[,paste(h, "m", sep="_")]), 1, max)
-          })
-          colnames(fc) = paste(histo_names, "fc", sep="_")
-          m2s = cbind(m2s, fc)    
-        }
-        # m > m+2sd ?
-        bool = sapply(histo_names, function(h) {
-          m2s[,paste(h, "nsd", sep="_")] > 2
-        })
-        colnames(bool) = paste(histo_names, "m2s", sep="_")
-        m2s = cbind(m2s, bool)    
-        # return
-        m2s = m2s[,sort(colnames(m2s))]
-        return (data.frame(m2s))
-      }, ...)
-      # extract m2s data
-      m2s = m2s_perm_data[[1]]
-      # p_nsd
-      perm_nsd = sapply(histo_names, function(h) {
-        nsd_h = m2s_perm_data[[1]][, paste(h, "nsd", sep="_")]
-        nsd_h_perm = lapply(1:nb_perm, function(i) {
-          m2s_perm_data[[i+1]][, paste(h, "nsd", sep="_")]
-        })
-        nsd_h_perm = do.call(cbind, nsd_h_perm)
-        bool_nsd_h_perm = apply(nsd_h_perm, 2, function(col) {
-          col >= nsd_h
-        })
-        sum_bool_nsd_h_perm = apply(bool_nsd_h_perm, 1, sum) / nb_perm
-        return(sum_bool_nsd_h_perm)  
-      })
-      colnames(perm_nsd) = paste(histo_names, "p_nsd", sep="_")
-      m2s = cbind(m2s, perm_nsd)
-      # max h ?
-      max_m = apply(t(m2s[, paste(histo_names, "m", sep="_")]), 2, function(l) {
-        max_l = max(l)
-        ret = histo_names[which(l == max_l)[1]]
-        return(ret)
-      })
-      m2s = cbind(m2s, max_m)    
-      # sort
-      m2s = m2s[,sort(colnames(m2s))]
-      return(m2s)
-    },
-    # do_anova = function(probe_name, exp_grp_key) {
-    #   "Performs anova test for a given `probe_name` and a given `exp_grp_key`."
-    #   idx_sample = rownames(.self$get_exp_grp())
-    #   # Dealing with ratio data, reduce data to interesting probes and samples
-    #   filtred_bp_data = .self$get_data()[probe_name, idx_sample]
-    #   m = aov(filtred_bp_data~.self$get_exp_grp()[,exp_grp_key])
-    #   # tests
-    #   s = shapiro.test(residuals(m))
-    #   shap = -log10(s$p.value)
-    #   f_kc = m$coefficients[2]
-    #   pval = -log10(summary(m)[[1]][["Pr(>F)"]][1])
-    #   ret = list(shap=shap, pval=pval)
-    #   return(ret)
+    # plot_m2s_analysis = function(m2s, histo, label_col_names="gene", xlim, ...) {
+    #   h = histo
+    #   nsd = m2s[[paste(h, "nsd", sep="_")]]
+    #   pval = m2s[[paste(h, "p_nsd", sep="_")]]
+    #   pval[pval==0] = 1/(1/min(pval[pval!=0]) + 1)
+    #   # idx = nsd > 0
+    #   # nsd = nsd[idx]
+    #   # pval = pval[idx]
+    #   # if (label_col_names %in% colnames(m2s)) {
+    #   #   col = as.factor(m2s[[label_col_names]])
+    #   #   col = col[idx]
+    #   # } else {
+    #   #   col=1
+    #   # }
+    #   if (missing(xlim)) {
+    #     xlim = c(-4, log2(max(nsd)))
+    #   }
+    #   plot(log2(nsd), -log10(pval), main=h, pch=16, xlim=xlim, ...)
+    #   # if (label_col_names %in% colnames(m2s)) {
+    #   #   legend("bottomright", col=unique(col), legend=unique(col), pch=16)
+    #   # }
+    #   abline(v=log2(c(2,3)))
+    #   abline(h=-log10(0.05))
+    # },
+    # do_m2s_analysis = function(probe_names, exp_grp_key, ctrl_name, nb_perm=100, MONITORED=FALSE, ...) {
+    #   "Performs permutation test to detect right shifted expression groups for a given `probe_name` and a given `exp_grp_key`."
+    #   # Before starting...
+    #   # exp_grp = .self$get_exp_grp()
+    #   tmp_data = .self$get_data()
+    #   tmp_data = tmp_data[probe_names,rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]]
+    #   # histos
+    #   histo_names = na.omit(unique(exp_grp[[exp_grp_key]]))
+    #   histo_names = histo_names[-which(histo_names == ctrl_name)]
+    #   # perm_sample_names
+    #   perm_sample_names = sapply(1:nb_perm, function(i) {
+    #     set.seed(i)
+    #     sample(colnames(tmp_data))
+    #   })
+    #   # do permutations
+    #   if (MONITORED) {
+    #     apply_function_name = "monitored_apply"
+    #   } else {
+    #     apply_function_name = "apply"
+    #   }
+    #   m2s_perm_data = get(apply_function_name)(t(0:nb_perm), 2, function(perm){
+    #     cur_data = tmp_data
+    #     if (perm > 0) {
+    #       colnames(cur_data) = perm_sample_names[,perm]
+    #     }
+    #     # ctrl
+    #     ctrl = t(apply(cur_data[probe_names, na.omit(rownames(exp_grp)[exp_grp[[exp_grp_key]] == ctrl_name])], 1, function(line) {
+    #       mean = mean(line)
+    #       sd = sd(line)
+    #       return(c(mean, sd))
+    #     }))
+    #     colnames(ctrl) = c("ctrl_m", "ctrl_sd")
+    #     # mean of histos
+    #     means = sapply(histo_names, function(h) {
+    #       sample_names = na.omit(rownames(exp_grp)[exp_grp[[exp_grp_key]] == h])
+    #       ret = apply(cur_data[probe_names, sample_names], 1, mean)
+    #       return(ret)
+    #     })
+    #     colnames(means) = paste(histo_names, "m", sep="_")
+    #     m2s = cbind(ctrl, means)
+    #     # nb of sd
+    #     nsd = sapply(histo_names, function(h) {
+    #       (m2s[,paste(h, "m", sep="_")] - m2s[,"ctrl_m"]) / m2s[,"ctrl_sd"]
+    #     })
+    #     colnames(nsd) = paste(histo_names, "nsd", sep="_")
+    #     m2s = cbind(m2s, nsd)
+    #     # fold change
+    #     if (perm < 0) {
+    #       fc = sapply(histo_names, function(h) {
+    #         s = sign(m2s[,paste(h, "m", sep="_")] - m2s[,"ctrl_m"])
+    #         ret = s * apply(cbind(m2s[,paste(h, "m", sep="_")] / m2s[,"ctrl_m"], m2s[,"ctrl_m"] / m2s[,paste(h, "m", sep="_")]), 1, max)
+    #       })
+    #       colnames(fc) = paste(histo_names, "fc", sep="_")
+    #       m2s = cbind(m2s, fc)
+    #     }
+    #     # m > m+2sd ?
+    #     bool = sapply(histo_names, function(h) {
+    #       m2s[,paste(h, "nsd", sep="_")] > 2
+    #     })
+    #     colnames(bool) = paste(histo_names, "m2s", sep="_")
+    #     m2s = cbind(m2s, bool)
+    #     # return
+    #     m2s = m2s[,sort(colnames(m2s))]
+    #     return (data.frame(m2s))
+    #   }, ...)
+    #   # extract m2s data
+    #   m2s = m2s_perm_data[[1]]
+    #   # p_nsd
+    #   perm_nsd = sapply(histo_names, function(h) {
+    #     nsd_h = m2s_perm_data[[1]][, paste(h, "nsd", sep="_")]
+    #     nsd_h_perm = lapply(1:nb_perm, function(i) {
+    #       m2s_perm_data[[i+1]][, paste(h, "nsd", sep="_")]
+    #     })
+    #     nsd_h_perm = do.call(cbind, nsd_h_perm)
+    #     bool_nsd_h_perm = apply(nsd_h_perm, 2, function(col) {
+    #       col >= nsd_h
+    #     })
+    #     sum_bool_nsd_h_perm = apply(bool_nsd_h_perm, 1, sum) / nb_perm
+    #     return(sum_bool_nsd_h_perm)
+    #   })
+    #   colnames(perm_nsd) = paste(histo_names, "p_nsd", sep="_")
+    #   m2s = cbind(m2s, perm_nsd)
+    #   # max h ?
+    #   max_m = apply(t(m2s[, paste(histo_names, "m", sep="_")]), 2, function(l) {
+    #     max_l = max(l)
+    #     ret = histo_names[which(l == max_l)[1]]
+    #     return(ret)
+    #   })
+    #   m2s = cbind(m2s, max_m)
+    #   # sort
+    #   m2s = m2s[,sort(colnames(m2s))]
+    #   return(m2s)
     # },
     plot_boxplot = function(probe_name, exp_grp_key,  gene_name, ylim, las=2, col="grey", border="black", bp_function_name="boxplot", ...) {
       "Draw the box plot for a given `probe_name` and a given `exp_grp_key`."

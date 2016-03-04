@@ -33,13 +33,12 @@ study. It an abstract class.
 \section{Methods}{
 
 \describe{
+\item{\code{do_anova(probe_names, samples_names, exp_grp_key)}}{Performs anova test for a given `probe_name` and a given `exp_grp_key`.}
+
 \item{\code{do_gm2sd_analysis(probe_names, ctrl_exp_grp_key, case_exp_grp_key,
   ctrl_factor_name, case_factor_name, ctrl_thres_func = m2sd,
   case_value_func = mean, comp_func = get("<"), nb_perm = 100,
   MONITORED = FALSE)}}{Performs permutation test to detect right shifted expression groups for two given groups.}
-
-\item{\code{do_m2s_analysis(probe_names, exp_grp_key, ctrl_name, nb_perm = 100,
-  MONITORED = FALSE, ...)}}{Performs permutation test to detect right shifted expression groups for a given `probe_name` and a given `exp_grp_key`.}
 
 \item{\code{do_mw_test(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name,
   case_factor_name, alternative, PLOT = FALSE)}}{Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) exprtession groups for a given `probe_name` and a given `exp_grp_key`.}
