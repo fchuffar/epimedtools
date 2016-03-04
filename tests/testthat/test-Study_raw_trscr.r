@@ -24,7 +24,7 @@ test_that(".CEL.gz files could be retrieve from geo and exp_grp properly fused."
   expect_equal(dim(exp_grp), c(8,37))
 })
 
-test_that("Study_raw_trscr$data could be compute from .CEL.gz", {
+test_that("study$data could be compute from .CEL.gz", {
   study = create_study()
   kc_cel_filedir = system.file(
     "extdata/trscr_raw_kc", 

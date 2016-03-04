@@ -31,11 +31,11 @@
 #' study = create_study("/tmp/tmp_cached_study.rds")
 #' @return It returns an object that extends the Study_abstract class.
 #' @export
-create_study = function(cache_filename, Study_RC_name="Study_raw_trscr", ...) {
+create_study = function(cache_filename, ...) {
   if (missing(cache_filename)) {
-    study = get(Study_RC_name)()
+    study = Study_abstract()
   } else {
-    study = get(Study_RC_name)(cache_filename, ...)
+    study = Study_abstract(cache_filename, ...)
   }
   return(study)
 }
@@ -55,7 +55,10 @@ create_study = function(cache_filename, Study_RC_name="Study_raw_trscr", ...) {
 #' @field data A matris of experiemental data. Each column is a sample, named by it's sample name, and each row is a probes.
 #' @field platform_name A character string that describes the platform used to perform.
 #' @field exp_grp A data.frame that describe the experimental grouping. Each line is a sample.
+#' @field cel_filedirs A character string that describes the directory taht contain associated cel files.
 #' @export
+#' @importFrom Biobase exprs
+#' @importFrom affy justRMA
 #' @importFrom GEOquery Table
 #' @importFrom GEOquery getGEO
 #' @importFrom beanplot beanplot
@@ -64,6 +67,7 @@ Study_abstract = setRefClass(
   "Study_abstract",
   fields = list(
     "dest_dir" = "character",
+    cel_filedirs="character",
     "data" = "ANY",
     "exp_grp" = "ANY",
     "platform" = "ANY",
@@ -76,7 +80,7 @@ Study_abstract = setRefClass(
     "stuffs" = "ANY"
   ),
   methods = list(
-    get_data = function(CACHE=TRUE, ...) {
+    get_data = function(CACHE=FALSE, ...) {
       if (is.null(dim(.self$data))) {
         if (length(.self$gse) != 0) {
           .self$get_gset()
@@ -186,6 +190,42 @@ Study_abstract = setRefClass(
         }
       }
       return(.self$platform)
+    },
+    set_data = function(hook, ...) {
+      "Set the data field and update experiment grouping."
+      if (!missing(hook)) {
+        get(hook)(...)
+      }
+      cel_files = lapply(.self$cel_filedirs, get_cel_filenames)
+      orig = unlist(sapply(1:length(.self$cel_filedirs), function(i) {
+        split1 = unique(unlist(strsplit(.self$cel_filedirs[i], "/")))  
+        split2 = unique(unlist(strsplit(.self$cel_filedirs[-i], "/")))  
+        n = paste(split1[!(split1 %in% split2)], collapse="_")
+        n = gsub("[.]", "_", n)
+        n = gsub("__*", "_", n)
+        n = gsub("^_", "", n)
+        rep(n, length(cel_files[[i]]))
+      }))
+      cel_files = unlist(cel_files)
+      cel_files = sapply(cel_files, function(cel_file) {
+        if (substr(cel_file, 1, 1) != "/") {
+          return(paste(getwd(), "/", cel_file, sep=""))
+        } else {
+          return(cel_file)
+        }
+      })
+      cel_files_short = unlist(lapply(.self$cel_filedirs, get_cel_filenames, full.names=FALSE))
+      cel_files = cel_files[!duplicated(cel_files_short)]
+      orig = orig[!duplicated(cel_files_short)]
+      sample_names = cel_files_short[!duplicated(cel_files_short)]
+      tmp_exp_grp = data.frame(orig=orig)
+      rownames(tmp_exp_grp) = simplify_sample_names(sample_names) 
+      if (!is.null(dim(.self$get_exp_grp()))) {
+        tmp_exp_grp = fuse_exp_grp(.self$get_exp_grp(), tmp_exp_grp)
+      }
+      .self$exp_grp = tmp_exp_grp
+      .self$data = exprs(justRMA(filenames=cel_files, celfile.path=""))
+      colnames(.self$data) = simplify_sample_names(colnames(.self$data))
     },
     # Analysis method dealing with Study_abstract class intances...
     plot_qc = function(method = "boxplot", ...) {
