@@ -29,19 +29,20 @@ study. It an abstract class.
 \item{\code{platform_name}}{A character string that describes the platform used to perform.}
 
 \item{\code{exp_grp}}{A data.frame that describe the experimental grouping. Each line is a sample.}
+
+\item{\code{cel_filedirs}}{A character string that describes the directory taht contain associated cel files.}
 }}
 \section{Methods}{
 
 \describe{
 \item{\code{do_anova(probe_names, samples_names, exp_grp_key)}}{Performs anova test for a given `probe_name` and a given `exp_grp_key`.}
 
-\item{\code{do_gm2sd_analysis(probe_names, ctrl_exp_grp_key, case_exp_grp_key,
-  ctrl_factor_name, case_factor_name, ctrl_thres_func = m2sd,
-  case_value_func = mean, comp_func = get("<"), nb_perm = 100,
-  MONITORED = FALSE)}}{Performs permutation test to detect right shifted expression groups for two given groups.}
+\item{\code{do_gm2sd_analysis(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr,
+  ctrl_thres_func = m2sd, case_value_func = mean, comp_func = get("<"),
+  nb_perm = 100, MONITORED = FALSE)}}{Performs permutation test to detect right shifted expression groups for two given groups.}
 
-\item{\code{do_mw_test(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name,
-  case_factor_name, alternative, PLOT = FALSE)}}{Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) exprtession groups for a given `probe_name` and a given `exp_grp_key`.}
+\item{\code{do_mw_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, alternative,
+  PLOT = FALSE)}}{Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) expression groups for a given `probe_name` and a given `exp_grp_key`.}
 
 \item{\code{get_cel_files(dest_dir = "data", ...)}}{Retrieve .CEL.gz from NCBI GEO eweb site}
 
@@ -63,6 +64,11 @@ study. It an abstract class.
 
 \item{\code{plot_qc(method = "boxplot", ...)}}{Plot the quality control of the study.}
 
+\item{\code{pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr,
+  two_grp_test_func, ...)}}{Perform a pretreatment on data, according to `probe_names` and `exp_grp` keys and factors, before processing the dataset.}
+
 \item{\code{save(cache_filename)}}{Writes the study on the disk.}
+
+\item{\code{set_data(hook, ...)}}{Set the data field and update experiment grouping.}
 }}
 

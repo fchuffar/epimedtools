@@ -43,12 +43,12 @@ test_that("study$data could be compute from .CEL.gz", {
   expect_equal(sum(rownames(exp_grp) %in% colnames(data)), 6)
   ratio = study$get_ratio()
   expect_equal(dim(ratio), c(54675,6))
-  probe_names=rownames(data)[1:10]
-  exp_grp_key="orig"
-  ctrl_name="trscr_raw_ctrl"
-  nb_perm=10
-  m2s = study$do_m2s_analysis(probe_names=probe_names, exp_grp_key=exp_grp_key, ctrl_name=ctrl_name, nb_perm=nb_perm)
-  expect_equal(dim(m2s), c(10,7))
+  # probe_names=rownames(data)[1:10]
+  # exp_grp_key="orig"
+  # ctrl_name="trscr_raw_ctrl"
+  # nb_perm=10
+  # m2s = study$do_m2s_analysis(probe_names=probe_names, exp_grp_key=exp_grp_key, ctrl_name=ctrl_name, nb_perm=nb_perm)
+  # expect_equal(dim(m2s), c(10,7))
 })
 
 test_that("that hooks could be activated.", {

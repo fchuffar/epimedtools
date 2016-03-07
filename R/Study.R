@@ -5,7 +5,6 @@
 #' This function intanciates an object that extends the epimedtools internal abstract class Study_abstract. You can learn more about Study_abstract class by typing ?epimedtools::Study_abstract
 #' 
 #' @param cache_filename A character string that describes the study cache file name.
-#' @param Study_RC_name A character string that specify the RC to use to instanciate the object.
 #' @param ... Parameters that are given to the Study contructor
 #' @examples
 #' # create study and load data from GSE57831_series_matrix.txt.gz contained in the package
@@ -410,89 +409,84 @@ Study_abstract = setRefClass(
       pca_res$kaiser_crit = 1/length(pca_res$var)      
       return(pca_res)
     },
-    # pretreat_test = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, ...) {
-    #   # Check data
-    #   tmp_data = .self$get_data()
-    #   if (missing(probe_names)) {
-    #     probe_names = rownames(tmp_data)
-    #   }
-    #   tmp_data = tmp_data[probe_names,]
-    #   # Check exp_grp
-    #   if (!(ctrl_exp_grp_key %in% colnames(.self$get_exp_grp()))) {
-    #     stop(paste(ctrl_exp_grp_key, " is not a column name of exp_grp.", sep=""))
-    #   }
-    #   if (!(ctrl_factor_name %in% unique(.self$get_exp_grp()[[ctrl_exp_grp_key]]))) {
-    #     stop(paste(ctrl_factor_name, " is not a factor of ", ctrl_exp_grp_key, " exp_grp column.", sep=""))
-    #   }
-    #   if (!(case_exp_grp_key %in% colnames(.self$get_exp_grp()))) {
-    #     stop(paste(ctrl_exp_grp_key, " is not a column name of exp_grp.", sep=""))
-    #   }
-    #   if (!(case_factor_name %in% unique(.self$get_exp_grp()[[case_exp_grp_key]]))) {
-    #     stop(paste(case_factor_name, " is not a factor of ", case_exp_grp_key, " exp_grp column.", sep=""))
-    #   }
-    #   # sample
-    #   ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_exp_grp_key]] == ctrl_factor_name)]
-    #   case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_exp_grp_key]] == case_factor_name)]
-    #   # go!
-    #   foo = apply(tmp_data[, unique(c(ctrl_samples, case_samples))], 1, function(line, alternative, ) {
-    #     ctrl = line[ctrl_samples]
-    #     case = line[case_samples]
-    #     ctrl_median = median(ctrl)
-    #     ctrl_mean = mean(ctrl)
-    #     case_median = median(case)
-    #     case_mean = mean(case)
-    #     s = sign(case_mean - ctrl_mean)
-    #     # print(s)
-    #     fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
-    #     # d_med = case_median - ctrl_median
-    #     if (is.null(alternative)) {
-    #       if (s >= 0) {
-    #         alternative="less"
-    #       } else {
-    #         alternative="greater"
-    #       }
-    #     }
-    #     mw = wilcox.test(ctrl, case, alternative=alternative)
-    #     if (PLOT) {
-    #       beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
-    #     }
-    #     return(list(mw_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
-    #   }, alternative)
-    #   foo = do.call(rbind, foo)
-    #   foo = data.frame(lapply(data.frame(foo, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
-    #   return(foo)
-    # },
-    do_mw_test = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, alternative, PLOT=FALSE) {
-      " Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) exprtession groups for a given `probe_name` and a given `exp_grp_key`." 
-      # Check data
+    pretreat_before_a_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func, ...) {
+      " Perform a pretreatment on data, according to `probe_names` and `exp_grp` keys and factors, before processing the dataset." 
+      # Check exp_grp keys
+      if (missing(ctrl_key)) {
+        stop("You need to specify a control column key.")
+      }
+      if (missing(case_key)) {
+        case_key = ctrl_key
+      }
+      if (!(ctrl_key %in% colnames(.self$get_exp_grp()))) {
+        stop(paste(ctrl_key, " is not a column name of exp_grp.", sep=""))
+      }
+      if (!(case_key %in% colnames(.self$get_exp_grp()))) {
+        stop(paste(ctrl_key, " is not a column name of exp_grp.", sep=""))
+      }
+      # Check exp_grp factors
+      if (missing(ctrl_fctr)) {
+        ctrl_fctr = na.omit(unique(.self$get_exp_grp()[[ctrl_key]]))
+      }
+      if (missing(case_fctr)) {
+        case_fctr = na.omit(unique(.self$get_exp_grp()[[case_key]]))
+      }
+      if (case_key == ctrl_key) {
+        case_fctr = case_fctr[which(!case_fctr %in% ctrl_fctr)]
+      }
+      # preprocess groups
+      ctrl_list = lapply(ctrl_fctr, function(ctrl_f) {
+        if (!(ctrl_f %in% unique(.self$get_exp_grp()[[ctrl_key]]))) {
+          stop(paste(ctrl_f, " is not a factor of ", ctrl_key, " exp_grp column.", sep=""))
+        }
+        rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_key]] == ctrl_f)]
+      })
+      case_list = lapply(case_fctr, function(case_f) {
+        if (!(case_f %in% unique(.self$get_exp_grp()[[case_key]]))) {
+          stop(paste(case_f, " is not a factor of ", case_key, " exp_grp column.", sep=""))
+        }
+        rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_key]] == case_f)]      
+      })
+      if (length(ctrl_fctr) > 1) {
+        names(ctrl_list) = paste(ctrl_key, ctrl_fctr, sep="_")
+      }
+      if (length(case_fctr) > 1) {
+        names(case_list) = paste(case_key, case_fctr, sep="_")
+      }
+      # print(ctrl_fctr)
+      # print(ctrl_list)
+      # print(case_fctr)
+      # print(case_list)
+      # Filter data
       tmp_data = .self$get_data()
       if (missing(probe_names)) {
         probe_names = rownames(tmp_data)
       }
-      tmp_data = tmp_data[probe_names,]
-      # Check exp_grp
-      if (!(ctrl_exp_grp_key %in% colnames(.self$get_exp_grp()))) {
-        stop(paste(ctrl_exp_grp_key, " is not a column name of exp_grp.", sep=""))
-      }
-      if (!(ctrl_factor_name %in% unique(.self$get_exp_grp()[[ctrl_exp_grp_key]]))) {
-        stop(paste(ctrl_factor_name, " is not a factor of ", ctrl_exp_grp_key, " exp_grp column.", sep=""))
-      }
-      if (!(case_exp_grp_key %in% colnames(.self$get_exp_grp()))) {
-        stop(paste(ctrl_exp_grp_key, " is not a column name of exp_grp.", sep=""))
-      }
-      if (!(case_factor_name %in% unique(.self$get_exp_grp()[[case_exp_grp_key]]))) {
-        stop(paste(case_factor_name, " is not a factor of ", case_exp_grp_key, " exp_grp column.", sep=""))
-      }
-      if (missing(alternative)) {
-        alternative = NULL
-      }
-      # Get samples
-      ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_exp_grp_key]] == ctrl_factor_name)]
-      case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_exp_grp_key]] == case_factor_name)]
+      tmp_data = tmp_data[probe_names, unique(unlist(c(ctrl_list, case_list)))]
+      
       # Go!
-      foo = apply(tmp_data[, unique(c(ctrl_samples, case_samples))], 1, function(line, alternative) {
-        ctrl = line[ctrl_samples]
-        case = line[case_samples]
+      test_res = apply(tmp_data, 1, function(line, ctrl_list, case_list, ...) {
+        ctrl_ret = lapply(ctrl_list, function(ctrl_samples) {
+          case_ret = lapply(case_list, function(ctrl_samples, case_samples, two_grp_test_func, ...) {
+            ctrl = line[ctrl_samples]
+            case = line[case_samples]
+            return(two_grp_test_func(ctrl, case, ...))
+          }, ctrl_samples, two_grp_test_func=two_grp_test_func, ...)
+          case_ret = unlist(case_ret, recursive=FALSE)
+          return(case_ret)
+        })
+        ctrl_ret = unlist(ctrl_ret, recursive=FALSE)
+        # print("______________________ ")
+        # print(ret)
+        return(ctrl_ret)
+      }, ctrl_list, case_list, ...)
+      test_res = do.call(rbind, test_res)
+      test_res = data.frame(lapply(data.frame(test_res, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
+      return(test_res)
+    },
+    do_mw_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, alternative, PLOT=FALSE) {
+      " Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) expression groups for a given `probe_name` and a given `exp_grp_key`." 
+      mw_func = function(ctrl, case, alternative, PLOT)  {
         ctrl_median = median(ctrl)
         ctrl_mean = mean(ctrl)
         case_median = median(case)
@@ -501,6 +495,9 @@ Study_abstract = setRefClass(
         # print(s)
         fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
         # d_med = case_median - ctrl_median
+        if (missing(alternative)) {
+          alternative = NULL
+        }
         if (is.null(alternative)) {
           if (s >= 0) {            
             alternative="less"
@@ -513,10 +510,63 @@ Study_abstract = setRefClass(
           beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
         }
         return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
-      }, alternative)
-      foo = do.call(rbind, foo)
-      foo = data.frame(lapply(data.frame(foo, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
-      return(foo)
+      }
+      # process_group
+      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative, PLOT=FALSE)
+      return(ret)
+      # # Check data
+      # tmp_data = .self$get_data()
+      # if (missing(probe_names)) {
+      #   probe_names = rownames(tmp_data)
+      # }
+      # tmp_data = tmp_data[probe_names,]
+      # # Check exp_grp
+      # if (!(ctrl_key %in% colnames(.self$get_exp_grp()))) {
+      #   stop(paste(ctrl_key, " is not a column name of exp_grp.", sep=""))
+      # }
+      # if (!(ctrl_fctr %in% unique(.self$get_exp_grp()[[ctrl_key]]))) {
+      #   stop(paste(ctrl_fctr, " is not a factor of ", ctrl_key, " exp_grp column.", sep=""))
+      # }
+      # if (!(case_key %in% colnames(.self$get_exp_grp()))) {
+      #   stop(paste(ctrl_key, " is not a column name of exp_grp.", sep=""))
+      # }
+      # if (!(case_fctr %in% unique(.self$get_exp_grp()[[case_key]]))) {
+      #   stop(paste(case_fctr, " is not a factor of ", case_key, " exp_grp column.", sep=""))
+      # }
+      # if (missing(alternative)) {
+      #   alternative = NULL
+      # }
+      # # Get samples
+      # ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_key]] == ctrl_fctr)]
+      # case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_key]] == case_fctr)]
+      # # Go!
+      # foo = apply(tmp_data[, unique(c(ctrl_samples, case_samples))], 1, function(line, alternative) {
+      #   ctrl = line[ctrl_samples]
+      #   case = line[case_samples]
+      #   ctrl_median = median(ctrl)
+      #   ctrl_mean = mean(ctrl)
+      #   case_median = median(case)
+      #   case_mean = mean(case)
+      #   s = sign(case_mean - ctrl_mean)
+      #   # print(s)
+      #   fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
+      #   # d_med = case_median - ctrl_median
+      #   if (is.null(alternative)) {
+      #     if (s >= 0) {
+      #       alternative="less"
+      #     } else {
+      #       alternative="greater"
+      #     }
+      #   }
+      #   mw = wilcox.test(ctrl, case, alternative=alternative)
+      #   if (PLOT) {
+      #     beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
+      #   }
+      #   return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
+      # }, alternative)
+      # foo = do.call(rbind, foo)
+      # foo = data.frame(lapply(data.frame(foo, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
+      # return(foo)
     },
     do_anova = function(probe_names, samples_names, exp_grp_key) {
       "Performs anova test for a given `probe_name` and a given `exp_grp_key`."
@@ -541,11 +591,11 @@ Study_abstract = setRefClass(
         return(ret)        
       })
     },
-    do_gm2sd_analysis = function(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE) {
+    do_gm2sd_analysis = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE) {
       "Performs permutation test to detect right shifted expression groups for two given groups."
       # samples
-      ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_exp_grp_key]] == ctrl_factor_name)]
-      case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_exp_grp_key]] == case_factor_name)]
+      ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_key]] == ctrl_fctr)]
+      case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_key]] == case_fctr)]
       # data
       tmp_data = .self$get_data()
       tmp_data = tmp_data[probe_names, unique(c(ctrl_samples, case_samples))]
