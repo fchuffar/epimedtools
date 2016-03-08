@@ -29,13 +29,19 @@ print(study$get_exp_grp())
 
 ## ------------------------------------------------------------------------
 # selecting intersting probes
-probe_names = rownames(study$get_data())[1:10]
+probe_names = rownames(study$get_data())
 # subset dataset
 ctrl_exp_grp_key = "orig"
 case_exp_grp_key = "orig"
 ctrl_factor_name = "trscr_raw_ctrl"
 case_factor_name = "trscr_raw_kc"
 
-mw_pval = study$do_mw_test(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name)
+mw_res = study$do_mw_test(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name)
+
+# Whitout FDR
+plot(mw_res$mean_fc, -log10(mw_res$mw_pval))
+# Whit FDR 
+# plot(mw_res$mean_fc, -log10(p.adjust(mw_res$mw_pval, "BH")))
+abline(h=-log10(0.05), lty=3)
 
 

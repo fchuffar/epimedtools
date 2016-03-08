@@ -15,6 +15,7 @@ test_that("do_gm2sd_analysis works", {
   # case_fctr = "Placenta"
 
   gm2sd = study$do_gm2sd_analysis(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE)
+  # print(gm2sd)
   expect_equal(dim(gm2sd), c(10,3))
 
   gm2sd0 = study$do_gm2sd_analysis(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=0, MONITORED=FALSE)
@@ -36,7 +37,7 @@ test_that("do_mw_test works", {
   case_fctr = "Smoker"
 
   mw = study$do_mw_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr)
-  print(mw)
+  # print(mw)
   expect_equal(dim(mw), c(10,2))
 })
 
@@ -57,7 +58,7 @@ test_that("do_mw_test works", {
 
   mw = study$do_mw_test(probe_names, ctrl_key=ctrl_key, case_key=case_key, ctrl_fctr=ctrl_fctr)
   # mw = study$do_mw_test(probe_names, ctrl_key=ctrl_key, case_key=case_key)
-  print(mw)
+  # print(mw)
   expect_equal(dim(mw), c(10,4))
 })
 

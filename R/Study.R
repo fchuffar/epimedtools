@@ -511,62 +511,46 @@ Study_abstract = setRefClass(
         }
         return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
       }
-      # process_group
-      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative, PLOT=FALSE)
+      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative, PLOT)
       return(ret)
-      # # Check data
-      # tmp_data = .self$get_data()
-      # if (missing(probe_names)) {
-      #   probe_names = rownames(tmp_data)
-      # }
-      # tmp_data = tmp_data[probe_names,]
-      # # Check exp_grp
-      # if (!(ctrl_key %in% colnames(.self$get_exp_grp()))) {
-      #   stop(paste(ctrl_key, " is not a column name of exp_grp.", sep=""))
-      # }
-      # if (!(ctrl_fctr %in% unique(.self$get_exp_grp()[[ctrl_key]]))) {
-      #   stop(paste(ctrl_fctr, " is not a factor of ", ctrl_key, " exp_grp column.", sep=""))
-      # }
-      # if (!(case_key %in% colnames(.self$get_exp_grp()))) {
-      #   stop(paste(ctrl_key, " is not a column name of exp_grp.", sep=""))
-      # }
-      # if (!(case_fctr %in% unique(.self$get_exp_grp()[[case_key]]))) {
-      #   stop(paste(case_fctr, " is not a factor of ", case_key, " exp_grp column.", sep=""))
-      # }
-      # if (missing(alternative)) {
-      #   alternative = NULL
-      # }
-      # # Get samples
-      # ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_key]] == ctrl_fctr)]
-      # case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_key]] == case_fctr)]
-      # # Go!
-      # foo = apply(tmp_data[, unique(c(ctrl_samples, case_samples))], 1, function(line, alternative) {
-      #   ctrl = line[ctrl_samples]
-      #   case = line[case_samples]
-      #   ctrl_median = median(ctrl)
-      #   ctrl_mean = mean(ctrl)
-      #   case_median = median(case)
-      #   case_mean = mean(case)
-      #   s = sign(case_mean - ctrl_mean)
-      #   # print(s)
-      #   fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
-      #   # d_med = case_median - ctrl_median
-      #   if (is.null(alternative)) {
-      #     if (s >= 0) {
-      #       alternative="less"
-      #     } else {
-      #       alternative="greater"
-      #     }
-      #   }
-      #   mw = wilcox.test(ctrl, case, alternative=alternative)
-      #   if (PLOT) {
-      #     beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
-      #   }
-      #   return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
-      # }, alternative)
-      # foo = do.call(rbind, foo)
-      # foo = data.frame(lapply(data.frame(foo, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
-      # return(foo)
+    },
+    do_gm2sd_analysis = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE) {
+      "Performs permutation test to detect right shifted expression groups for two given groups."
+      gm2sd_func = function(ctrl, case, ctrl_thres_func, case_value_func, comp_func, nb_perm, MONITORED)  {
+        ctrl_thres = ctrl_thres_func(ctrl)
+        freq = sum(comp_func(ctrl_thres, case)) / length(case)
+        if (MONITORED) {
+          apply_function_name = "monitored_apply"
+        } else {
+          apply_function_name = "apply"
+        }
+        perm_data = get(apply_function_name)(t(0:nb_perm), 2, function(perm){
+          if (perm > 0) {
+            set.seed(perm)
+            pooled_values = sample(c(ctrl, case))
+            ctrl = pooled_values[1:length(ctrl)]
+            case = pooled_values[(length(ctrl)+1):length(pooled_values)]
+          }
+          # ctrl
+          ctrl_thres = ctrl_thres_func(ctrl)
+          case_value = case_value_func(case)
+          comp = comp_func(ctrl_thres, case_value)
+          return(comp)
+        })
+        # print(perm_data)
+        idx = perm_data[1]
+        if (nb_perm > 0) {
+          pval = sum(perm_data[2:(nb_perm+1)])/nb_perm
+          pval[pval == 0] = 1 / (10*nb_perm)
+        } else {
+          pval = rep(1, length(idx))
+        }
+        return(list(idx=idx, pval=pval, freq=freq))
+        # return(list(freq=freq))
+      }
+      # process_group
+      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=gm2sd_func, ctrl_thres_func, case_value_func, comp_func, nb_perm, MONITORED)
+      return(ret)
     },
     do_anova = function(probe_names, samples_names, exp_grp_key) {
       "Performs anova test for a given `probe_name` and a given `exp_grp_key`."
@@ -590,55 +574,6 @@ Study_abstract = setRefClass(
         ret = list(shap=shap, pval=pval)
         return(ret)        
       })
-    },
-    do_gm2sd_analysis = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE) {
-      "Performs permutation test to detect right shifted expression groups for two given groups."
-      # samples
-      ctrl_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[ctrl_key]] == ctrl_fctr)]
-      case_samples = rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_key]] == case_fctr)]
-      # data
-      tmp_data = .self$get_data()
-      tmp_data = tmp_data[probe_names, unique(c(ctrl_samples, case_samples))]
-      # do permutations
-      if (MONITORED) {
-        apply_function_name = "monitored_apply"
-      } else {
-        apply_function_name = "apply"        
-      }
-      # go!
-      # freq
-      freq = apply(tmp_data, 1, function(line) {
-        ctrl = line[ctrl_samples]
-        case = line[case_samples]
-        ctrl_thres = ctrl_thres_func(ctrl)
-        freq = sum(comp_func(ctrl_thres, case)) / length(case)
-        return(freq)
-      })
-      perm_data = get(apply_function_name)(t(0:nb_perm), 2, function(perm){
-        cur_data = tmp_data
-        if (perm > 0) {
-          set.seed(perm)
-          colnames(cur_data) = sample(colnames(cur_data)) 
-        }
-        # ctrl
-        ret = apply(cur_data, 1, function(line) {
-          ctrl = line[ctrl_samples]
-          case = line[case_samples]
-          ctrl_thres = ctrl_thres_func(ctrl)
-          case_value = case_value_func(case)
-          comp = comp_func(ctrl_thres, case_value)
-          return(comp)
-        })
-        return(ret)
-      })
-      idx = perm_data[,1]
-      if (nb_perm > 0) {
-        pval = apply(t(perm_data[,2:(nb_perm+1)]), 2, sum)/nb_perm        
-        pval[pval == 0] = 1/ (10*nb_perm)
-      } else {
-        pval = rep(1, length(idx))
-      }
-      return(data.frame(idx=idx, pval=pval, freq=freq))
     },
     # plot_m2s_analysis = function(m2s, histo, label_col_names="gene", xlim, ...) {
     #   h = histo
