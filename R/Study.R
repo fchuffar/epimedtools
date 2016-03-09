@@ -463,13 +463,21 @@ Study_abstract = setRefClass(
         probe_names = rownames(tmp_data)
       }
       tmp_data = tmp_data[probe_names, unique(unlist(c(ctrl_list, case_list)))]
-      
+      if (length(probe_names) == 1) {
+        tmp_data = t(as.matrix(tmp_data))
+      }
+      # print(tmp_data)
       # Go!
       test_res = apply(tmp_data, 1, function(line, ctrl_list, case_list, ...) {
         ctrl_ret = lapply(ctrl_list, function(ctrl_samples) {
-          case_ret = lapply(case_list, function(ctrl_samples, case_samples, two_grp_test_func, ...) {
+          case_ret = lapply(case_list, function(case_samples, ctrl_samples, two_grp_test_func, ...) {
             ctrl = line[ctrl_samples]
             case = line[case_samples]
+            # print("____________________________")
+            # print(ctrl)
+            # print("            ____            ")
+            # print(case)
+            # print("____________________________")
             return(two_grp_test_func(ctrl, case, ...))
           }, ctrl_samples, two_grp_test_func=two_grp_test_func, ...)
           case_ret = unlist(case_ret, recursive=FALSE)
@@ -552,6 +560,65 @@ Study_abstract = setRefClass(
       ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=gm2sd_func, ctrl_thres_func, case_value_func, comp_func, nb_perm, MONITORED)
       return(ret)
     },
+    # # do_mw_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, alternative, PLOT=FALSE) {
+    # plot_boxplot2 = function(probe_name, exp_grp_key,  gene_name, ylim, las=2, col="grey", border="black", bp_function_name="boxplot", ...) {
+    #   "Draw the box plot for a given `probe_name` and a given `exp_grp_key`."
+    #   boxplot_func = function(ctrl, case, alternative, PLOT)  {
+    #     ctrl_median = median(ctrl)
+    #     ctrl_mean = mean(ctrl)
+    #     case_median = median(case)
+    #     case_mean = mean(case)
+    #     s = sign(case_mean - ctrl_mean)
+    #     # print(s)
+    #     fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
+    #     # d_med = case_median - ctrl_median
+    #     if (missing(alternative)) {
+    #       alternative = NULL
+    #     }
+    #     if (is.null(alternative)) {
+    #       if (s >= 0) {
+    #         alternative="less"
+    #       } else {
+    #         alternative="greater"
+    #       }
+    #     }
+    #     mw = wilcox.test(ctrl, case, alternative=alternative)
+    #     if (PLOT) {
+    #       beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
+    #     }
+    #     return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
+    #   }
+    #   ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative, PLOT)
+    #   return(ret)
+    #
+    #   idx_sample = rownames(.self$get_exp_grp())
+    #   # Dealing with ratio data, reduce data to interesting probes and samples
+    #   filtred_bp_data = .self$get_data()[probe_name, idx_sample]
+    #   # Box plots
+    #   if (missing(ylim)) {
+    #     ylim = c(min(filtred_bp_data), max(filtred_bp_data))
+    #   }
+    #   if (missing(gene_name)) {
+    #     main = probe_name
+    #   } else {
+    #     main = paste(gene_name, probe_name, sep="@")
+    #   }
+    #       # boxplot_filename <- paste(study_dirname, "/", gene, "_", probe_name, "_", exp_grp_key, ".pdf", sep="")
+    #       # pdf(file=boxplot_filename, height=10, width=10)# open jpeg device with specified dimensions
+    #   bp_function = get(bp_function_name)
+    #       bp_function(filtred_bp_data~.self$get_exp_grp()[,exp_grp_key], # open boxplot
+    #       # what=c(1,1,1,0),
+    #         ylim = ylim,                     # fixed vertical scale
+    #         col = col, border = border,  # colors of inside and border of box
+    #         las = las,                         # written vertically
+    #         xlab = exp_grp_key,
+    #         main = main, # title
+    #     ...
+    #       )
+    #       # dev.off()
+    #
+    #
+    # },
     do_anova = function(probe_names, samples_names, exp_grp_key) {
       "Performs anova test for a given `probe_name` and a given `exp_grp_key`."
       # Check data
@@ -575,6 +642,7 @@ Study_abstract = setRefClass(
         return(ret)        
       })
     },
+    
     # plot_m2s_analysis = function(m2s, histo, label_col_names="gene", xlim, ...) {
     #   h = histo
     #   nsd = m2s[[paste(h, "nsd", sep="_")]]

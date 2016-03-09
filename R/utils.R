@@ -26,7 +26,7 @@ FDR = function (x, FDR)
 #' @return a fake study.
 #' @export
 get_fake_study = function(nb_samples = 12, nb_probes = 10) {
-  data = matrix(round(rnorm(nb_probes * nb_samples),3), nb_probes)
+  data = matrix(round(c(rnorm(nb_probes * floor(nb_samples/2)), rnorm(nb_probes * ceiling(nb_samples/2), 3,1)),3), nb_probes)
   data = data - min(data)
   colnames(data) = c(paste(rep("ctrl", nb_samples/2), 1:(nb_samples/2), sep=""), paste(rep("case", nb_samples/2), 1:(nb_samples/2), sep=""))
   rownames(data) = paste(rep("prb", nb_probes), 1:nb_probes, sep="")

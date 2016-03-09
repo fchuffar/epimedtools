@@ -60,6 +60,7 @@ test_that("do_mw_test works", {
   # mw = study$do_mw_test(probe_names, ctrl_key=ctrl_key, case_key=case_key)
   # print(mw)
   expect_equal(dim(mw), c(10,4))
+  expect_gt(mw[1,1], 0)
 })
 
 
