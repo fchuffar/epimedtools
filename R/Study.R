@@ -184,6 +184,8 @@ Study_abstract = setRefClass(
             .self$platform_filename = paste(dest_dir, "/", .self$get_platform_name(), ".soft", sep="")
           }
         }
+        .self$platform$ID = as.character(.self$platform$ID)
+        rownames(.self$platform) = .self$platform$ID
         if (CACHE) {
           .self$save()
         }
@@ -321,7 +323,19 @@ Study_abstract = setRefClass(
         })))
       } else {
         probes = as.character(pf[grep(gene, pf[[pf_col_name]]), ]$ID)    
+        probes = sapply(probes, function(probe) {
+          entry = as.character(pf[probe, pf_col_name])
+          # print(entry)
+          if (gene %in% unlist(strsplit(entry, "[ /]+"))) {
+            return(probe)
+          } else {
+            return(NULL)
+          }
+        })
+        probes = unlist(probes)
+        # print(pf[probes, pf_col_name])
       }
+      return(probes)
     },
     get_probe_gene_tab = function(gene, DEEP_SEARCH=FALSE, pf_col_name="Gene Symbol", ...) {
       "Build a gene / probe table from a gene list."
@@ -409,7 +423,7 @@ Study_abstract = setRefClass(
       pca_res$kaiser_crit = 1/length(pca_res$var)      
       return(pca_res)
     },
-    pretreat_before_a_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func, ...) {
+    pretreat_before_a_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func, for_each_line_process_groups_func="for_each_line_process_groups_two_by_two_func", ...) {
       " Perform a pretreatment on data, according to `probe_names` and `exp_grp` keys and factors, before processing the dataset." 
       # Check exp_grp keys
       if (missing(ctrl_key)) {
@@ -468,7 +482,7 @@ Study_abstract = setRefClass(
       }
       # print(tmp_data)
       # Go!
-      test_res = apply(tmp_data, 1, function(line, ctrl_list, case_list, ...) {
+      for_each_line_process_groups_two_by_two_func = function(line, ctrl_list, case_list, ...) {
         ctrl_ret = lapply(ctrl_list, function(ctrl_samples) {
           case_ret = lapply(case_list, function(case_samples, ctrl_samples, two_grp_test_func, ...) {
             ctrl = line[ctrl_samples]
@@ -487,6 +501,13 @@ Study_abstract = setRefClass(
         # print("______________________ ")
         # print(ret)
         return(ctrl_ret)
+      }
+      for_each_line_process_all_groups_func = function(line, ctrl_list, case_list, ...) {
+        
+        return(NULL)
+      }
+      test_res = apply(tmp_data, 1, function(line, ctrl_list, case_list, ...) {
+        get(for_each_line_process_groups_func)(line, ctrl_list, case_list, ...)
       }, ctrl_list, case_list, ...)
       test_res = do.call(rbind, test_res)
       test_res = data.frame(lapply(data.frame(test_res, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
@@ -519,7 +540,7 @@ Study_abstract = setRefClass(
         }
         return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
       }
-      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative, PLOT)
+      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative=alternative, PLOT=PLOT)
       return(ret)
     },
     do_gm2sd_analysis = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE) {
@@ -557,7 +578,7 @@ Study_abstract = setRefClass(
         # return(list(freq=freq))
       }
       # process_group
-      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=gm2sd_func, ctrl_thres_func, case_value_func, comp_func, nb_perm, MONITORED)
+      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=gm2sd_func, ctrl_thres_func=ctrl_thres_func, case_value_func=case_value_func, comp_func=comp_func, nb_perm=nb_perm, MONITORED=MONITORED)
       return(ret)
     },
     # # do_mw_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, alternative, PLOT=FALSE) {
