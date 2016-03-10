@@ -13,6 +13,6 @@ simplify_sample_names(sample_names)
 A character vector that describes simplified sample names.
 }
 \description{
-This function simplfy sample names.
+This function simplfies sample names.
 }
 

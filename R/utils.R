@@ -57,7 +57,7 @@ m2sd = function(ctrl) {
 }
 #' A Function That Simplify Sample Names.
 #'
-#' This function simplfy sample names.
+#' This function simplfies sample names.
 #' 
 #' @param sample_names A character vector that describes the sample names.
 #' @return A character vector that describes simplified sample names.
@@ -74,7 +74,51 @@ simplify_sample_names = function(sample_names) {
   # sample_names = do.call(cbind, t(sample_names))
   return(sample_names)
 }
-
+#' A Function That Simplify Factor Names.
+#'
+#' This function simplfies factor names.
+#' 
+#' @param factor_names A character vector that describes the factor names.
+#' @return A character vector that describes simplified factor names.
+#' @export
+simplify_factor_names = function(factor_names) {
+  factor_names = as.character(factor_names)
+  one_way = function(factor_names) {
+    # print(factor_names)
+    l = min(sapply(unique(factor_names), nchar)) 
+    f = strsplit(substr(as.character(factor_names), 0, l), "")   
+    m = do.call(rbind, f)
+    vl = apply(m, 2, function(col) {
+      length(unique(col))
+    })
+    d_idx = which(vl!=1)[1]
+    factor_names = substr(factor_names, d_idx, 100000L)
+    # print(factor_names)
+    return(factor_names)    
+  }
+  str_rev = function(factor_names) {
+    sapply(lapply(strsplit(factor_names, ""), rev), function(s) { paste(s, collapse='')})
+  }
+  factor_names = one_way(factor_names)
+  factor_names = str_rev(factor_names)
+  factor_names = one_way(factor_names)
+  factor_names = str_rev(factor_names)
+  return(factor_names)
+}
+#' A Function That Simplify Column Names.
+#'
+#' This function simplfies column names.
+#' 
+#' @param column_names A character vector that describes the column names.
+#' @return A character vector that describes simplified column names.
+#' @export
+simplify_column_names = function(column_names) {
+  n = tolower(column_names)
+  n = gsub("[.]", "_", n)
+  n = gsub("_+", "_", n)
+  n = gsub("^_", "", n)
+  return(n)
+}
 #' Retrieve Directory's .CEL.gz Files.
 #'
 #' This function takes a directory as parameter and return a string vector of the .CEL.gz files 

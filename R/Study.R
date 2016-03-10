@@ -388,12 +388,15 @@ Study_abstract = setRefClass(
       if (missing(xlim)) {
         xlim=c(0, min(length(pca_res$var), 50))
       }
-      barplot(pca_res$pvar, xlab="PC", ylab="% of var", xlim=xlim)
+      barplot(pca_res$pvar, xlab="PC", ylab="% of var", xlim=xlim, ...)
       barplot(pca_res$bs[,2], add=TRUE, col=adjustcolor(2, alpha.f=0.1))
       legend("topright", col=c(1,2), legend=c("eigenvalues", "broken-stick"), pch=15)
       # abline(h=pca_res$kaiser_crit)
     },
     plot_pca_pc = function(pca_res, pc1=1, pc2=2, exp_grp_key, col, LEGEND=TRUE, ...) {
+      if (missing(exp_grp_key)) {
+        col = 1
+      }
       if (missing(col)) {
         col = as.factor(.self$get_exp_grp()[rownames(pca_res$x),][[exp_grp_key]])        
       }
@@ -415,7 +418,8 @@ Study_abstract = setRefClass(
       }
       pca_data = .self$get_data()[probe_names, sample_names]
       # pca_res = FactoMineR::PCA(t(pca_data), graph=FALSE, ncp=8)
-      pca_res = prcomp(t(pca_data), scale. = TRUE, ...)
+      pca_data[apply(t(pca_data), 2, var, na.rm=TRUE) != 0, ]
+      pca_res = prcomp(t(pca_data[apply(pca_data, 1, var, na.rm=TRUE) != 0, ]), scale. = TRUE, ...)
       pca_res$var = pca_res$sdev * pca_res$sdev
       pca_res$pvar = pca_res$var/ sum(pca_res$var)
       pca_res$bs = broken_stick(length(pca_res$pvar))
@@ -461,12 +465,15 @@ Study_abstract = setRefClass(
         }
         rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_key]] == case_f)]      
       })
-      if (length(ctrl_fctr) > 1) {
+      # if (length(ctrl_fctr) > 1) {
         names(ctrl_list) = paste(ctrl_key, ctrl_fctr, sep="_")
-      }
-      if (length(case_fctr) > 1) {
+        if (length(ctrl_fctr) > 1) {
+          names(ctrl_list) = simplify_factor_names(names(ctrl_list))
+        }
         names(case_list) = paste(case_key, case_fctr, sep="_")
-      }
+        if (length(case_fctr) > 1) {
+          names(case_list) = simplify_factor_names(names(case_list))
+        }
       # print(ctrl_fctr)
       # print(ctrl_list)
       # print(case_fctr)
@@ -503,14 +510,30 @@ Study_abstract = setRefClass(
         return(ctrl_ret)
       }
       for_each_line_process_all_groups_func = function(line, ctrl_list, case_list, ...) {
-        
+        unified_list = c(ctrl_list, case_list)
+        # print(unified_list)
+        samples = unlist(unified_list)
+        filtred_bp_data = line[samples]
+        filtred_bp_factors = as.factor(unlist(lapply(names(unified_list),function(n){rep(n, length(unified_list[[n]]))})))
+        # print("-------------------------------------------------")
+        # print(names(unified_list))
+        # print(length(samples))
+        # print(length(filtred_bp_data))
+        # print(filtred_bp_data)
+        # print(length(filtred_bp_factors))
+        # print(filtred_bp_factors)
+        two_grp_test_func(filtred_bp_data, filtred_bp_factors, "prb", "gn", ...)
+        # filtred_bp_factors, probe_name, gene_name
         return(NULL)
       }
       test_res = apply(tmp_data, 1, function(line, ctrl_list, case_list, ...) {
         get(for_each_line_process_groups_func)(line, ctrl_list, case_list, ...)
       }, ctrl_list, case_list, ...)
-      test_res = do.call(rbind, test_res)
-      test_res = data.frame(lapply(data.frame(test_res, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
+      # print(test_res)
+      if (!is.null(test_res)) {
+        test_res = do.call(rbind, test_res)
+        test_res = data.frame(lapply(data.frame(test_res, stringsAsFactors=FALSE), unlist), stringsAsFactors=FALSE)
+      }
       return(test_res)
     },
     do_mw_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, alternative, PLOT=FALSE) {
@@ -581,65 +604,36 @@ Study_abstract = setRefClass(
       ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=gm2sd_func, ctrl_thres_func=ctrl_thres_func, case_value_func=case_value_func, comp_func=comp_func, nb_perm=nb_perm, MONITORED=MONITORED)
       return(ret)
     },
-    # # do_mw_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, alternative, PLOT=FALSE) {
-    # plot_boxplot2 = function(probe_name, exp_grp_key,  gene_name, ylim, las=2, col="grey", border="black", bp_function_name="boxplot", ...) {
-    #   "Draw the box plot for a given `probe_name` and a given `exp_grp_key`."
-    #   boxplot_func = function(ctrl, case, alternative, PLOT)  {
-    #     ctrl_median = median(ctrl)
-    #     ctrl_mean = mean(ctrl)
-    #     case_median = median(case)
-    #     case_mean = mean(case)
-    #     s = sign(case_mean - ctrl_mean)
-    #     # print(s)
-    #     fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
-    #     # d_med = case_median - ctrl_median
-    #     if (missing(alternative)) {
-    #       alternative = NULL
-    #     }
-    #     if (is.null(alternative)) {
-    #       if (s >= 0) {
-    #         alternative="less"
-    #       } else {
-    #         alternative="greater"
-    #       }
-    #     }
-    #     mw = wilcox.test(ctrl, case, alternative=alternative)
-    #     if (PLOT) {
-    #       beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
-    #     }
-    #     return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
-    #   }
-    #   ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative, PLOT)
-    #   return(ret)
-    #
-    #   idx_sample = rownames(.self$get_exp_grp())
-    #   # Dealing with ratio data, reduce data to interesting probes and samples
-    #   filtred_bp_data = .self$get_data()[probe_name, idx_sample]
-    #   # Box plots
-    #   if (missing(ylim)) {
-    #     ylim = c(min(filtred_bp_data), max(filtred_bp_data))
-    #   }
-    #   if (missing(gene_name)) {
-    #     main = probe_name
-    #   } else {
-    #     main = paste(gene_name, probe_name, sep="@")
-    #   }
-    #       # boxplot_filename <- paste(study_dirname, "/", gene, "_", probe_name, "_", exp_grp_key, ".pdf", sep="")
-    #       # pdf(file=boxplot_filename, height=10, width=10)# open jpeg device with specified dimensions
-    #   bp_function = get(bp_function_name)
-    #       bp_function(filtred_bp_data~.self$get_exp_grp()[,exp_grp_key], # open boxplot
-    #       # what=c(1,1,1,0),
-    #         ylim = ylim,                     # fixed vertical scale
-    #         col = col, border = border,  # colors of inside and border of box
-    #         las = las,                         # written vertically
-    #         xlab = exp_grp_key,
-    #         main = main, # title
-    #     ...
-    #       )
-    #       # dev.off()
-    #
-    #
-    # },
+    # do_mw_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, alternative, PLOT=FALSE) {
+    plot_boxplot2 = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ylim, las=2, col="grey", border="black", bp_function_name="boxplot") {
+      "Draw the box plot for a given `probe_name` and a given `exp_grp_key`."
+      boxplot_func = function(filtred_bp_data, filtred_bp_factors, probe_name, gene_name, ylim=ylim, las=2, col="grey", border="black", bp_function_name="boxplot", ...)  {
+        # Box plots
+        if (missing(ylim)) {
+          ylim = c(min(filtred_bp_data), max(filtred_bp_data))
+        }
+        if (missing(gene_name)) {
+          main = probe_name
+        } else {
+          main = paste(gene_name, probe_name, sep="@")
+        }
+        # boxplot_filename <- paste(study_dirname, "/", gene, "_", probe_name, "_", exp_grp_key, ".pdf", sep="")
+        # pdf(file=boxplot_filename, height=10, width=10)# open jpeg device with specified dimensions
+        bp_function = get(bp_function_name)
+        bp_function(filtred_bp_data~filtred_bp_factors, # open boxplot
+        # what=c(1,1,1,0),
+          ylim = ylim,                     # fixed vertical scale
+          col = col, border = border,  # colors of inside and border of box
+          las = las,                         # written vertically
+          # xlab = exp_grp_key,
+          main = main, # title
+          ...
+        )
+        # dev.off()
+      }
+      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=boxplot_func, for_each_line_process_groups_func="for_each_line_process_all_groups_func")
+      return(ret)
+    },
     do_anova = function(probe_names, samples_names, exp_grp_key) {
       "Performs anova test for a given `probe_name` and a given `exp_grp_key`."
       # Check data

@@ -62,10 +62,15 @@ study. It an abstract class.
 \item{\code{plot_boxplot(probe_name, exp_grp_key, gene_name, ylim, las = 2,
   col = "grey", border = "black", bp_function_name = "boxplot", ...)}}{Draw the box plot for a given `probe_name` and a given `exp_grp_key`.}
 
+\item{\code{plot_boxplot2(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ylim,
+  las = 2, col = "grey", border = "black", bp_function_name = "boxplot")}}{Draw the box plot for a given `probe_name` and a given `exp_grp_key`.}
+
 \item{\code{plot_qc(method = "boxplot", ...)}}{Plot the quality control of the study.}
 
 \item{\code{pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr,
-  two_grp_test_func, ...)}}{Perform a pretreatment on data, according to `probe_names` and `exp_grp` keys and factors, before processing the dataset.}
+  two_grp_test_func,
+  for_each_line_process_groups_func = "for_each_line_process_groups_two_by_two_func",
+  ...)}}{Perform a pretreatment on data, according to `probe_names` and `exp_grp` keys and factors, before processing the dataset.}
 
 \item{\code{save(cache_filename)}}{Writes the study on the disk.}
 
