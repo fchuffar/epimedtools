@@ -53,6 +53,8 @@ test_that("simplified_XXX_names do the job.", {
   expect_equal(simplify_factor_names(c("a_bb_c", "a_b_c_c"), "_"), c("bb", "b_c"))
   expect_equal(simplify_factor_names(c("bb", "b"), "_"), c("bb", "b"))
   expect_equal(simplify_factor_names(c("bb", "b_c"), "_"), c("bb", "b_c"))
+  factor_names = c("aa", "aaa")
+  simplify_factor_names(c("aa", "aaa"))
 })
 
 test_that("do_mw_test works", {

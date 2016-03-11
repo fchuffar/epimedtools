@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{simplify_sample_names}
 \alias{simplify_sample_names}
-\title{A Function That Simplify Sample Names.}
+\title{A Function That Simplifies Sample Names.}
 \usage{
 simplify_sample_names(sample_names)
 }
@@ -13,6 +13,6 @@ simplify_sample_names(sample_names)
 A character vector that describes simplified sample names.
 }
 \description{
-This function simplfies sample names.
+This function simplyfies sample names.
 }
 

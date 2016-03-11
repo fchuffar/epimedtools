@@ -1,3 +1,39 @@
+#' A Function That Summarizes Expriment Grouping.
+#'
+#' This function summarizes expriment grouping.
+#' 
+#' @param exp_grp a dataframe that describes the experimental grouping.
+#' @export
+summarize_exp_grp = function(exp_grp) {
+  foo = sapply(colnames(exp_grp), function(cn) {
+    nb_fact = length(unique(exp_grp[[cn]]))
+    if (nb_fact > 1 & nb_fact < length(exp_grp[[cn]])) {
+      print(paste("____________________________", cn, "____________________________"))
+      print(table(exp_grp[[cn]]))
+    }
+  })
+}
+#' A Function That Simplifies Expriment Grouping.
+#'
+#' This function simplyfies expriment grouping.
+#' 
+#' @param exp_grp a dataframe that describes the experimental grouping.
+#' @return a simplified experimental grouping.
+#' @export
+simplify_exp_grp = function(exp_grp) {
+  colnames(exp_grp) = simplify_column_names(colnames(exp_grp))
+  col_div = apply(exp_grp, 2, function(col) {
+    length(unique(col))
+  })
+  exp_grp = exp_grp[,col_div != 1]
+  for (n in colnames(exp_grp)) {
+    exp_grp[[n]] = simplify_column_names(exp_grp[[n]])
+    
+    exp_grp[[n]] = simplify_factor_names(exp_grp[[n]])
+  }
+  return(exp_grp)
+}
+
 #' A Function That Computes de False Discovery Rate.
 #'
 #' This function computes the false discovery rate from a vector of independent p-values. 
@@ -55,9 +91,9 @@ get_fake_study = function(nb_samples = 12, nb_probes = 10) {
 m2sd = function(ctrl) {
   mean(ctrl) + 2 * sd(ctrl)
 }
-#' A Function That Simplify Sample Names.
+#' A Function That Simplifies Sample Names.
 #'
-#' This function simplfies sample names.
+#' This function simplyfies sample names.
 #' 
 #' @param sample_names A character vector that describes the sample names.
 #' @return A character vector that describes simplified sample names.
@@ -74,9 +110,9 @@ simplify_sample_names = function(sample_names) {
   # sample_names = do.call(cbind, t(sample_names))
   return(sample_names)
 }
-#' A Function That Simplify Factor Names.
+#' A Function That Simplifies Factor Names.
 #'
-#' This function simplfies factor names.
+#' This function simplyfies factor names.
 #' 
 #' @param factor_names A character vector that describes the factor names.
 #' @param split character passed to strsplit function as split.
@@ -94,13 +130,17 @@ simplify_factor_names = function(factor_names, split="", fixed=FALSE) {
       length(unique(col))
     })
     d_idx = which(vl!=1)
-    if (length(d_idx) >= 1) {
-      fd_idx = d_idx[1] - 1
-      if (fd_idx > 0) {
-        to_be_remove = paste(c(f[[1]][1:fd_idx], ""), collapse=split)
-        factor_names = gsub(paste("^", to_be_remove, sep=""), "", factor_names, fixed=fixed)        
-        # factor_names = gsub(to_be_remove, "", factor_names, fixed=fixed)
+    if (length(d_idx) == 0) {
+      d_idx = length(vl)
+    }
+    fd_idx = d_idx[1] - 1
+    if (fd_idx > 0) {
+      to_be_remove = paste(c(f[[1]][1:fd_idx], ""), collapse=split)
+      if (!fixed) {
+        to_be_remove = paste("^", to_be_remove, sep="")
       }
+      factor_names = gsub(to_be_remove, "", factor_names, fixed=fixed)        
+      # factor_names = gsub(to_be_remove, "", factor_names, fixed=fixed)
     }
     # factor_names = substr(factor_names, d_idx, 100000L)
     # print(factor_names)
@@ -117,9 +157,9 @@ simplify_factor_names = function(factor_names, split="", fixed=FALSE) {
   
   return(factor_names)
 }
-#' A Function That Simplify Column Names.
+#' A Function That Simplifies Column Names.
 #'
-#' This function simplfies column names.
+#' This function simplyfies column names.
 #' 
 #' @param column_names A character vector that describes the column names.
 #' @return A character vector that describes simplified column names.

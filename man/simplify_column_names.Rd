@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{simplify_column_names}
 \alias{simplify_column_names}
-\title{A Function That Simplify Column Names.}
+\title{A Function That Simplifies Column Names.}
 \usage{
 simplify_column_names(column_names)
 }
@@ -13,6 +13,6 @@ simplify_column_names(column_names)
 A character vector that describes simplified column names.
 }
 \description{
-This function simplfies column names.
+This function simplyfies column names.
 }
 

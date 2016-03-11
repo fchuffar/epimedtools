@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{simplify_factor_names}
 \alias{simplify_factor_names}
-\title{A Function That Simplify Factor Names.}
+\title{A Function That Simplifies Factor Names.}
 \usage{
 simplify_factor_names(factor_names, split = "", fixed = FALSE)
 }
@@ -17,6 +17,6 @@ simplify_factor_names(factor_names, split = "", fixed = FALSE)
 A character vector that describes simplified factor names.
 }
 \description{
-This function simplfies factor names.
+This function simplyfies factor names.
 }
 
