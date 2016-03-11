@@ -42,6 +42,19 @@ test_that("do_mw_test works", {
 })
 
 
+test_that("simplified_XXX_names do the job.", {
+  colnames_mw_res = c("histo_other.histo_neuro.mean_fc.res", "histo_other.histo_neuro.mw_pval.res")
+  simplified_colnames_mw_res = simplify_column_names(colnames_mw_res)
+  expect_equal(simplified_colnames_mw_res, c("histo_other_histo_neuro_mean_fc_res", "histo_other_histo_neuro_mw_pval_res"))
+  # factor_names = c("histo_other_histo_neuro_mean_fc_res", "histo_other_histo_neuro_mw_pval_res")
+  simplified_factnames_mw_res = simplify_factor_names(simplified_colnames_mw_res, "_")
+  expect_equal(simplified_factnames_mw_res, c("mean_fc", "mw_pval"))
+  expect_equal(simplify_factor_names(c("a_bb_c", "a_b_c"), "_"), c("bb", "b"))
+  expect_equal(simplify_factor_names(c("a_bb_c", "a_b_c_c"), "_"), c("bb", "b_c"))
+  expect_equal(simplify_factor_names(c("bb", "b"), "_"), c("bb", "b"))
+  expect_equal(simplify_factor_names(c("bb", "b_c"), "_"), c("bb", "b_c"))
+})
+
 test_that("do_mw_test works", {
   study = create_study()
   s = get_fake_study()

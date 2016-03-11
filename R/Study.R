@@ -563,8 +563,10 @@ Study_abstract = setRefClass(
         }
         return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
       }
-      ret = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative=alternative, PLOT=PLOT)
-      return(ret)
+      mw_res = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative=alternative, PLOT=PLOT)
+      colnames(mw_res) = simplify_column_names(colnames(mw_res))
+      colnames(mw_res) = simplify_factor_names(colnames(mw_res), "_")
+      return(mw_res)
     },
     do_gm2sd_analysis = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ctrl_thres_func=m2sd, case_value_func=mean, comp_func=get("<"), nb_perm=100, MONITORED=FALSE) {
       "Performs permutation test to detect right shifted expression groups for two given groups."

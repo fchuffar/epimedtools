@@ -79,30 +79,42 @@ simplify_sample_names = function(sample_names) {
 #' This function simplfies factor names.
 #' 
 #' @param factor_names A character vector that describes the factor names.
+#' @param split character passed to strsplit function as split.
+#' @param fixed boolean passed to gsub function as fixed.
 #' @return A character vector that describes simplified factor names.
 #' @export
-simplify_factor_names = function(factor_names) {
+simplify_factor_names = function(factor_names, split="", fixed=FALSE) {
   factor_names = as.character(factor_names)
-  one_way = function(factor_names) {
+  one_way = function(factor_names, split, fixed) {
     # print(factor_names)
-    l = min(sapply(unique(factor_names), nchar)) 
-    f = strsplit(substr(as.character(factor_names), 0, l), "")   
+    l = min(sapply(strsplit(unique(factor_names), split), length)) 
+    f = lapply(strsplit(factor_names, split), function(x) {x[1:l]})
     m = do.call(rbind, f)
     vl = apply(m, 2, function(col) {
       length(unique(col))
     })
-    d_idx = which(vl!=1)[1]
-    factor_names = substr(factor_names, d_idx, 100000L)
+    d_idx = which(vl!=1)
+    if (length(d_idx) >= 1) {
+      fd_idx = d_idx[1] - 1
+      if (fd_idx > 0) {
+        to_be_remove = paste(c(f[[1]][1:fd_idx], ""), collapse=split)
+        factor_names = gsub(paste("^", to_be_remove, sep=""), "", factor_names, fixed=fixed)        
+        # factor_names = gsub(to_be_remove, "", factor_names, fixed=fixed)
+      }
+    }
+    # factor_names = substr(factor_names, d_idx, 100000L)
     # print(factor_names)
     return(factor_names)    
   }
   str_rev = function(factor_names) {
     sapply(lapply(strsplit(factor_names, ""), rev), function(s) { paste(s, collapse='')})
   }
-  factor_names = one_way(factor_names)
+  factor_names = one_way(factor_names, split, fixed)
   factor_names = str_rev(factor_names)
-  factor_names = one_way(factor_names)
+  factor_names = one_way(factor_names, split, fixed)
   factor_names = str_rev(factor_names)
+  # print(factor_names)
+  
   return(factor_names)
 }
 #' A Function That Simplify Column Names.

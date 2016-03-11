@@ -4,10 +4,14 @@
 \alias{simplify_factor_names}
 \title{A Function That Simplify Factor Names.}
 \usage{
-simplify_factor_names(factor_names)
+simplify_factor_names(factor_names, split = "", fixed = FALSE)
 }
 \arguments{
 \item{factor_names}{A character vector that describes the factor names.}
+
+\item{split}{character passed to strsplit function as split.}
+
+\item{fixed}{boolean passed to gsub function as fixed.}
 }
 \value{
 A character vector that describes simplified factor names.
