@@ -15,7 +15,7 @@ FDR(x, FDR)
 The corresponding cutoff.
 }
 \description{
-This function computes the false discovery rate from a vector of independent p-values. 
+This function computes the false discovery rate from a vector of independent p-values.
 It extracts the cutoff corresponding to the specified FDR. See Benjamini & Hochberg 1995 paper.
 }
 

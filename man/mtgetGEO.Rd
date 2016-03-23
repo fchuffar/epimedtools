@@ -13,8 +13,8 @@ mtgetGEO(...)
 GEO content.
 }
 \description{
-This function offer a memoised version of getGEO. It returns a Table 
-version of a GEO query response. It is used to get platform metadatas 
+This function offer a memoised version of getGEO. It returns a Table
+version of a GEO query response. It is used to get platform metadatas
 from GEO portal or a local file.
 }
 \examples{

@@ -17,7 +17,7 @@ get_cel_filenames(dir, full.names = TRUE, ERROR_IF_EMPTY = TRUE)
 It returns a string vector of the .CEL.gz files.
 }
 \description{
-This function takes a directory as parameter and return a string vector of the .CEL.gz files 
+This function takes a directory as parameter and return a string vector of the .CEL.gz files
 that it contains.
 }
 

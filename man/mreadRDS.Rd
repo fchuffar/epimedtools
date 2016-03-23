@@ -13,7 +13,7 @@ mreadRDS(...)
 RDS content.
 }
 \description{
-This function offer a memoised version of readRDS. It is used to get GEO data 
+This function offer a memoised version of readRDS. It is used to get GEO data
 from GEO portal or a local file.
 }
 \examples{
