@@ -298,9 +298,10 @@ simplify_factor_names = function(factor_names, split="", fixed=FALSE) {
 #' @export
 simplify_column_names = function(column_names) {
   n = tolower(column_names)
-  n = gsub("[.]", "_", n)
+  n = gsub("[.|:| ]", "_", n)
   n = gsub("_+", "_", n)
   n = gsub("^_", "", n)
+  n = gsub("_$", "", n)
   return(n)
 }
 #' Retrieve Directory's .CEL.gz Files.

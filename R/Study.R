@@ -76,7 +76,7 @@ Study_abstract = setRefClass(
     "gset" = "ANY",
     "gse" = "character",
     "series_matrix_filename" = "character", 
-    "stuffs" = "ANY"
+    "stuffs" = "list"
   ),
   methods = list(
     get_data = function(CACHE=FALSE, ...) {
@@ -465,15 +465,14 @@ Study_abstract = setRefClass(
         }
         rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_key]] == case_f)]      
       })
-      # if (length(ctrl_fctr) > 1) {
-        names(ctrl_list) = paste(ctrl_key, ctrl_fctr, sep="_")
-        if (length(ctrl_fctr) > 1) {
-          names(ctrl_list) = simplify_factor_names(names(ctrl_list))
-        }
-        names(case_list) = paste(case_key, case_fctr, sep="_")
-        if (length(case_fctr) > 1) {
-          names(case_list) = simplify_factor_names(names(case_list))
-        }
+      names(ctrl_list) = paste(ctrl_key, ctrl_fctr, sep="_")
+      if (length(ctrl_fctr) > 1) {
+        names(ctrl_list) = simplify_factor_names(names(ctrl_list))
+      }
+      names(case_list) = paste(case_key, case_fctr, sep="_")
+      if (length(case_fctr) > 1) {
+        names(case_list) = simplify_factor_names(names(case_list))
+      }
       # print(ctrl_fctr)
       # print(ctrl_list)
       # print(case_fctr)
