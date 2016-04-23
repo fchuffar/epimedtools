@@ -23,7 +23,7 @@ scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival
     digits=3,scientific=TRUE)
   }
   sf=survfit(SS~v)
-  levels = length(unique(v))
+  levels = length(na.omit(unique(v)))
   col = colorRampPalette(colors)(levels)
   main= paste(main, " P=", pvt, sep="")
   plot(sf, col=col, main=main, ...)

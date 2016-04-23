@@ -337,7 +337,7 @@ Study_abstract = setRefClass(
       }
       return(probes)
     },
-    get_probe_gene_tab = function(gene, DEEP_SEARCH=FALSE, pf_col_name="Gene Symbol", ...) {
+    get_probe_gene_tab = function(genes, DEEP_SEARCH=FALSE, pf_col_name="Gene Symbol", ...) {
       "Build a gene / probe table from a gene list."
       pf = .self$get_platform(...)
       probe_gene_tab = lapply(genes, function(gene) {
@@ -440,7 +440,7 @@ Study_abstract = setRefClass(
         stop(paste(ctrl_key, " is not a column name of exp_grp.", sep=""))
       }
       if (!(case_key %in% colnames(.self$get_exp_grp()))) {
-        stop(paste(ctrl_key, " is not a column name of exp_grp.", sep=""))
+        stop(paste(case_key, " is not a column name of exp_grp.", sep=""))
       }
       # Check exp_grp factors
       if (missing(ctrl_fctr)) {
@@ -563,6 +563,23 @@ Study_abstract = setRefClass(
         return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
       }
       mw_res = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative=alternative, PLOT=PLOT)
+      colnames(mw_res) = simplify_column_names(colnames(mw_res))
+      colnames(mw_res) = simplify_factor_names(colnames(mw_res), "_")
+      return(mw_res)
+    },
+    do_fast_fc = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr) {
+      " Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) expression groups for a given `probe_name` and a given `exp_grp_key`." 
+      fast_fc_func = function(ctrl, case)  {
+        ctrl_median = median(ctrl)
+        ctrl_mean = mean(ctrl)
+        case_median = median(case)
+        case_mean = mean(case)
+        s = sign(case_mean - ctrl_mean)
+        # print(s)
+        fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
+        return(list(fc=fc))
+      }
+      mw_res = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=fast_fc_func)
       colnames(mw_res) = simplify_column_names(colnames(mw_res))
       colnames(mw_res) = simplify_factor_names(colnames(mw_res), "_")
       return(mw_res)
