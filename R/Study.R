@@ -314,7 +314,7 @@ Study_abstract = setRefClass(
       ratio = .self$get_data(...) / ctrl_op
       return(ratio)
     },
-    gs_to_probe = function(gene, ALL_PF_COL=FALSE, pf_col_name="Gene Symbol", ...) {
+    gs_to_probe = function(gene, ALL_PF_COL=FALSE, pf_col_name="Gene Symbol", col_delimiter="[ /]+", ...) {
       "Return probes name for a given gene."
       pf = .self$get_platform(...)
       if (ALL_PF_COL) {
@@ -326,9 +326,10 @@ Study_abstract = setRefClass(
         probes = sapply(probes, function(probe) {
           entry = as.character(pf[probe, pf_col_name])
           # print(entry)
-          if (gene %in% unlist(strsplit(entry, "[ /]+"))) {
+          if (gene %in% unlist(strsplit(entry, col_delimiter))) {
             return(probe)
           } else {
+            # print(NULL)
             return(NULL)
           }
         })
@@ -337,13 +338,13 @@ Study_abstract = setRefClass(
       }
       return(probes)
     },
-    get_probe_gene_tab = function(genes, DEEP_SEARCH=FALSE, pf_col_name="Gene Symbol", ...) {
+    get_probe_gene_tab = function(genes, DEEP_SEARCH=FALSE, pf_col_name="Gene Symbol", col_delimiter="[ /]+", ...) {
       "Build a gene / probe table from a gene list."
       pf = .self$get_platform(...)
       probe_gene_tab = lapply(genes, function(gene) {
-        probe = gs_to_probe(gene, pf_col_name=pf_col_name, ...)
+        probe = gs_to_probe(gene, pf_col_name=pf_col_name, col_delimiter=col_delimiter, ...)
         if (length(probe) == 0 & DEEP_SEARCH) {
-            probe = gs_to_probe(gene, ALL_PF_COL=TRUE, ...)
+            probe = gs_to_probe(gene, ALL_PF_COL=TRUE, col_delimiter=col_delimiter, ...)
         }
         if (length(probe) == 0) {
           return(NULL)
@@ -406,7 +407,7 @@ Study_abstract = setRefClass(
         ...
       )
       if (LEGEND) {
-        legend("topright", legend=unique(col), col=unique(col), pch=16)        
+        legend("topright", legend=sort(unique(col)), col=sort(unique(col)), pch=16)        
       }
     },
     do_pca = function(probe_names, sample_names, ...) {
