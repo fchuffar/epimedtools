@@ -1,3 +1,81 @@
+#' A Function Performing ANOVAs.
+#'
+#' This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix. Its return a dataframe that includes many metrics as a results (beta, pval...).
+#'
+#' @param design A dataframe that describes the design of the experiment.
+#' @param model A model describe the test to apply.
+#' @param data A matrix of exrpression values for probe/gene (lines) and confditions (colums).
+#' @param key A character string that will suffix the column names of the resulting data frame
+#' @param correction A numeric vector (typically in [-1, 1]) to correct the beta signs according to the wanted reference.
+#' @param MONITORED_APPLY A boolean set to TRUE if we want to monitor the loop on lines (usefull for debugging).
+#' @importFrom nortest ad.test
+#' @importFrom stats residuals
+#' @importFrom stats lm
+#' @importFrom stats aov
+#' @importFrom stats p.adjust
+#' @importFrom stats anova
+#' @export
+perform_anova = function(design, model, data, key, correction = 1, MONITORED_APPLY=FALSE) {
+  options(contrasts=c("contr.sum", "contr.poly"))
+  if (MONITORED_APPLY) {
+    the_apply = monitored_apply
+  } else {
+    the_apply = apply
+  }
+  anova_res = the_apply(data[, design$sample], 1, function(l) {
+    # print(l)
+    design$val = l
+    # design$val = unlist(data[brdt_probenames[2], paste(design$sample, suffix, sep="")])
+    m = lm(model, data=design)
+    # Shapiro-Wilks (normality)
+    # sw = shapiro.test(residuals(m))
+    # sw_pval = sw$p.value
+    # Anderson-Darling (normality)
+    ad = ad.test(residuals(m))
+    ad_pval = ad$p.value
+    # Brown-Forsythe (homoskedasticity)
+    # if (length(grep("*", "a*a", fixed=TRUE) > 0)) {
+    #
+    # }
+    # bf = lawstat::levene.test(residuals(m), do.call(paste,design[,as.character(model[c(3:min(length(model), 4))])]))
+    # bf_pval = bf$p.value
+    # boxplot(val~sp, data=design)
+    anov = anova(m)
+    # print(anov)
+    m1 = aov(model, data=design)
+    summ_aov = summary(m1)
+    # model.tables(m1)
+    aov_coeff = m1$coefficients[-1] * correction
+    len = length(aov_coeff)
+    aov_pval = summ_aov[[1]][1:len,5]
+    if (len > 1) {      
+      names(aov_coeff) = paste("beta_", key, 1:len, sep="")
+      names(aov_pval) = paste("pval_", key, 1:len, sep="")
+    } else {
+      names(aov_coeff) = paste("beta", key, sep="_")
+      names(aov_pval) = paste("pval", key, sep="_")      
+    }
+    # ret = c(ad_pval=ad_pval, bf_pval=bf_pval, aov_coeff, aov_pval)
+    # names(ret)[1:2] = paste(names(ret)[1:2], key, sep="_")
+    ret = c(ad_pval=ad_pval, aov_coeff, aov_pval)
+    names(ret)[1] = paste(names(ret)[1], key, sep="_")
+    # ret
+    # print(ret)
+    return(ret)
+  })
+  anova_res = data.frame(t(anova_res))
+  len = length(grep("beta", names(anova_res)))
+  if (len > 1) {      
+    for (i in 1:len) {
+      anova_res[[paste("adj_pval_", key, i, sep="")]] = p.adjust(anova_res[[paste("pval_", key, i, sep="")]], method="BH")    
+    }
+  } else {
+    anova_res[[paste("adj_pval_", key, sep="")]] = p.adjust(anova_res[[paste("pval_", key, sep="")]], method="BH")    
+  }
+  return(anova_res)
+}
+
+
 #' A Function That Plots Survival Curves.
 #'
 #' This function takes a survival structure such as produced by function Surv of
@@ -13,6 +91,9 @@
 #' @param legend A vector of character to explicit the legend of the plot
 #' @param ... Parameters passed to plot function.
 #' @importFrom survival survfit
+#' @importFrom stats na.omit
+#' @importFrom grDevices colorRampPalette
+#' @importFrom graphics plot
 #' @export
 scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, ...) {
   pv = coxres(SS,v)[1]
@@ -83,6 +164,7 @@ coxres = function(SS,v) {
 #' @param nd The number of classes.
 #' @param breaks An increasing vector of numeric.
 #' @return A vector of factors.
+#' @importFrom stats quantile
 #' @export
 discr = function(v, nd=5, breaks){
   ind = !is.na(v)
@@ -108,6 +190,7 @@ discr = function(v, nd=5, breaks){
 #' @param s A vector of character.
 #' @param split character passed to strsplit function as split.
 #' @param fixed boolean passed to gsub function as fixed.
+#' @importFrom stats na.omit
 #' @export
 longest_common_prefix = function(s, split="", fixed=FALSE) {
   s = na.omit(s)
@@ -173,6 +256,7 @@ simplify_exp_grp = function(exp_grp) {
 #' @param x A vector of independent p-values.
 #' @param FDR The false discovery rate.
 #' @return The corresponding cutoff.
+#' @importFrom stats na.omit
 #' @export
 FDR = function (x, FDR)
 {
@@ -192,6 +276,8 @@ FDR = function (x, FDR)
 #' @param nb_samples An integer that describes the number of samples.
 #' @param nb_probes An integer that describes the number of probes.
 #' @return a fake study.
+#' @importFrom stats rnorm
+#' @importFrom stats runif
 #' @export
 get_fake_study = function(nb_samples = 12, nb_probes = 10) {
   data = matrix(round(c(rnorm(nb_probes * floor(nb_samples/2)), rnorm(nb_probes * ceiling(nb_samples/2), 3,1)),3), nb_probes)
@@ -219,6 +305,7 @@ get_fake_study = function(nb_samples = 12, nb_probes = 10) {
 #'
 #' @param ctrl A numeric vector
 #' @return `mean` + 2 * `sd` of the inpuit vector
+#' @importFrom stats sd
 #' @export
 m2sd = function(ctrl) {
   mean(ctrl) + 2 * sd(ctrl)
