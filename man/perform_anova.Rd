@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{perform_anova}
 \alias{perform_anova}
-\title{A Function Performing ANOVAs.}
+\title{A Function Performing ANOVAs}
 \usage{
 perform_anova(design, model, data, key, correction = 1,
   MONITORED_APPLY = FALSE)

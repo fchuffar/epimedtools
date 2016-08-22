@@ -1,4 +1,32 @@
-#' A Function Performing ANOVAs.
+#' A Function that Plots Quality Control for an Expression Data Matrix
+#'
+#' This function plots a boxplot for each sample in an expression data matrix.
+#'
+#' @param data A matrix of exrpression values for probe/gene (lines) and confditions (colums).
+#' @param USE_LOG2_FOR_EXPR A boolean set to TRUE if we want to plot the log of the expression.
+#' @param ... Parameters passed to plot function.
+#' @importFrom graphics axis
+#' @importFrom graphics boxplot
+#' @export
+qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
+  if (USE_LOG2_FOR_EXPR) {
+    trans= log2
+    ylab = "log2(expr)"
+  } else {
+    trans = identity
+    ylab = "expr_ratio"    
+  }
+  plot(0,0, col=0, xlim=c(1,ncol(data)), ylim=range(trans(data)), xaxt="n", xlab="", ylab=ylab, ...)
+  axis(1, at=1:ncol(data), labels=colnames(data), tick=TRUE, las=2)
+  for (i in 1:ncol(data)) {
+    boxplot(trans(data[,i]), at=i, add=TRUE, axes=FALSE)
+  }
+}
+
+
+
+
+#' A Function Performing ANOVAs
 #'
 #' This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix. Its return a dataframe that includes many metrics as a results (beta, pval...).
 #'
