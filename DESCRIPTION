@@ -18,7 +18,8 @@ Imports:
     affy,
     survival,
     GEOquery,
-    nortest
+    nortest,
+    gtools
 Depends:
     methods
 RoxygenNote: 5.0.1

@@ -36,31 +36,31 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 #' @param key A character string that will suffix the column names of the resulting data frame
 #' @param correction A numeric vector (typically in [-1, 1]) to correct the beta signs according to the wanted reference.
 #' @param MONITORED_APPLY A boolean set to TRUE if we want to monitor the loop on lines (usefull for debugging).
+#' @param AD_TEST A boolean set to TRUE if we want to perform normality test.
 #' @importFrom nortest ad.test
 #' @importFrom stats residuals
 #' @importFrom stats lm
 #' @importFrom stats aov
 #' @importFrom stats p.adjust
 #' @importFrom stats anova
+#' @importFrom gtools logratio2foldchange
 #' @export
-perform_anova = function(design, model, data, key, correction = 1, MONITORED_APPLY=FALSE) {
+perform_anova = function(design, model, data, key, correction = 1, MONITORED_APPLY=FALSE, AD_TEST=TRUE) {
   options(contrasts=c("contr.sum", "contr.poly"))
-  if (MONITORED_APPLY) {
-    the_apply = monitored_apply
-  } else {
-    the_apply = apply
-  }
-  anova_res = the_apply(data[, design$sample], 1, function(l) {
+  anova_res = epimedtools::monitored_apply(data[, design$sample], 1, function(l) {
     # print(l)
-    design$val = l
-    # design$val = unlist(data[brdt_probenames[2], paste(design$sample, suffix, sep="")])
+    design$val = log2(l)
     m = lm(model, data=design)
     # Shapiro-Wilks (normality)
     # sw = shapiro.test(residuals(m))
     # sw_pval = sw$p.value
     # Anderson-Darling (normality)
-    ad = ad.test(residuals(m))
-    ad_pval = ad$p.value
+    if (AD_TEST) {
+      ad = ad.test(residuals(m))
+      ad_pval = ad$p.value
+    } else {
+      ad_pval = 1
+    }
     # Brown-Forsythe (homoskedasticity)
     # if (length(grep("*", "a*a", fixed=TRUE) > 0)) {
     #
@@ -73,7 +73,7 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
     m1 = aov(model, data=design)
     summ_aov = summary(m1)
     # model.tables(m1)
-    aov_coeff = m1$coefficients[-1] * correction
+    aov_coeff = m1$coefficients[-1] * correction  
     len = length(aov_coeff)
     aov_pval = summ_aov[[1]][1:len,5]
     if (len > 1) {      
@@ -96,9 +96,13 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
   if (len > 1) {      
     for (i in 1:len) {
       anova_res[[paste("adj_pval_", key, i, sep="")]] = p.adjust(anova_res[[paste("pval_", key, i, sep="")]], method="BH")    
+      anova_res[[paste("logratio_", key, i, sep="")]] = 2 * anova_res[[paste("beta_", key, i, sep="")]]
+      anova_res[[paste("foldchange_", key, i, sep="")]] = logratio2foldchange(anova_res[[paste("logratio_", key, i, sep="")]])
     }
   } else {
     anova_res[[paste("adj_pval_", key, sep="")]] = p.adjust(anova_res[[paste("pval_", key, sep="")]], method="BH")    
+    anova_res[[paste("logratio_", key, sep="")]] = 2 * anova_res[[paste("beta_", key, sep="")]]
+    anova_res[[paste("foldchange_", key, sep="")]] = logratio2foldchange(anova_res[[paste("logratio_", key, sep="")]])
   }
   return(anova_res)
 }

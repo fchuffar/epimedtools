@@ -5,7 +5,7 @@
 \title{A Function Performing ANOVAs}
 \usage{
 perform_anova(design, model, data, key, correction = 1,
-  MONITORED_APPLY = FALSE)
+  MONITORED_APPLY = FALSE, AD_TEST = TRUE)
 }
 \arguments{
 \item{design}{A dataframe that describes the design of the experiment.}
@@ -19,6 +19,8 @@ perform_anova(design, model, data, key, correction = 1,
 \item{correction}{A numeric vector (typically in [-1, 1]) to correct the beta signs according to the wanted reference.}
 
 \item{MONITORED_APPLY}{A boolean set to TRUE if we want to monitor the loop on lines (usefull for debugging).}
+
+\item{AD_TEST}{A boolean set to TRUE if we want to perform normality test.}
 }
 \description{
 This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix. Its return a dataframe that includes many metrics as a results (beta, pval...).
