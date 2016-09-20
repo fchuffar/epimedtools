@@ -61,7 +61,13 @@ The __epimedtools__ package provides not only a set of treatment features like d
 
 ## Installation
 
-To get the current development version from github:
+To get the current development version from github, you need first to install following packages from bioconductor:
+
+  * ``Biobase`
+  * ``affy``
+  * ``GEOquery``
+
+Then, install ``epimedtool``:
 
 ```R
 install.packages("devtools")
