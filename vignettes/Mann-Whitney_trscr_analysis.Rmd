@@ -58,7 +58,7 @@ The Mann-Whitney analysis on 100 first probes.
 
 ```{r}
 # selecting intersting probes
-probe_names = rownames(study$get_data())
+probe_names = rownames(study$get_data())[1:100]
 # subset dataset
 ctrl_exp_grp_key = "orig"
 case_exp_grp_key = "orig"
@@ -67,10 +67,17 @@ case_factor_name = "trscr_raw_kc"
 
 mw_res = study$do_mw_test(probe_names, ctrl_exp_grp_key, case_exp_grp_key, ctrl_factor_name, case_factor_name)
 
+thres = c(1,-1) * -log10(0.05)
+fc_thres = c(-1.5, -1.2, 1.2, 1.5)
+lr_thres = gtools::foldchange2logratio(fc_thres)
+
 # Whitout FDR
-plot(mw_res$mean_fc, -log10(mw_res$mw_pval))
+plot(mw_res$trscr_raw_ctrl.trscr_raw_kc.logratio, -log10(mw_res$trscr_raw_ctrl.trscr_raw_kc.mw_pval_adj))
+
+
 # Whit FDR 
 # plot(mw_res$mean_fc, -log10(p.adjust(mw_res$mw_pval, "BH")))
-abline(h=-log10(0.05), lty=3)
+abline(h=-log10(0.05), v = lr_thres, lty=3, col=2)
+legend("bottomright", lty=3, col=2, legend=paste("fc thres (", paste(fc_thres, collapse=","), ")", sep=""))
 
 ```
