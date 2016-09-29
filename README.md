@@ -8,7 +8,7 @@ The __epimedtools__ package provides set of useful statistical functions. This p
 
 ## Data Struture
 
-The __epimedtools__ package aims to manage a `study` object composed of the three data structure: the `data` matrix and the two `exp_grp` and `platform` dataframe.
+The __epimedtools__ package aims to manage a `study` object composed of the three data structure: the `data` matrix and the two `exp_grp` and `platform` dataframes.
 
 Take care: 
 
