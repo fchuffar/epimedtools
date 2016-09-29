@@ -14,7 +14,7 @@ Take care:
 
   - study$data is a matrix of numerics
   - `colnames(study$data)` contain `rownames(study$exp_grp)`
-  - `rownames(study$data)` contains `rownames(study$platform)`
+  - `rownames(study$data)` contain   `rownames(study$platform)`
 
 ```R
 > study
