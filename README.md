@@ -69,9 +69,9 @@ The __epimedtools__ package provides not only a set of treatment features like d
 
 To get the current development version from github, you need first to install following packages from bioconductor:
 
-  * ``Biobase`
-  * ``affy``
-  * ``GEOquery``
+  * `Biobase`
+  * `affy`
+  * `GEOquery`
 
 Then, install ``epimedtool``:
 
