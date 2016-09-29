@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{monitored_sapply}
 \alias{monitored_sapply}
-\title{A Monitored Version of `sapply``}
+\title{A Monitored Version of `sapply`}
 \usage{
 monitored_sapply(vec, func, ...)
 }

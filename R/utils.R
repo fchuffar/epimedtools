@@ -1,3 +1,155 @@
+#' A Function That Computes Survival Table.
+#'
+#' This function computes the false discovery rate from a vector of independent p-values.
+#' It extracts the cutoff corresponding to the specified FDR. See Benjamini & Hochberg 1995 paper.
+#' @param probe_names index of probes to consider
+#' @param sample_names index of samples to consider
+#' @param exp_grp_key the column name of the exprimental grouping to considere  
+#' @param study An Reference classes object that contains data and metadata
+#' @param suffix A character string used to suffix the cache file nam
+#' @param USE_CACHE A boolean set to TRUE if cache could be used
+#' @param PLOT_SCURVE A boolean set to TRUE if Survival curve of the corresponding `exp_grp_key` needs to be ploted.
+#' @return A dataframe taht contains survival infirmations
+#' @export
+compute_survival_table = function(probe_names, sample_names, exp_grp_key, study, suffix="", USE_CACHE=FALSE, PLOT_SCURVE=FALSE) {
+  # ss
+  ss = study$exp_grp[sample_names,]$ss
+  if (PLOT_SCURVE) { 
+    cox_results = scurve(ss, study$exp_grp[sample_names, exp_grp_key], main=paste("Survival on ", exp_grp_key, sep=""))
+    print(cox_results)
+  }
+  # all probes
+  survival_res_filename = paste("survival_", suffix, "_res.rds", sep="")
+  if (!file.exists(survival_res_filename) | !USE_CACHE) {
+    survival_res = monitored_apply(t(probe_names), 2, function(probe_name) {  
+      v = study$data[probe_name, sample_names]
+      return(coxres(ss, v))
+    })
+    survival_res = data.frame(t(survival_res), stringsAsFactors=FALSE)
+    rownames(survival_res) = probe_names
+    if (USE_CACHE) {
+      saveRDS(survival_res, survival_res_filename)
+    }
+    # survival_res$lower_gs = study$platform[rownames(survival_res), ]$lower_gs
+  }
+  if (USE_CACHE) {
+    survival_res = readRDS(survival_res_filename)
+  }
+  return(survival_res)  
+}
+
+# suffix = "lung"
+# exp_grp_key = "histo.y"
+# sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$fut),])
+# probe_names = probe_gene_tab$probe
+# survival_lung_res = compute_survival_table(probe_names, sample_names, study, exp_grp_key, suffix, USE_CACHE=FALSE)
+# rownames(survival_lung_res[survival_lung_res$pvcox < 0.001,])
+
+
+
+
+
+# plot_survival_panel = function(probe_name, sample_names, study, exp_grp_key1, exp_grp_key2, nb_q=5, anova_survival_res) {
+#   if (missing(exp_grp_key2)) {
+#     exp_grp_key2 = exp_grp_key1
+#   }
+#   if (missing(sample_names)) {
+#     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$ss),])
+#   }
+#   gene_name = study$platform[probe_name,]$lower_gs
+#   v = study$data[probe_name, sample_names]
+#   dv = density(v)
+#   fact = study$exp_grp[sample_names, exp_grp_key2]
+#   pval_cox = coxres(study$exp_grp[sample_names,]$ss, v)[1]
+#   # quantiles
+#   vd_all = discr(v, nb_q)
+#   b_all = attr(vd_all, "breaks")
+#   # optimize quantiles
+#   tbc = 2:(nb_q)
+#   ibs = unlist(lapply( 1:length(tbc), function(n) {
+#    as.list(as.data.frame(combn(tbc,n)))
+#   }), recursive=FALSE)
+#   pvcoxes = sapply(ibs, function(ib){
+#    vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+#    # scurve(ss, vd, main=paste(gene_name, probe_name, sep="@"))
+#    coxres(study$exp_grp[sample_names,]$ss, vd_it)[1]
+#   })
+#   ib = ibs[[which(pvcoxes == min(pvcoxes))]]
+#   vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+#   b_opt = attr(vd_opt, "breaks")
+#   # graphicals
+#   layout(matrix(c(1,1,1,1,2,3,3,3,4,4,5,5), 3, byrow=TRUE))
+#   # print(anova_survival_res)
+#   # print(exp_grp_key1)
+#   # print(paste("adj_pval", exp_grp_key1, sep="_"))
+#   # print(anova_survival_res[probe_name, paste("adj_pval", exp_grp_key1, sep="_")])
+#   bp = beanplot::beanplot(study$data[probe_name,rownames(study$exp_grp)]~study$exp_grp[[exp_grp_key1]], las=2, log="", ylim=range(study$data),
+#     main=paste(gene_name, "@", probe_name, " p_anova=", signif(anova_survival_res[probe_name, paste("adj_pval", exp_grp_key1, sep="_")],3), sep=""), ylab="log2(exprs)")
+#   mw_pval_colnames = colnames(anova_survival_res)[grep("mw_pval_adj", colnames(anova_survival_res))]
+#   case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
+#
+#   text(match(case_names, bp$names), range(study$data)[2] - (1:length(case_names))/2, paste(mw_pval_colnames, "=", signif(anova_survival_res[probe_name,mw_pval_colnames],3), sep=""))
+#   # sapply(case_names, function(case_name) {
+#   #   cn = colnames(anova_survival_res)[grep(paste(case_name, ".mw_pval_adj", sep=""), colnames(anova_survival_res))]
+#   #   text(which(case_name == bp$names),range(study$data)[2], paste(cn, "=", signif(anova_survival_res[probe_name,cn],3), sep=""))
+#   # })
+#   plot(dv$y, dv$x, ylim=range(v), xlim=rev(range(dv$y)), type='l', ylab="log2(exprs)")
+#   abline(h=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
+#   abline(h=b_opt, lty=2, lwd=1)
+#   beanplot::beanplot(v~fact, las=2, log="", ylim=range(v), main=paste(gene_name, "@", probe_name, " p_surv=", signif(as.numeric(pval_cox),3)
+#     # , " p_anova=", signif(as.numeric(pval_cox),3)
+#     , sep=""))
+#   abline(h=b_all, lty=1, lwd=1, col="grey")
+#   abline(h=b_opt, lty=2, lwd=1)
+#   scurve(study$exp_grp[sample_names,]$ss, vd_all, main=paste(gene_name, probe_name, sep="@"))
+#   scurve(study$exp_grp[sample_names,]$ss, vd_opt, main=paste(gene_name, probe_name, sep="@"))
+# }
+#
+# # exp_grp_key1 = "histo"
+# # exp_grp_key2 = "histo.y"
+# # nb_q = 5
+# # probe_name = probe_names[1]
+# # plot_survival_panel(probe_name, sample_names, study, exp_grp_key1, exp_grp_key2)
+
+
+
+#' A Function that Plots Pairs Correpaltion
+#'
+#' This function enhances pairs fucntion by adding decoration in classic pairs graphic.
+#'
+#' @param ... Parameters passed to pairs function.
+#' @importFrom graphics pairs
+#' @importFrom graphics par
+#' @importFrom graphics strwidth
+#' @importFrom graphics text
+#' @importFrom stats cor
+#' @importFrom stats cor.test
+#' @importFrom stats symnum
+#' @export
+
+et_pairs = function(...) {
+  panel.cor = function(x, y, digits=2, prefix="", cex.cor, ...) {
+      usr = par("usr"); on.exit(par(usr)) 
+      par(usr = c(0, 1, 0, 1)) 
+      r = abs(cor(x, y)) 
+      txt = format(c(r, 0.123456789), digits=digits)[1] 
+      txt = paste(prefix, txt, sep="") 
+      if(missing(cex.cor)) cex = 0.8/strwidth(txt) 
+ 
+      test = cor.test(x,y) 
+      # borrowed from printCoefmat
+      Signif = symnum(test$p.value, corr = FALSE, na = FALSE, 
+                    cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
+                    symbols = c("***", "**", "*", ".", " ")) 
+ 
+      text(0.5, 0.5, txt, cex = cex * r) 
+      text(.8, .8, Signif, cex=cex, col=2) 
+  }
+  pairs(..., upper.panel=panel.cor)
+  
+}
+
+
 #' A Function that Plots Quality Control for an Expression Data Matrix
 #'
 #' This function plots a boxplot for each sample in an expression data matrix.
@@ -24,6 +176,132 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 }
 
 
+
+###### Genes are indexed by `g` in `G`.
+###### Conditions are indexed by `h` \in H$ (histology...).
+###### Samples are indexed by $i \in I$.
+###### For each gene $g$:
+######
+######   * we compute a linear model of the level of expression value according to histological groups: $log2(exprs_{g, i}) = \beta_{g, h} + \epsilon_{g, i}$.
+######   * we perform ANOVA test on this model and harvest corresponding p-value
+######   * we extract of each group: $\beta_{g, h} = \frac{\sum_{g \in G} mean(log2(exprs_{g,i}))}{|G|} - mean(log2(exprs_{g,i}))$
+######   * we compute corresponding logratio scores: $logratio_{g, h} = (1 + \frac{1}/{|H| - 1}) \beta_{g, h}$
+######   * we compute corresponding foldchange scores using `gtools::foldchange2logratio` function
+######
+###### This value are reported into the `anova_lung_res.csv` matrix file which fields are:
+######
+######   * probename:            the name of the corresponding probe
+######   * ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)
+######   * intercept:            the mean of means of each group
+######   * beta_histo_ADC:       the previously describe beta value for the group `ADC` of the experimental grouping field `histo`
+######   * logratio_histo_ADC :  the previously describe logratio value for the group `ADC` of the experimental grouping field `histo`
+######   * foldchange_histo_ADC: the previously describe foldchange value for the group `ADC` of the experimental grouping field `histo`
+######   * pval_histo:           the pvalue associated to the ANOVA test
+######   * adj_pval_histo :      the adjusted pvalue associated to the ANOVA test using Benjamini–Hochberg procedure
+######   * lower_gs:             the name of the associated gene in lower case
+
+
+
+#' A Function Performs Differential Expression Analysis Based On ANOVA
+#'
+#' This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix. 
+#' Its return a dataframe that includes many metrics as a results (beta, pval...).
+#' Genes are indexed by `g` in `G`.
+#' Conditions are indexed by `h` in `H` (histology, sex...).
+#' Samples are indexed by `i` in `I`.
+#' For each gene `g`: 
+#' 
+#'   * we compute a linear model of the level of expression value according to histological groups: `log2(exprs_{g, i}) = beta_{g, h} + epsilon_{g, i}`.
+#'   * we perform ANOVA test on this model and harvest corresponding p-value
+#'   * we extract of each group: `beta_{g, h} = frac{sum_{g in G} mean(log2(exprs_{g,i}))}{|G|} - mean(log2(exprs_{g,i}))`
+#'   * we compute corresponding logratio scores: `logratio_{g, h} = (1 + frac{1}/{|H| - 1}) beta_{g, h}`
+#'   * we compute corresponding foldchange scores using `gtools::foldchange2logratio` function
+#' 
+#' This value are reported into the `anova_lung_res.csv` matrix file which fields are: 
+#' 
+#'   * probename:            the name of the corresponding probe      
+#'   * ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)  
+#'   * intercept:            the mean of means of each group 
+#'   * beta_histo_ADC:       the previously describe beta value for the group `ADC` of the experimental grouping field `histo`
+#'   * logratio_histo_ADC :  the previously describe logratio value for the group `ADC` of the experimental grouping field `histo`   
+#'   * foldchange_histo_ADC: the previously describe foldchange value for the group `ADC` of the experimental grouping field `histo`
+#'   * pval_histo:           the pvalue associated to the ANOVA test   
+#'   * adj_pval_histo:       the adjusted pvalue associated to the ANOVA test using Benjamini-Hochberg procedure
+#'   * lower_gs:             the name of the associated gene in lower case
+#' @param design A dataframe that describes the design of the experiment.
+#' @param model A model describe the test to apply.
+#' @param data A matrix of exrpression values for probe/gene (lines) and confditions (colums).
+#' @param key A character string that will suffix the column names of the resulting data frame
+#' @param MONITORED_APPLY A boolean set to TRUE if we want to monitor the loop on lines (usefull for debugging).
+#' @param AD_TEST A boolean set to TRUE if we want to perform normality test.
+#' @importFrom nortest ad.test
+#' @importFrom stats residuals
+#' @importFrom stats lm
+#' @importFrom stats aov
+#' @importFrom stats p.adjust
+#' @importFrom stats anova
+#' @importFrom gtools logratio2foldchange
+#' @export
+perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALSE, AD_TEST=TRUE) {
+  options(contrasts=c("contr.sum", "contr.poly"))
+  anova_res = epimedtools::monitored_apply(data[, rownames(design)], 1, function(l) {
+    # print(l)
+    design$val = l
+    m = lm(model, data=design)
+    # Shapiro-Wilks (normality)
+    # sw = shapiro.test(residuals(m))
+    # sw_pval = sw$p.value
+    # Anderson-Darling (normality)
+    if (AD_TEST) {
+      ad = ad.test(residuals(m))
+      ad_pval = ad$p.value
+    } else {
+      ad_pval = 1
+    }
+    # Brown-Forsythe (homoskedasticity)
+    # if (length(grep("*", "a*a", fixed=TRUE) > 0)) {
+    #
+    # }
+    # bf = lawstat::levene.test(residuals(m), do.call(paste,design[,as.character(model[c(3:min(length(model), 4))])]))
+    # bf_pval = bf$p.value
+    # boxplot(val~sp, data=design)
+
+    aov_coeff = c(intercept=m$coefficients[[1]])
+    for (xlevels_name in names(m$xlevels)) {
+      for (lev in m$xlevels[[xlevels_name]]) {
+        idx = which(lev == m$xlevels[[xlevels_name]])
+        if (lev == rev(m$xlevels[[xlevels_name]])[1]) {
+          aov_coeff[[paste("beta", xlevels_name, lev, sep="_")]] = -sum(m$coefficients[paste(xlevels_name, 1:(idx - 1), sep="")])
+        } else {
+          aov_coeff[[paste("beta", xlevels_name, lev, sep="_")]] = m$coefficients[paste(xlevels_name, idx, sep="")]          
+        }
+      }
+    }
+
+    anov = anova(m)
+    aov_pval = anov[names(m$xlevels),5]
+    names(aov_pval) = paste("pval", names(m$xlevels), sep="_")   
+    ret = c(ad_pval=ad_pval, aov_coeff, aov_pval)
+    if (!is.null(key)) {
+      names(ret) = paste(names(ret), key, sep="_")      
+    }
+    return(ret)
+  })
+  anova_res = data.frame(t(anova_res))
+  # adj_pval
+  for (colname in colnames(anova_res)[which(strtrim(colnames(anova_res), 5) == "pval_")]) {
+    anova_res[[paste("adj", colname, sep="_")]] = p.adjust(anova_res[[colname]], method="BH")
+  }
+  # logratio and foldchange
+  beta_colnames = colnames(anova_res)[which(strtrim(colnames(anova_res), 5) == "beta_")]
+  nb_lev = length(beta_colnames)
+  for (colname in beta_colnames) {
+    suffix = substr(colname, 6, 10000)
+    anova_res[[paste("logratio", suffix, sep="_")]] = anova_res[[colname]] * (1 + 1 / (nb_lev - 1))
+    anova_res[[paste("foldchange", suffix, sep="_")]] = logratio2foldchange(anova_res[[paste("logratio", suffix, sep="_")]])
+  }  
+  return(anova_res)
+}
 
 
 #' A Function Performing ANOVAs
@@ -121,14 +399,16 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
 #' @param colors Colors to interpolate; must be a valid argument to col2rgb().
 #' @param main A character string to explicit the title of the plot
 #' @param legend A vector of character to explicit the legend of the plot
+#' @param nb_sign An integer  indicating the number of significant digits to be used
 #' @param ... Parameters passed to plot function.
 #' @importFrom survival survfit
 #' @importFrom stats na.omit
 #' @importFrom grDevices colorRampPalette
 #' @importFrom graphics plot
 #' @export
-scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, ...) {
-  pv = coxres(SS,v)[1]
+scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, ...) {
+  cox_results = coxres(SS,v)
+  pv = cox_results[1]
   if (pv<1e-100) {
     pvt = "<1e-100"
   } else {
@@ -138,7 +418,7 @@ scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival
   sf=survfit(SS~v)
   levels = length(na.omit(unique(v)))
   col = colorRampPalette(colors)(levels)
-  main= paste(main, " P=", pvt, sep="")
+  main= paste(main, " p=", signif(as.numeric(pvt), nb_sign), sep="")
   plot(sf, col=col, main=main, ...)
   tab = table(v)
   if (missing(legend)) {
@@ -151,6 +431,7 @@ scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival
   }
   legend = paste(legend, " (", tab, ")", sep="")
   legend("topright", legend=legend, col=col, pch=3, lty=1)
+  return(cox_results)
 }
 
 #' A Function That Fits the Cox Regression Model
@@ -310,6 +591,7 @@ FDR = function (x, FDR)
 #' @return a fake study.
 #' @importFrom stats rnorm
 #' @importFrom stats runif
+#' @importFrom survival Surv
 #' @export
 get_fake_study = function(nb_samples = 12, nb_probes = 10) {
   data = matrix(round(c(rnorm(nb_probes * floor(nb_samples/2)), rnorm(nb_probes * ceiling(nb_samples/2), 3,1)),3), nb_probes)
@@ -321,8 +603,11 @@ get_fake_study = function(nb_samples = 12, nb_probes = 10) {
     age=round(runif(nb_samples,20,30)),
     tabac=rep(c(rep("Smoker", nb_samples/4), rep("Non Smoker", nb_samples/4)), 2),
     treatment = c(rep("0 ug", nb_samples/2), rep("15 ug", nb_samples/2)),
-    histo=rep("lung", nb_samples)
+    histo=rep("lung", nb_samples), 
+    fut = round(runif(nb_samples,20,120)),
+    da = round(runif(nb_samples))
   )
+  exp_grp$ss = Surv(exp_grp$fut, exp_grp$da)
   rownames(exp_grp) = colnames(data)
   platform = data.frame(
     gene_name = rep("...",nb_probes),
@@ -579,7 +864,7 @@ monitored_apply = function(mat, marg=1, func, mod=100, ...) {
     tmp_matrix = rbind(1:nb_it, mat)
   }
   d1 = as.numeric(Sys.time())
-  foo = apply(tmp_matrix, marg, function(vec) {
+  foo = apply(tmp_matrix, marg, function(vec, ...) {
     id = as.numeric(vec[1])
     ret = func(vec[-1], ...)
     # monitoring...
@@ -592,10 +877,10 @@ monitored_apply = function(mat, marg=1, func, mod=100, ...) {
       print(paste("~", round(remain), " seconds remaining, finishing at ~", end_at, " (", id, "/", nb_it, ")." , sep=""))
     }
     return(ret)
-  })
+  }, ...)
 }
 
-#' A Monitored Version of `sapply``
+#' A Monitored Version of `sapply`
 #'
 #' This function offer a monitored version of `sapply`.
 #'

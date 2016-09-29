@@ -62,7 +62,7 @@ test_that("that hooks could be activated.", {
     package = "epimeddata"
   )
   study$cel_filedirs = c(kc_cel_filedir, ctrl_cel_filedir)
-  expect_error(study$get_data(CACHE=FALSE, hook = "stop", "It's just a hook test!"), regexp="It's just a hook test!")
+  expect_error(study$get_data(CACHE=FALSE, hook = "stop", error_msg=""It's just a hook test!"), regexp="It's just a hook test!")
 })
 
 test_that("exp_grp could be merge", {

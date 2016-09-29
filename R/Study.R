@@ -192,10 +192,13 @@ Study_abstract = setRefClass(
       }
       return(.self$platform)
     },
-    set_data = function(hook, ...) {
-      "Set the data field and update experiment grouping."
+    set_data = function(hook, method_to_read_cel_files, ...) {
+            "Set the data field and update experiment grouping."
       if (!missing(hook)) {
         get(hook)(...)
+      }
+      if (missing(method_to_read_cel_files)) {
+        method_to_read_cel_files = justRMA        
       }
       cel_files = lapply(.self$cel_filedirs, get_cel_filenames)
       orig = unlist(sapply(1:length(.self$cel_filedirs), function(i) {
@@ -224,8 +227,8 @@ Study_abstract = setRefClass(
       if (!is.null(dim(.self$get_exp_grp()))) {
         tmp_exp_grp = fuse_exp_grp(.self$get_exp_grp(), tmp_exp_grp)
       }
-      .self$exp_grp = tmp_exp_grp
-      .self$data = exprs(justRMA(filenames=cel_files, celfile.path=""))
+      .self$exp_grp = tmp_exp_grp 
+      .self$data = exprs(method_to_read_cel_files(filenames=cel_files, celfile.path=""))
       colnames(.self$data) = simplify_sample_names(colnames(.self$data))
     },
     # Analysis method dealing with Study_abstract class intances...
@@ -428,7 +431,9 @@ Study_abstract = setRefClass(
       pca_res$kaiser_crit = 1/length(pca_res$var)      
       return(pca_res)
     },
-    pretreat_before_a_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func, for_each_line_process_groups_func="for_each_line_process_groups_two_by_two_func", ...) {
+    pretreat_before_a_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func, 
+        for_each_line_process_groups_func="for_each_line_process_groups_two_by_two_func", ...
+      ) {
       " Perform a pretreatment on data, according to `probe_names` and `exp_grp` keys and factors, before processing the dataset." 
       # Check exp_grp keys
       if (missing(ctrl_key)) {
@@ -466,14 +471,21 @@ Study_abstract = setRefClass(
         }
         rownames(.self$get_exp_grp())[which(.self$get_exp_grp()[[case_key]] == case_f)]      
       })
-      names(ctrl_list) = paste(ctrl_key, ctrl_fctr, sep="_")
-      if (length(ctrl_fctr) > 1) {
-        names(ctrl_list) = simplify_factor_names(names(ctrl_list))
+      if (ctrl_key != case_key) {
+        names(ctrl_list) = paste(ctrl_key, ctrl_fctr, sep="_")
+        names(case_list) = paste(case_key, case_fctr, sep="_")        
+      } else {
+        names(ctrl_list) = paste(ctrl_fctr, sep="_")
+        names(case_list) = paste(case_fctr, sep="_")        
       }
-      names(case_list) = paste(case_key, case_fctr, sep="_")
-      if (length(case_fctr) > 1) {
-        names(case_list) = simplify_factor_names(names(case_list))
-      }
+      # names(ctrl_list) = paste(ctrl_key, ctrl_fctr, sep="_")
+      # names(case_list) = paste(case_key, case_fctr, sep="_")
+      # if (length(ctrl_fctr) > 1) {
+      #   names(ctrl_list) = simplify_factor_names(names(ctrl_list))
+      # }
+      # if (length(case_fctr) > 1) {
+      #   names(case_list) = simplify_factor_names(names(case_list))
+      # }
       # print(ctrl_fctr)
       # print(ctrl_list)
       # print(case_fctr)
@@ -502,11 +514,24 @@ Study_abstract = setRefClass(
             return(two_grp_test_func(ctrl, case, ...))
           }, ctrl_samples, two_grp_test_func=two_grp_test_func, ...)
           case_ret = unlist(case_ret, recursive=FALSE)
+          
+          # print("______________________ ")
+          # print(length(case_list))
+          # print(rep(paste(names(case_list)), length(case_list))), "vs",
+          # print(case_ret)
           return(case_ret)
         })
         ctrl_ret = unlist(ctrl_ret, recursive=FALSE)
         # print("______________________ ")
-        # print(ret)
+        # print(nb_fields)
+        # nb_fields = length(ctrl_ret) / (length(case_list) * length(ctrl_list))
+        # colnames = sapply(names(ctrl_list), function(ctrl_name) {
+        #   sapply(names(case_list), function(case_name) {
+        #     paste(rep(case_name, nb_fields), "vs", ctrl_name, sep="_")
+        #   })
+        # })
+        # print(colnames)
+        # print(ctrl_ret)
         return(ctrl_ret)
       }
       for_each_line_process_all_groups_func = function(line, ctrl_list, case_list, ...) {
@@ -526,9 +551,9 @@ Study_abstract = setRefClass(
         # filtred_bp_factors, probe_name, gene_name
         return(NULL)
       }
-      test_res = apply(tmp_data, 1, function(line, ctrl_list, case_list, ...) {
-        get(for_each_line_process_groups_func)(line, ctrl_list, case_list, ...)
-      }, ctrl_list, case_list, ...)
+      test_res = monitored_apply(tmp_data, 1, function(line, ctrl_list, case_list, ...) {
+        get(for_each_line_process_groups_func)(line=line, ctrl_list=ctrl_list, case_list=case_list, ...)
+      }, ctrl_list=ctrl_list, case_list=case_list, ...)
       # print(test_res)
       if (!is.null(test_res)) {
         test_res = do.call(rbind, test_res)
@@ -536,20 +561,19 @@ Study_abstract = setRefClass(
       }
       return(test_res)
     },
-    do_mw_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, alternative, PLOT=FALSE) {
-      " Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) expression groups for a given `probe_name` and a given `exp_grp_key`." 
-      mw_func = function(ctrl, case, alternative, PLOT)  {
+    do_mw_test = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, ...) {
+      " Perform a Mann-Whitney test to detect shifted (`two.sided`, `less` or `greater`) expression groups for a given `probe_name` and a given `exp_grp_key`." 
+      mw_func = function(ctrl, case, alternative=NULL, PLOT=FALSE)  {
         ctrl_median = median(ctrl)
         ctrl_mean = mean(ctrl)
         case_median = median(case)
         case_mean = mean(case)
         s = sign(case_mean - ctrl_mean)
         # print(s)
-        fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
+        lr = s * abs(case_mean - ctrl_mean)
+        fc = logratio2foldchange(lr)
+        # fc = s * max(case_mean/ctrl_mean, ctrl_mean/case_mean)
         # d_med = case_median - ctrl_median
-        if (missing(alternative)) {
-          alternative = NULL
-        }
         if (is.null(alternative)) {
           if (s >= 0) {            
             alternative="less"
@@ -557,19 +581,23 @@ Study_abstract = setRefClass(
             alternative="greater"            
           }
         }
-        mw = wilcox.test(ctrl, case, alternative=alternative)
+        mw = suppressWarnings(wilcox.test(ctrl, case, alternative=alternative))
         if (PLOT) {
           beanplot(ctrl, case, col=(mw$p.value < 0.05) + 1, main = mw$p.value, log="")
         }
-        return(list(mean_fc=fc, mw_pval = mw$p.value))#, d_med = d_med))
+        return(list(logratio=lr, foldchange=fc, mw_pval = mw$p.value))#, d_med = d_med))
       }
-      mw_res = .self$pretreat_before_a_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr, two_grp_test_func=mw_func, alternative=alternative, PLOT=PLOT)
-      colnames(mw_res) = simplify_column_names(colnames(mw_res))
-      colnames(mw_res) = simplify_factor_names(colnames(mw_res), "_")
+      mw_res = .self$pretreat_before_a_test(probe_names=probe_names, ctrl_key=ctrl_key, case_key=case_key, ctrl_fctr=ctrl_fctr, case_fctr=case_fctr, two_grp_test_func=mw_func, ...)
+      # colnames(mw_res) = simplify_column_names(colnames(mw_res))
+      # colnames(mw_res) = simplify_factor_names(colnames(mw_res), "_")
+      mw_pval_colnames = colnames(mw_res)[grep("mw_pval", colnames(mw_res))]
+      adj_pvals = apply(t(mw_res[,mw_pval_colnames]), 1, p.adjust, method="BH")
+      colnames(adj_pvals) = paste(mw_pval_colnames, "_adj", sep="")
+      mw_res = cbind(mw_res, adj_pvals)
       return(mw_res)
     },
     do_fast_fc = function(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr) {
-      " Perform a Mann-Whitney test to detect shifted (`alternative` `less` or `greater`) expression groups for a given `probe_name` and a given `exp_grp_key`." 
+      " Perform a Mann-Whitney test to detect shifted (`two.sided` `less` or `greater`) expression groups for a given `probe_name` and a given `exp_grp_key`." 
       fast_fc_func = function(ctrl, case)  {
         ctrl_median = median(ctrl)
         ctrl_mean = mean(ctrl)
