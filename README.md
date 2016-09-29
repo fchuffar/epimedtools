@@ -10,6 +10,12 @@ The __epimedtools__ package provides set of useful statistical functions. This p
 
 The __epimedtools__ package aims to manage a `study` object composed of the three data structure: the `data` matrix and the two `exp_grp` and `platform` dataframe.
 
+Take care: 
+
+  - study$data is a matrix of numerics
+  - `colnames(study$data)` contain `rownames(study$exp_grp)`
+  - `rownames(study$data)` contains `rownames(study$platform)`
+
 ```R
 > study
 #' $data
