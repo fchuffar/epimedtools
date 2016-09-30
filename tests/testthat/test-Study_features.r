@@ -1,10 +1,11 @@
 context("Study_features")
 
-test_that("perform_anova_gen works", {
+test_that("compute_survival_table plot_survival_panel perform_anova_gen works work", {
   study = create_study()
   s = get_fake_study()
   study$data = s$data
   study$exp_grp = s$exp_grp
+  study$platform = s$platform
 
   suffix = "tabac"
   exp_grp_key = "tabac"
@@ -12,25 +13,19 @@ test_that("perform_anova_gen works", {
   probe_names = rownames(study$data)
   USE_CACHE=FALSE
   PLOT_SCURVE=FALSE
-  anova_res = perform_anova_gen(study$exp_grp, val~tabac, study$data)
-  expect_equal(dim(anova_res), c(nrow(study$data),10))
-})
 
-
-test_that("compute_survival_table works", {
-  study = create_study()
-  s = get_fake_study()
-  study$data = s$data
-  study$exp_grp = s$exp_grp
-
-  suffix = "tabac"
-  exp_grp_key = "tabac"
-  sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$ss),])
-  probe_names = rownames(study$data)
-  USE_CACHE=FALSE
-  PLOT_SCURVE=FALSE
   survival_res = compute_survival_table(probe_names, sample_names, exp_grp_key, study, suffix, USE_CACHE=USE_CACHE)
   expect_equal(dim(survival_res), c(nrow(study$data),5))
+
+  anova_res = perform_anova_gen(study$exp_grp, val~tabac, study$data)
+  expect_equal(dim(anova_res), c(nrow(study$data),10))
+
+  mw_res = study$do_mw_test(probe_names, exp_grp_key, ctrl_fctr="Non_Smoker")
+
+  probe_name = probe_names[1]
+  anova_mw_res = cbind(anova_res[probe_names,], mw_res[probe_names,])
+  gene_pf_colname="gene_name"
+  plot_survival_panel(probe_name, sample_names, exp_grp_key, study, anova_mw_res=anova_mw_res, gene_pf_colname=gene_pf_colname)
 })
 
 
@@ -45,7 +40,7 @@ test_that("do_gm2sd_analysis works", {
   # subset dataset
   ctrl_key = "tabac"
   case_key = "tabac"
-  ctrl_fctr = "Non Smoker"
+  ctrl_fctr = "Non_Smoker"
   case_fctr = "Smoker"
   # case_fctr = "Placenta"
 
@@ -68,7 +63,7 @@ test_that("do_mw_test works", {
   # subset dataset
   ctrl_key = "tabac"
   case_key = "tabac"
-  ctrl_fctr = "Non Smoker"
+  ctrl_fctr = "Non_Smoker"
   case_fctr = "Smoker"
 
   mw = study$do_mw_test(probe_names, ctrl_key, case_key, ctrl_fctr, case_fctr)
@@ -101,7 +96,7 @@ test_that("do_mw_test works", {
   probe_names = rownames(study$get_data())
   # subset dataset
   ctrl_key = "treatment"
-  ctrl_fctr = "0 ug"
+  ctrl_fctr = "0ug"
   case_key = "tabac"
   study$exp_grp[study$exp_grp[[ctrl_key]] == ctrl_fctr, case_key] = NA
   # print(study$exp_grp)
@@ -124,7 +119,7 @@ test_that("do_pca works", {
   # subset dataset
   ctrl_key = "tabac"
   case_key = "tabac"
-  ctrl_fctr = "Non Smoker"
+  ctrl_fctr = "Non_Smoker"
   case_fctr = "Smoker"
   # case_fctr = "Placenta"
 

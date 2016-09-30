@@ -1,3 +1,92 @@
+#' A Function That Plots Survival Panel.
+#'
+#' This function plots ...
+#' @param probe_name probe to consider
+#' @param sample_names index of samples to consider
+#' @param exp_grp_key the column name of the exprimental grouping to considere  
+#' @param study An Reference classes object that contains data and metadata
+#' @param nb_q An integer specifying the number of quantile to initialize discretized expression data
+#' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
+#' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name.
+#' @return NULL
+#' @importFrom grDevices adjustcolor
+#' @importFrom graphics abline
+#' @importFrom graphics layout
+#' @importFrom stats density
+#' @importFrom utils combn
+#' @importFrom beanplot beanplot
+#' @export
+plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_q=5, anova_mw_res, gene_pf_colname) {
+  if (missing(sample_names)) {
+    sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$ss),])
+  }
+  if (!missing(gene_pf_colname)) {
+    gene_name = study$platform[probe_name,][[gene_pf_colname]]
+  } else {
+    gene_name = ""
+  }
+  v = study$data[probe_name, sample_names]
+  dv = density(v)
+  fact = study$exp_grp[sample_names, exp_grp_key]
+  pval_cox = coxres(study$exp_grp[sample_names,]$ss, v)[1]
+  # quantiles
+  vd_all = discr(v, nb_q)
+  b_all = attr(vd_all, "breaks")
+  # optimize quantiles
+  tbc = 2:(nb_q)
+  ibs = unlist(lapply( 1:length(tbc), function(n) {
+   as.list(as.data.frame(combn(tbc,n)))
+  }), recursive=FALSE)
+  pvcoxes = sapply(ibs, function(ib){
+   vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+   # scurve(ss, vd, main=paste(gene_name, probe_name, sep="@"))
+   coxres(study$exp_grp[sample_names,]$ss, vd_it)[1]
+  })
+  ib = ibs[[which(pvcoxes == min(pvcoxes))]]
+  vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+  b_opt = attr(vd_opt, "breaks")
+  # graphicals
+  layout(matrix(c(1,1,1,1,2,3,3,3,4,4,5,5), 3, byrow=TRUE))
+  # print(anova_mw_res)
+  # print(exp_grp_key)
+  # print(paste("adj_pval", exp_grp_key, sep="_"))
+  # print(anova_mw_res[probe_name, paste("adj_pval", exp_grp_key, sep="_")])
+  if (!missing(anova_mw_res)) {
+    anova_pval_leg = paste("p_anova=", signif(anova_mw_res[probe_name, paste("adj_pval", exp_grp_key, sep="_")],3), sep="")
+  } else {
+    anova_pval_leg = ""
+  }
+  bp = beanplot(study$data[probe_name,rownames(study$exp_grp)]~study$exp_grp[[exp_grp_key]], las=2, log="", ylim=range(study$data), 
+    main=paste(gene_name, "@", probe_name, " ", anova_pval_leg, sep=""), ylab="log2(exprs)")
+  mw_pval_colnames = colnames(anova_mw_res)[grep("mw_pval_adj", colnames(anova_mw_res))]
+  case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
+  
+  text(match(case_names, bp$names), range(study$data)[2] - (1:length(case_names))/2, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))
+  # sapply(case_names, function(case_name) {
+  #   cn = colnames(anova_mw_res)[grep(paste(case_name, ".mw_pval_adj", sep=""), colnames(anova_mw_res))]
+  #   text(which(case_name == bp$names),range(study$data)[2], paste(cn, "=", signif(anova_mw_res[probe_name,cn],3), sep=""))
+  # })
+  plot(dv$y, dv$x, ylim=range(v), xlim=rev(range(dv$y)), type='l', ylab="log2(exprs)")
+  abline(h=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
+  abline(h=b_opt, lty=2, lwd=1)
+  beanplot(v~fact, las=2, log="", ylim=range(v), main=paste(gene_name, "@", probe_name, " p_surv=", signif(as.numeric(pval_cox),3) 
+    # , " p_anova=", signif(as.numeric(pval_cox),3) 
+    , sep=""))  
+  abline(h=b_all, lty=1, lwd=1, col="grey")
+  abline(h=b_opt, lty=2, lwd=1)
+  scurve(study$exp_grp[sample_names,]$ss, vd_all, main=paste(gene_name, probe_name, sep="@"))
+  scurve(study$exp_grp[sample_names,]$ss, vd_opt, main=paste(gene_name, probe_name, sep="@"))
+  return(NULL)
+}
+
+# exp_grp_key = "histo"
+# exp_grp_key = "histo.y"
+# nb_q = 5
+# probe_name = probe_names[1]
+# plot_survival_panel(probe_name, sample_names, exp_grp_key, study)
+
+
+
 #' A Function That Computes Survival Table.
 #'
 #' This function computes the false discovery rate from a vector of independent p-values.
@@ -46,70 +135,6 @@ compute_survival_table = function(probe_names, sample_names, exp_grp_key, study,
 # rownames(survival_lung_res[survival_lung_res$pvcox < 0.001,])
 
 
-
-
-
-# plot_survival_panel = function(probe_name, sample_names, study, exp_grp_key1, exp_grp_key2, nb_q=5, anova_survival_res) {
-#   if (missing(exp_grp_key2)) {
-#     exp_grp_key2 = exp_grp_key1
-#   }
-#   if (missing(sample_names)) {
-#     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$ss),])
-#   }
-#   gene_name = study$platform[probe_name,]$lower_gs
-#   v = study$data[probe_name, sample_names]
-#   dv = density(v)
-#   fact = study$exp_grp[sample_names, exp_grp_key2]
-#   pval_cox = coxres(study$exp_grp[sample_names,]$ss, v)[1]
-#   # quantiles
-#   vd_all = discr(v, nb_q)
-#   b_all = attr(vd_all, "breaks")
-#   # optimize quantiles
-#   tbc = 2:(nb_q)
-#   ibs = unlist(lapply( 1:length(tbc), function(n) {
-#    as.list(as.data.frame(combn(tbc,n)))
-#   }), recursive=FALSE)
-#   pvcoxes = sapply(ibs, function(ib){
-#    vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
-#    # scurve(ss, vd, main=paste(gene_name, probe_name, sep="@"))
-#    coxres(study$exp_grp[sample_names,]$ss, vd_it)[1]
-#   })
-#   ib = ibs[[which(pvcoxes == min(pvcoxes))]]
-#   vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
-#   b_opt = attr(vd_opt, "breaks")
-#   # graphicals
-#   layout(matrix(c(1,1,1,1,2,3,3,3,4,4,5,5), 3, byrow=TRUE))
-#   # print(anova_survival_res)
-#   # print(exp_grp_key1)
-#   # print(paste("adj_pval", exp_grp_key1, sep="_"))
-#   # print(anova_survival_res[probe_name, paste("adj_pval", exp_grp_key1, sep="_")])
-#   bp = beanplot::beanplot(study$data[probe_name,rownames(study$exp_grp)]~study$exp_grp[[exp_grp_key1]], las=2, log="", ylim=range(study$data),
-#     main=paste(gene_name, "@", probe_name, " p_anova=", signif(anova_survival_res[probe_name, paste("adj_pval", exp_grp_key1, sep="_")],3), sep=""), ylab="log2(exprs)")
-#   mw_pval_colnames = colnames(anova_survival_res)[grep("mw_pval_adj", colnames(anova_survival_res))]
-#   case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
-#
-#   text(match(case_names, bp$names), range(study$data)[2] - (1:length(case_names))/2, paste(mw_pval_colnames, "=", signif(anova_survival_res[probe_name,mw_pval_colnames],3), sep=""))
-#   # sapply(case_names, function(case_name) {
-#   #   cn = colnames(anova_survival_res)[grep(paste(case_name, ".mw_pval_adj", sep=""), colnames(anova_survival_res))]
-#   #   text(which(case_name == bp$names),range(study$data)[2], paste(cn, "=", signif(anova_survival_res[probe_name,cn],3), sep=""))
-#   # })
-#   plot(dv$y, dv$x, ylim=range(v), xlim=rev(range(dv$y)), type='l', ylab="log2(exprs)")
-#   abline(h=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
-#   abline(h=b_opt, lty=2, lwd=1)
-#   beanplot::beanplot(v~fact, las=2, log="", ylim=range(v), main=paste(gene_name, "@", probe_name, " p_surv=", signif(as.numeric(pval_cox),3)
-#     # , " p_anova=", signif(as.numeric(pval_cox),3)
-#     , sep=""))
-#   abline(h=b_all, lty=1, lwd=1, col="grey")
-#   abline(h=b_opt, lty=2, lwd=1)
-#   scurve(study$exp_grp[sample_names,]$ss, vd_all, main=paste(gene_name, probe_name, sep="@"))
-#   scurve(study$exp_grp[sample_names,]$ss, vd_opt, main=paste(gene_name, probe_name, sep="@"))
-# }
-#
-# # exp_grp_key1 = "histo"
-# # exp_grp_key2 = "histo.y"
-# # nb_q = 5
-# # probe_name = probe_names[1]
-# # plot_survival_panel(probe_name, sample_names, study, exp_grp_key1, exp_grp_key2)
 
 
 
@@ -244,7 +269,7 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 #' @export
 perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALSE, AD_TEST=TRUE) {
   options(contrasts=c("contr.sum", "contr.poly"))
-  anova_res = epimedtools::monitored_apply(data[, rownames(design)], 1, function(l) {
+  anova_res = monitored_apply(data[, rownames(design)], 1, function(l) {
     # print(l)
     design$val = l
     m = lm(model, data=design)
@@ -325,7 +350,7 @@ perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALS
 #' @export
 perform_anova = function(design, model, data, key, correction = 1, MONITORED_APPLY=FALSE, AD_TEST=TRUE) {
   options(contrasts=c("contr.sum", "contr.poly"))
-  anova_res = epimedtools::monitored_apply(data[, design$sample], 1, function(l) {
+  anova_res = monitored_apply(data[, design$sample], 1, function(l) {
     # print(l)
     design$val = log2(l)
     m = lm(model, data=design)
@@ -601,8 +626,8 @@ get_fake_study = function(nb_samples = 12, nb_probes = 10) {
   exp_grp = data.frame(
     sex=ifelse(runif(nb_samples)>0.5, "Male", "Female"),
     age=round(runif(nb_samples,20,30)),
-    tabac=rep(c(rep("Smoker", nb_samples/4), rep("Non Smoker", nb_samples/4)), 2),
-    treatment = c(rep("0 ug", nb_samples/2), rep("15 ug", nb_samples/2)),
+    tabac=rep(c(rep("Smoker", nb_samples/4), rep("Non_Smoker", nb_samples/4)), 2),
+    treatment = c(rep("0ug", nb_samples/2), rep("15ug", nb_samples/2)),
     histo=rep("lung", nb_samples), 
     fut = round(runif(nb_samples,20,120)),
     da = round(runif(nb_samples))
@@ -610,7 +635,9 @@ get_fake_study = function(nb_samples = 12, nb_probes = 10) {
   exp_grp$ss = Surv(exp_grp$fut, exp_grp$da)
   rownames(exp_grp) = colnames(data)
   platform = data.frame(
-    gene_name = rep("...",nb_probes),
+    gene_name = sapply(1:nb_probes, function(i) {
+      paste(toupper(c(sample(letters[1:26],round(runif(1,2,4))),sample(0:9,1), sample(letters[1:26],round(runif(1,0,1))))), collapse="")
+    }),
     GOID = rep("...",nb_probes)
   )
   rownames(platform) = rownames(data)
