@@ -1,4 +1,127 @@
-#' A Function That Plots Survival Panel.
+#' A Function That Plots Heatmaps of Differentialy Expressed Genes Accros Conditions
+#'
+#' This function plots heatmaps of differentialy expressed genes across conditions.
+#' @param exp_grp_key the column name of the exprimental grouping to considere  
+#' @param case_fctr The label of the group that we considere as differentialy expressed
+#' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
+#' @param study An Reference classes object that contains data and metadata
+#' @param ctrl_fctr The label of the group that we considere as the reference
+#' @param main A character string to explicit the title of the plot
+#' @param mw_pval the the suffix the column name corresponding to the Mann-Whitney p-value used to 
+#' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
+#' @param PLOT_GS A boolean set to TRUE if genes names to be ploted
+#' @param fc_thres A vector of integer coprresponding to the foldchange thresholds
+#' @return probes used to plot the heatmap
+#' @importFrom gtools foldchange2logratio
+#' @importFrom graphics hist
+#' @importFrom graphics image
+#' @importFrom graphics points
+#' @export
+plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,  mw_pval="mw_pval_adj", gene_pf_colname="gene_name", PLOT_GS=FALSE, fc_thres = c(-1.5, -1.2, 1.2, 1.5)) {
+  lr_thres = foldchange2logratio(fc_thres)
+  if (missing(main)) {main=""} 
+  if (missing(ctrl_fctr)) {
+    ctrl_fctr = "others"
+    key_lr_an = paste("logratio_", exp_grp_key, "_", case_fctr, sep="")
+    key_fc_an = paste("foldchange_", exp_grp_key, "_", case_fctr, sep="")
+    key_pval_an = paste("adj_pval_", exp_grp_key, sep="")
+    key_lr_mw = key_lr_an
+    key_fc_mw = key_fc_an
+    key_pval_mw = key_pval_an
+    main = paste(main, " ", case_fctr, sep="") 
+  } else {
+    mw_key = paste(ctrl_fctr, case_fctr, sep=".")
+    key_lr_an = paste("logratio_", exp_grp_key, "_", mw_key, sep="")
+    key_lr_mw = paste(mw_key, ".logratio", sep="")
+    key_fc_an = paste("foldchange_", exp_grp_key, "_", mw_key, sep="")
+    key_fc_mw = paste(mw_key, ".foldchange", sep="")
+    key_pval_an = paste("adj_pval_", exp_grp_key, sep="")
+    key_pval_mw = paste(mw_key, ".", mw_pval, sep="")
+    anova_mw_res[[key_lr_an]] = anova_mw_res[[paste("logratio_", exp_grp_key, "_", case_fctr, sep="")]] - anova_mw_res[[paste("logratio_", exp_grp_key, "_", ctrl_fctr, sep="")]]
+    anova_mw_res[[key_fc_an]] = gtools::logratio2foldchange(anova_mw_res[[key_lr_an]])    
+    main = paste(main, " ", mw_key, sep="")
+  }
+
+  ## which genes?
+  # foo = anova_mw_res[anova_mw_res[[key_pval_an]] < 0.05,]
+  # foo = foo[order(foo[[key_pval_an]]), ]
+  foo = anova_mw_res[anova_mw_res[[key_pval_mw]] < 0.05,]
+  foo = foo[order(foo[[key_pval_mw]]), ]
+  idx_1 = rownames(foo)[which(foo[[key_fc_mw]] > 1.5  & foo[[key_fc_an]] > 1.5)  ]
+  idx_2 = rownames(foo)[which(foo[[key_fc_mw]] < -1.5 & foo[[key_fc_an]] < -1.5) ]
+  # idx_probes = c(idx_1)
+  idx_probes = c(idx_2,idx_1)
+
+  # wich samples?
+  fact_vals = unique(study$exp_grp[[exp_grp_key]])
+  idx_samples = rownames(study$exp_grp)[study$exp_grp[[exp_grp_key]] %in% fact_vals]
+  # idx_samples = rownames(study$exp_grp)
+  
+  ## data logratio?
+  # data_logratio = apply(study$data[idx_probes,], 1, function(l) {
+  #   # log2(2^l / mean(2^l))
+  #   l - mean(l)
+  # })[idx_samples,]
+  data_logratio = apply(t(study$data[idx_probes, idx_samples]), 2, function(l) {
+    # 2^l / mean(2^l)
+    # log2(2^l / mean(2^l))
+    l - mean(l)
+  })
+
+  ## ordering samples
+  # data_logratio_mean = apply(data_logratio, 1, function(l) {mean(abs(l))})
+  data_logratio_mean = apply(t(data_logratio[,idx_1]), 2, mean)
+  mean_idx = names(data_logratio_mean)[rev(order(data_logratio_mean))]
+  # mean_idx = names(data_logratio_mean)
+  ordered_samples = sapply(fact_vals, function(f){rownames(study$exp_grp[mean_idx, ])[study$exp_grp[mean_idx, exp_grp_key] == f]})
+  idx_samples = unlist(ordered_samples)
+  data_logratio = data_logratio[idx_samples,]
+
+
+  # Go!
+  main = paste(main, " (", ncol(data_logratio), ")", sep="")
+  hm_carpet = data_logratio
+  q = max(abs(quantile(data_logratio, probs=c(0.01, 0.99))))
+  # q = max(abs(quantile(data_logratio, probs=c(0.1, 0.9))))
+
+  hm_breaks = c(-max(abs(data_logratio)), seq(-q, q, length.out=49), max(abs(data_logratio)))
+  nr = ncol(hm_carpet)
+  nc = nrow(hm_carpet)
+  col=c("green", "black", "red")
+  col_ramp = colorRampPalette(col)(50)
+
+  # plotting...
+  # layout(matrix(1:6, 2, byrow=TRUE), respect=TRUE)
+  layout(matrix(1:3, 1, byrow=TRUE), respect=TRUE)
+
+  plot(-log10(anova_mw_res[[key_pval_an]]), -log10(anova_mw_res[[key_pval_mw]]), pch=".", col=(rownames(anova_mw_res) %in% idx_probes+1), xlab=paste("-log10(",key_pval_an,")", sep=""), ylab=paste("-log10(",key_pval_mw,")", sep=""))
+  points(-log10(anova_mw_res[idx_probes, key_pval_an]), -log10(anova_mw_res[idx_probes, key_pval_mw]), pch=16, col=adjustcolor(2, alpha.f=0.3))
+  abline(h=-log10(0.05), v=-log10(0.05), col="grey", lty=2)
+
+  # plot(anova_mw_res[[key_lr_an]], anova_mw_res[[key_lr_mw]], col=(rownames(anova_mw_res) %in% c(idx_1, idx_2)) + 1, xlab=key_lr_an, ylab=key_lr_mw, pch=".")
+  # abline(h=lr_thres, v=lr_thres, col="grey", lty=2)
+
+  # range
+  hist(data_logratio, breaks=hm_breaks, col=col_ramp)
+  abline(v=lr_thres, col=2, lty=2)
+  # heatmap
+  image(1:nc, 1:nr, hm_carpet, xlim = 0.5 + c(0, nc), ylim = 0.5 +
+      c(0, nr), axes = FALSE, xlab = "", ylab="", main=main, col=col_ramp,
+      breaks = hm_breaks, useRaster=TRUE
+  )
+  tab_fact = table(study$exp_grp[idx_samples,exp_grp_key])[fact_vals]
+  abline(v=cumsum(tab_fact) + 0.5, h=length(idx_2) + 0.5, col=adjustcolor("white", alpha.f=0.7))
+  axis(1, tick=FALSE, at=cumsum(tab_fact) - tab_fact/2 + 0.5, labels=fact_vals)  
+  tab_idx = c(length(idx_2), length(idx_1))
+  axis(4, tick=FALSE, at=cumsum(tab_idx) - tab_idx/2 + 0.5, labels=c(paste(ctrl_fctr, ">>", case_fctr, " (", length(idx_2), ")", sep=""), paste(case_fctr, ">>", ctrl_fctr, " (", length(idx_1), ")", sep="")))  
+  if (PLOT_GS) {
+    axis(2, tick=TRUE, at=1:length(idx_probes), labels=study$platform[idx_probes,gene_pf_colname], las=2, cex.axis=0.6)
+  }
+  return(idx_probes)
+}
+
+
+#' A Function That Plots Survival Panel
 #'
 #' This function plots ...
 #' @param probe_name probe to consider
@@ -619,29 +742,68 @@ FDR = function (x, FDR)
 #' @importFrom survival Surv
 #' @export
 get_fake_study = function(nb_samples = 12, nb_probes = 10) {
-  data = matrix(round(c(rnorm(nb_probes * floor(nb_samples/2)), rnorm(nb_probes * ceiling(nb_samples/2), 3,1)),3), nb_probes)
-  data = data - min(data)
-  colnames(data) = c(paste(rep("ctrl", nb_samples/2), 1:(nb_samples/2), sep=""), paste(rep("case", nb_samples/2), 1:(nb_samples/2), sep=""))
+  # generate data
+  # data = matrix(c(rnorm(nb_probes * floor(nb_samples/2)), rnorm(nb_probes * ceiling(nb_samples/2), 3,1)), nb_probes)
+  data = matrix(rnorm(nb_probes * nb_samples), nb_probes)
+  data = apply(data, 2, function(c,c_shift) {c + c_shift}, runif(nb_probes, 1,10))
+  data = signif(data,3)
+  colnames(data) = c(paste(rep("ctrl", ceiling(nb_samples/2)), 1:ceiling(nb_samples/2), sep=""), paste(rep("case", floor(nb_samples/2)), 1:floor(nb_samples/2), sep=""))
   rownames(data) = paste(rep("prb", nb_probes), 1:nb_probes, sep="")
+  
+  # generate exp_grp
   exp_grp = data.frame(
     sex=ifelse(runif(nb_samples)>0.5, "Male", "Female"),
     age=round(runif(nb_samples,20,30)),
-    tabac=rep(c(rep("Smoker", nb_samples/4), rep("Non_Smoker", nb_samples/4)), 2),
-    treatment = c(rep("0ug", nb_samples/2), rep("15ug", nb_samples/2)),
+    tabac=c(rep("Smoker", ceiling(ceiling(nb_samples/2)/2)), rep("Non_Smoker", floor(ceiling(nb_samples/2)/2)), rep("Smoker", ceiling(floor(nb_samples/2)/2)), rep("Non_Smoker", floor(floor(nb_samples/2)/2))),
+    treatment = c(rep("0ug", ceiling(nb_samples/2)), rep("15ug", floor(nb_samples/2))),
     histo=rep("lung", nb_samples), 
     fut = round(runif(nb_samples,20,120)),
     da = round(runif(nb_samples))
   )
-  exp_grp$ss = Surv(exp_grp$fut, exp_grp$da)
+  sampled_rownames = sample(rownames(data))
   rownames(exp_grp) = colnames(data)
+
+  # generate platform
   platform = data.frame(
     gene_name = sapply(1:nb_probes, function(i) {
       paste(toupper(c(sample(letters[1:26],round(runif(1,2,4))),sample(0:9,1), sample(letters[1:26],round(runif(1,0,1))))), collapse="")
     }),
-    GOID = rep("...",nb_probes)
+    GOID = rep("...",nb_probes), 
+    stringsAsFactors=FALSE
   )
   rownames(platform) = rownames(data)
-  return(list(data=data, exp_grp=exp_grp, platform=platform))
+
+  # up and dwn with smokers
+  idx_probes_up = sampled_rownames[1:ceiling(nb_probes/4)]
+  idx_probes_dwn = rev(sampled_rownames)[1:floor(nb_probes/4)]
+  idx_smoker_ctrl = rownames(exp_grp)[exp_grp$tabac == "Smoker" & exp_grp$treatment == "0ug"]
+  idx_smoker_case = rownames(exp_grp)[exp_grp$tabac == "Smoker" & exp_grp$treatment == "15ug"]
+  idx_nsmoker_case = rownames(exp_grp)[exp_grp$tabac == "Non_Smoker" & exp_grp$treatment == "15ug"]
+  smoking_shift = runif(length(c(idx_probes_up, idx_probes_dwn)), 1.2,3)
+  smoking_shift = smoking_shift * c(rep(1, length(idx_probes_up)), rep(-1, length(idx_probes_dwn))) 
+    
+  # update dta
+  data[c(idx_probes_up, idx_probes_dwn), idx_smoker_ctrl] = data[c(idx_probes_up, idx_probes_dwn), idx_smoker_ctrl] + smoking_shift
+  data[c(idx_probes_up, idx_probes_dwn), idx_smoker_case] = data[c(idx_probes_up, idx_probes_dwn), idx_smoker_case] + smoking_shift/2
+  data[c(idx_probes_up, idx_probes_dwn), idx_nsmoker_case] = data[c(idx_probes_up, idx_probes_dwn), idx_nsmoker_case] - smoking_shift/8
+  data = data - min(data) + 1  
+
+  # update exp_grp
+  exp_grp[idx_smoker_ctrl,]$da = ifelse(runif(length(idx_smoker_ctrl))>0.75, 0, 1)
+  exp_grp[idx_smoker_case,]$da = ifelse(runif(length(idx_smoker_case))>0.66, 0, 1)
+  exp_grp[idx_nsmoker_case,]$da = ifelse(runif(length(idx_nsmoker_case))>0.55, 0, 1)
+  exp_grp$ss = Surv(exp_grp$fut, exp_grp$da)
+
+  # update platform
+  platform[idx_probes_up,]$gene_name = paste(platform[idx_probes_up,]$gene_name, "u", sep="_")
+  platform[idx_probes_dwn,]$gene_name = paste(platform[idx_probes_dwn,]$gene_name, "d", sep="_")
+
+  # build study
+  study = create_study()
+  study$data = data
+  study$exp_grp = exp_grp
+  study$platform = platform
+  return(study)
 }
 #' A Function That Computes `mean` + 2 * `sd` on a Numeric Vector.
 #'

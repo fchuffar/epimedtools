@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{plot_survival_panel}
 \alias{plot_survival_panel}
-\title{A Function That Plots Survival Panel.}
+\title{A Function That Plots Survival Panel}
 \usage{
 plot_survival_panel(probe_name, sample_names, exp_grp_key, study, nb_q = 5,
   anova_mw_res, gene_pf_colname)
