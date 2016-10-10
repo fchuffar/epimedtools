@@ -1,6 +1,6 @@
 context("Study_features")
 
-test_that("compute_survival_table plot_survival_panel perform_anova_gen works work", {
+test_that("compute_survival_table plot_survival_panel perform_anova_gen work", {
   study = get_fake_study()
 
   suffix = "tabac"
@@ -11,10 +11,8 @@ test_that("compute_survival_table plot_survival_panel perform_anova_gen works wo
   PLOT_SCURVE=FALSE
 
   survival_res = compute_survival_table(probe_names, sample_names, exp_grp_key, study, suffix, USE_CACHE=USE_CACHE)
-  expect_equal(dim(survival_res), c(nrow(study$data),5))
 
   anova_res = perform_anova_gen(study$exp_grp, val~tabac, study$data)
-  expect_equal(dim(anova_res), c(nrow(study$data),10))
 
   mw_res = study$do_mw_test(probe_names, exp_grp_key, ctrl_fctr="Non_Smoker")
 
@@ -31,6 +29,9 @@ test_that("compute_survival_table plot_survival_panel perform_anova_gen works wo
   res_key_lr = "logratio_tabac_Smoker"
   res_key_pval = "adj_pval_tabac"
   plot_volcano(res_key_lr, res_key_pval, anova_mw_res)   
+
+  expect_equal(dim(survival_res), c(nrow(study$data),5))
+  expect_equal(dim(anova_res), c(nrow(study$data),10))
 })
 
 
