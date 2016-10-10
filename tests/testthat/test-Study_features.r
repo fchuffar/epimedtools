@@ -27,7 +27,10 @@ test_that("compute_survival_table plot_survival_panel perform_anova_gen works wo
   mw_pval="mw_pval_adj"
   main = ""
   fc_thres = c(-1.5, -1.2, 1.2, 1.5)
-  plot_hm(exp_grp_key, case_fctr, anova_mw_res, study, main=main, mw_pval=mw_pval, fc_thres=fc_thres)    
+  plot_hm(exp_grp_key, case_fctr, anova_mw_res, study, main=main, mw_pval=mw_pval, fc_thres=fc_thres) 
+  res_key_lr = "logratio_tabac_Smoker"
+  res_key_pval = "adj_pval_tabac"
+  plot_volcano(res_key_lr, res_key_pval, anova_mw_res)   
 })
 
 

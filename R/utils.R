@@ -1,3 +1,24 @@
+#' A Function That Draws a Volcano Plot
+#'
+#' This function draws volcano plot, logratio vs. p-value.
+#' @param res_key_lr the column name of the result dataframe to considere as logratio  
+#' @param res_key_pval the column name of the result dataframe to considere as logratio  
+#' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
+#' @param fc_thres A vector of integer corresponding to the foldchange thresholds
+#' @param pval_thres An integer corresponding to the p-value thresholds
+#' @param ... Parameters passed to plot function
+#' @return NULL
+#' @importFrom gtools foldchange2logratio
+#' @importFrom graphics plot
+#' @importFrom graphics legend
+#' @export
+plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5, -1.2, 1.2, 1.5), pval_thres=0.5, ...){
+  lr_thres = foldchange2logratio(fc_thres)
+  plot(anova_mw_res[[res_key_lr]], -log10(anova_mw_res[[res_key_pval]]), xlab=res_key_lr , ylab=paste("-log10(", res_key_pval,")", sep=""), xlim=range(c(lr_thres, anova_mw_res[[res_key_lr]])), ...)
+  abline(h=-log10(pval_thres), v=lr_thres, col=2, lty=3)
+  legend("bottomright", legend=paste("fc thres (", paste(fc_thres, collapse=","), ")", sep=""), col=2, lty=3, cex=0.5)
+}
+
 #' A Function That Plots Heatmaps of Differentialy Expressed Genes Accros Conditions
 #'
 #' This function plots heatmaps of differentialy expressed genes across conditions.
@@ -53,7 +74,7 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
   idx_probes = c(idx_2,idx_1)
 
   # wich samples?
-  fact_vals = unique(study$exp_grp[[exp_grp_key]])
+  fact_vals = na.omit(unique(study$exp_grp[[exp_grp_key]]))
   idx_samples = rownames(study$exp_grp)[study$exp_grp[[exp_grp_key]] %in% fact_vals]
   # idx_samples = rownames(study$exp_grp)
   
@@ -184,7 +205,16 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
   mw_pval_colnames = colnames(anova_mw_res)[grep("mw_pval_adj", colnames(anova_mw_res))]
   case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
   
-  text(match(case_names, bp$names), range(study$data)[2] - (1:length(case_names))/2, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))
+  mtc = match(case_names, bp$names)
+  rng = rep(range(study$data)[2], length(mtc))
+  dup = duplicated(paste(mtc,rng, sep="_"))
+  while(sum(dup) > 0) {
+    rng = rng - dup/2
+    dup = duplicated(paste(mtc,rng, sep="_"))
+  }
+  duplicated(paste(mtc,rng, sep="_"))
+
+  text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))
   # sapply(case_names, function(case_name) {
   #   cn = colnames(anova_mw_res)[grep(paste(case_name, ".mw_pval_adj", sep=""), colnames(anova_mw_res))]
   #   text(which(case_name == bp$names),range(study$data)[2], paste(cn, "=", signif(anova_mw_res[probe_name,cn],3), sep=""))
@@ -192,7 +222,7 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
   plot(dv$y, dv$x, ylim=range(v), xlim=rev(range(dv$y)), type='l', ylab="log2(exprs)")
   abline(h=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
   abline(h=b_opt, lty=2, lwd=1)
-  beanplot(v~fact, las=2, log="", ylim=range(v), main=paste(gene_name, "@", probe_name, " p_surv=", signif(as.numeric(pval_cox),3) 
+  beanplot(v~fact, las=2, log="", ylim=range(v), main=paste(gene_name, "@", probe_name, " p_cox=", signif(as.numeric(pval_cox),3) 
     # , " p_anova=", signif(as.numeric(pval_cox),3) 
     , sep=""))  
   abline(h=b_all, lty=1, lwd=1, col="grey")
@@ -344,8 +374,8 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 ######   * beta_histo_ADC:       the previously describe beta value for the group `ADC` of the experimental grouping field `histo`
 ######   * logratio_histo_ADC :  the previously describe logratio value for the group `ADC` of the experimental grouping field `histo`
 ######   * foldchange_histo_ADC: the previously describe foldchange value for the group `ADC` of the experimental grouping field `histo`
-######   * pval_histo:           the pvalue associated to the ANOVA test
-######   * adj_pval_histo :      the adjusted pvalue associated to the ANOVA test using Benjamini–Hochberg procedure
+######   * pval_histo:           the p-value associated to the ANOVA test
+######   * adj_pval_histo :      the adjusted p-value associated to the ANOVA test using Benjamini–Hochberg procedure
 ######   * lower_gs:             the name of the associated gene in lower case
 
 
@@ -373,8 +403,8 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 #'   * beta_histo_ADC:       the previously describe beta value for the group `ADC` of the experimental grouping field `histo`
 #'   * logratio_histo_ADC :  the previously describe logratio value for the group `ADC` of the experimental grouping field `histo`   
 #'   * foldchange_histo_ADC: the previously describe foldchange value for the group `ADC` of the experimental grouping field `histo`
-#'   * pval_histo:           the pvalue associated to the ANOVA test   
-#'   * adj_pval_histo:       the adjusted pvalue associated to the ANOVA test using Benjamini-Hochberg procedure
+#'   * pval_histo:           the p-value associated to the ANOVA test   
+#'   * adj_pval_histo:       the adjusted p-value associated to the ANOVA test using Benjamini-Hochberg procedure
 #'   * lower_gs:             the name of the associated gene in lower case
 #' @param design A dataframe that describes the design of the experiment.
 #' @param model A model describe the test to apply.
@@ -566,7 +596,7 @@ scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival
   sf=survfit(SS~v)
   levels = length(na.omit(unique(v)))
   col = colorRampPalette(colors)(levels)
-  main= paste(main, " p=", signif(as.numeric(pvt), nb_sign), sep="")
+  main= paste(main, " p_cox=", signif(as.numeric(pvt), nb_sign), sep="")
   plot(sf, col=col, main=main, ...)
   tab = table(v)
   if (missing(legend)) {
@@ -997,6 +1027,20 @@ for(j in 1:p) {
    }
 return(result)
 }
+
+
+
+#' A memoised version of read.csv2
+#'
+#' This function offer a memoised version of read.csv2. 
+#'
+#' @param ... parameters passed to read.csv2 function.
+#' @return csv file content.
+#' @importFrom GEOquery getGEO
+#' @importFrom memoise memoise
+mread.csv2 = memoise(function(...) {
+  read.csv2(...)
+})
 
 #' A memoised version of getGEO
 #'

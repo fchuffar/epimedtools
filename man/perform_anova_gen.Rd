@@ -43,8 +43,8 @@ This value are reported into the `anova_lung_res.csv` matrix file which fields a
   * beta_histo_ADC:       the previously describe beta value for the group `ADC` of the experimental grouping field `histo`
   * logratio_histo_ADC :  the previously describe logratio value for the group `ADC` of the experimental grouping field `histo`   
   * foldchange_histo_ADC: the previously describe foldchange value for the group `ADC` of the experimental grouping field `histo`
-  * pval_histo:           the pvalue associated to the ANOVA test   
-  * adj_pval_histo:       the adjusted pvalue associated to the ANOVA test using Benjamini-Hochberg procedure
+  * pval_histo:           the p-value associated to the ANOVA test   
+  * adj_pval_histo:       the adjusted p-value associated to the ANOVA test using Benjamini-Hochberg procedure
   * lower_gs:             the name of the associated gene in lower case
 }
 
