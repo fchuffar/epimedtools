@@ -1,0 +1,110 @@
+---
+title: "Example of Differential analysis"
+author: "Florent Chuffart"
+date: "`r Sys.Date()`"
+output: 
+  - rmarkdown::html_document
+---
+  
+  
+```{r, echo = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", echo=FALSE, results = "hide", fig.width=7, fig.height=7)
+library(epimedtools)
+
+thres = -log10(0.05)
+fc_thres = c(-1.5, -1.2, 1.2, 1.5)
+lr_thres = gtools::foldchange2logratio(fc_thres)
+```
+
+
+## Loading data
+
+We generate random data to illustrate the vignette behaviour.
+
+```{r}
+study = get_fake_study(nb_samples=100, nb_probes=200)
+study$exp_grp$tt = paste(study$exp_grp$tabac, study$exp_grp$treatment, sep="_")
+```
+
+## Explanatory variable 
+
+We need to specify the variable that we want to explain with the data. 
+It corresponds to an experiment grouping column name.
+
+
+```{r, eval=TRUE, echo=TRUE, results="hide"}
+exp_grp_key = "tt"
+```
+
+## Differential analysis
+
+### Performing differential analysis
+
+```{r, eval=TRUE, echo=TRUE, results="hide"}
+## ANOVA
+anova_res = epimedtools::perform_anova_gen(design=study$exp_grp, model=as.formula(paste("val~", exp_grp_key)), data=study$data) 
+## Mann-Whitney
+mw_res1 = study$do_mw_test(ctrl_key=exp_grp_key, case_key=exp_grp_key, ctrl_fctr="Non_Smoker_0ug", case_fctr="Smoker_0ug")
+mw_res2 = study$do_mw_test(ctrl_key=exp_grp_key, case_key=exp_grp_key, ctrl_fctr="Non_Smoker_15ug", case_fctr="Smoker_0ug")
+mw_res3 = study$do_mw_test(ctrl_key=exp_grp_key, case_key=exp_grp_key, ctrl_fctr="Non_Smoker_0ug", case_fctr="Smoker_15ug")
+mw_res4 = study$do_mw_test(ctrl_key=exp_grp_key, case_key=exp_grp_key, ctrl_fctr="Non_Smoker_15ug", case_fctr="Smoker_15ug")
+mw_res = cbind(mw_res1, mw_res2, mw_res3, mw_res4)
+```
+
+```{r, eval=TRUE, echo=TRUE, results="verbatim"}
+## Exporting...
+anova_mw_res = cbind(study$platform[rownames(anova_res), ]$gene_name, anova_res, mw_res[rownames(anova_res),])
+colnames(anova_mw_res)[1] = "gene_name"
+write.csv2(anova_mw_res, paste("anova_mw_lung_", exp_grp_key, "_res.csv", sep=""))
+WriteXLS::WriteXLS(anova_mw_res, paste("anova_mw_lung_", exp_grp_key, "_res.xls", sep=""), row.names=TRUE)
+head(anova_mw_res)
+```
+
+### Plotting differential analysis
+
+```{r, eval=TRUE, echo=FALSE, results="hide", fig.width=18, fig.height=6}
+plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5, -1.2, 1.2, 1.5), ...){
+  lr_thres = gtools::foldchange2logratio(fc_thres)
+  plot(anova_mw_res[[res_key_lr]], -log10(anova_mw_res[[res_key_pval]]), xlab=res_key_lr , ylab=paste("-log10(", res_key_pval,")", sep=""), xlim=range(c(lr_thres, anova_mw_res[[res_key_lr]])), ...)
+  abline(h=thres, v=lr_thres, col=2, lty=3)
+  legend("bottomright", legend=paste("fc thres (", paste(fc_thres, collapse=","), ")", sep=""), col=2, lty=3, cex=0.5)
+}
+
+for (lev in na.omit(unique(study$exp_grp[[exp_grp_key]]))) {
+  anova_res_key_lr = paste("logratio_", exp_grp_key, "_", lev, sep="")
+  anova_res_key_pval = paste("adj_pval_", exp_grp_key, sep="")
+  layout(matrix(1:3, 1), respect=TRUE)
+  plot_volcano(anova_res_key_lr, anova_res_key_pval, anova_mw_res, main=paste("ANOVA", exp_grp_key, lev, "effect"), pch=16, col=adjustcolor(1, alpha.f=0.5)) 
+
+  layout(matrix(c(1,1,1,1,2,3,4,4,4,4,5,6), 2), respect=TRUE)
+  foo = sapply(strsplit(colnames(anova_mw_res)[grep(paste(lev, ".*logratio", sep=""), colnames(anova_mw_res))],".", fixed=TRUE), function(l) {
+    if (lev %in% l) {      
+      key = paste(l[1], l[2], sep=".")
+      mw_res_key_lr = paste(key, "logratio", sep=".")
+      mw_res_key_pval = paste(key, "mw_pval_adj", sep=".")
+      plot_volcano(mw_res_key_lr, mw_res_key_pval, anova_mw_res, main=paste("Mann-Whitney", exp_grp_key, key), pch=16, col=adjustcolor(1, alpha.f=0.5))
+      plot(anova_mw_res[[anova_res_key_lr]], anova_mw_res[[mw_res_key_lr]], pch=".", xlab=anova_res_key_lr, ylab=mw_res_key_lr)
+      plot(-log10(anova_mw_res[[anova_res_key_pval]]), -log10(anova_mw_res[[mw_res_key_pval]]), pch=".", xlab=paste("-log10(", res_key_pval,")", sep=""), ylab=paste("-log10(", mw_res_key_pval,")", sep=""))
+    }
+  })
+}
+```
+
+
+### Heatmaps
+
+```{r, eval=TRUE, echo=FALSE, fig.width=18, fig.height=6}
+for (case_fctr in unique(study$exp_grp[[exp_grp_key]])) {
+  plot_hm(exp_grp_key, case_fctr, anova_mw_res, study, gene_pf_colname="gene_name", PLOT_GS=TRUE)  
+}
+```
+
+
+## Expression and survival on LOF GOF genes 
+
+
+```{r, eval=FALSE, fig.width=12, fig.height=18, echo=FALSE, results="verbatim"}
+for (probe_name in idx_probes) {
+  plot_survival_panel(probe_name, study=study, exp_grp_key1=exp_grp_key, anova_survival_res=anova_mw_res, gene_pf_colname="gene_name")
+}
+```

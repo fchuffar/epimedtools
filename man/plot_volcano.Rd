@@ -5,7 +5,7 @@
 \title{A Function That Draws a Volcano Plot}
 \usage{
 plot_volcano(res_key_lr, res_key_pval, anova_mw_res, fc_thres = c(-1.5, -1.2,
-  1.2, 1.5), pval_thres = 0.5, ...)
+  1.2, 1.5), pval_thres = 0.05, ...)
 }
 \arguments{
 \item{res_key_lr}{the column name of the result dataframe to considere as logratio}

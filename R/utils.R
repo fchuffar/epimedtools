@@ -1,3 +1,36 @@
+#' A Function That Requests Epimed Database
+#'
+#' This function requests epimed database.
+#' @param query A character string indicating to SQL query to execute
+#' @param dbname A character string integer the nane of the database
+#' @param host A character string the host of the database 
+#' @param port An integer indicating the port for the connexion to the database
+#' @param user A character string indicating the user tuse for the connexion to the database
+#' @param password A character string indicating the password to use for the connexion to the database
+#' @return a dataframe corresponding to data requested
+#' @importFrom DBI dbDriver
+#' @importFrom RPostgreSQL dbConnect
+#' @importFrom RPostgreSQL dbGetQuery
+#' @importFrom RPostgreSQL dbDisconnect
+#' @importFrom RPostgreSQL dbUnloadDriver
+#' @export
+#----------------------------------------------------------
+# function query on database
+#----------------------------------------------------------
+req = function(query, dbname="epimed_prod", host="epimed-db.imag.fr", port=5432, user="epimedtools", password="epimedtools") {
+ # load the PostgreSQL driver
+ drv = DBI::dbDriver("PostgreSQL")
+ # create a connection to the postgres database
+ con = RPostgreSQL::dbConnect(drv, dbname=dbname, host=host, port=port, user=user, password=password)
+ # load data
+ info = RPostgreSQL::dbGetQuery(con, query)
+ # close the connection
+ RPostgreSQL::dbDisconnect(con)
+ RPostgreSQL::dbUnloadDriver(drv)
+ return(info)  
+}
+
+
 #' A Function That Draws a Volcano Plot
 #'
 #' This function draws volcano plot, logratio vs. p-value.
@@ -12,7 +45,7 @@
 #' @importFrom graphics plot
 #' @importFrom graphics legend
 #' @export
-plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5, -1.2, 1.2, 1.5), pval_thres=0.5, ...){
+plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5, -1.2, 1.2, 1.5), pval_thres=0.05, ...){
   lr_thres = foldchange2logratio(fc_thres)
   plot(anova_mw_res[[res_key_lr]], -log10(anova_mw_res[[res_key_pval]]), xlab=res_key_lr , ylab=paste("-log10(", res_key_pval,")", sep=""), xlim=range(c(lr_thres, anova_mw_res[[res_key_lr]])), ...)
   abline(h=-log10(pval_thres), v=lr_thres, col=2, lty=3)
@@ -31,14 +64,16 @@ plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5,
 #' @param mw_pval the the suffix the column name corresponding to the Mann-Whitney p-value used to 
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
 #' @param PLOT_GS A boolean set to TRUE if genes names to be ploted
+#' @param PLOT_PVAL A boolean set to TRUE if ANOVA and Mann-Whitney need to be ploted
 #' @param fc_thres A vector of integer coprresponding to the foldchange thresholds
+#' @param key A character string that will suffix the column names of the resulting data frame
 #' @return probes used to plot the heatmap
 #' @importFrom gtools foldchange2logratio
 #' @importFrom graphics hist
 #' @importFrom graphics image
 #' @importFrom graphics points
 #' @export
-plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,  mw_pval="mw_pval_adj", gene_pf_colname="gene_name", PLOT_GS=FALSE, fc_thres = c(-1.5, -1.2, 1.2, 1.5)) {
+plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,  mw_pval="mw_pval_adj", gene_pf_colname="gene_name", key, PLOT_GS=FALSE, fc_thres = c(-1.5, -1.2, 1.2, 1.5), PLOT_PVAL=TRUE) {
   lr_thres = foldchange2logratio(fc_thres)
   if (missing(main)) {main=""} 
   if (missing(ctrl_fctr)) {
@@ -61,6 +96,11 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
     anova_mw_res[[key_lr_an]] = anova_mw_res[[paste("logratio_", exp_grp_key, "_", case_fctr, sep="")]] - anova_mw_res[[paste("logratio_", exp_grp_key, "_", ctrl_fctr, sep="")]]
     anova_mw_res[[key_fc_an]] = gtools::logratio2foldchange(anova_mw_res[[key_lr_an]])    
     main = paste(main, " ", mw_key, sep="")
+  }
+
+  if (!missing(key)) {
+    key_pval_an = paste(key_pval_an, key, sep="_")
+    key_pval_mw = paste(key_pval_mw, key, sep="_")
   }
 
   ## which genes?
@@ -115,10 +155,11 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
   # layout(matrix(1:6, 2, byrow=TRUE), respect=TRUE)
   layout(matrix(1:3, 1, byrow=TRUE), respect=TRUE)
 
-  plot(-log10(anova_mw_res[[key_pval_an]]), -log10(anova_mw_res[[key_pval_mw]]), pch=".", col=(rownames(anova_mw_res) %in% idx_probes+1), xlab=paste("-log10(",key_pval_an,")", sep=""), ylab=paste("-log10(",key_pval_mw,")", sep=""))
-  points(-log10(anova_mw_res[idx_probes, key_pval_an]), -log10(anova_mw_res[idx_probes, key_pval_mw]), pch=16, col=adjustcolor(2, alpha.f=0.3))
-  abline(h=-log10(0.05), v=-log10(0.05), col="grey", lty=2)
-
+  if (PLOT_PVAL) {
+    plot(-log10(anova_mw_res[[key_pval_an]]), -log10(anova_mw_res[[key_pval_mw]]), pch=".", col=(rownames(anova_mw_res) %in% idx_probes+1), xlab=paste("-log10(",key_pval_an,")", sep=""), ylab=paste("-log10(",key_pval_mw,")", sep=""))
+    points(-log10(anova_mw_res[idx_probes, key_pval_an]), -log10(anova_mw_res[idx_probes, key_pval_mw]), pch=16, col=adjustcolor(2, alpha.f=0.3))
+    abline(h=-log10(0.05), v=-log10(0.05), col="grey", lty=2)
+  }
   # plot(anova_mw_res[[key_lr_an]], anova_mw_res[[key_lr_mw]], col=(rownames(anova_mw_res) %in% c(idx_1, idx_2)) + 1, xlab=key_lr_an, ylab=key_lr_mw, pch=".")
   # abline(h=lr_thres, v=lr_thres, col="grey", lty=2)
 
@@ -213,8 +254,9 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
     dup = duplicated(paste(mtc,rng, sep="_"))
   }
   duplicated(paste(mtc,rng, sep="_"))
-
-  text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))
+  if (length(mtc) > 0) {
+    text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))    
+  }
   # sapply(case_names, function(case_name) {
   #   cn = colnames(anova_mw_res)[grep(paste(case_name, ".mw_pval_adj", sep=""), colnames(anova_mw_res))]
   #   text(which(case_name == bp$names),range(study$data)[2], paste(cn, "=", signif(anova_mw_res[probe_name,cn],3), sep=""))
@@ -231,6 +273,130 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
   scurve(study$exp_grp[sample_names,]$ss, vd_opt, main=paste(gene_name, probe_name, sep="@"))
   return(NULL)
 }
+
+
+
+
+
+
+
+
+
+
+#' A Function That Plots Expression as Beanplots
+#'
+#' This function plots ...
+#' @param probe_name probe to consider
+#' @param sample_names index of samples to consider
+#' @param exp_grp_key the column name of the exprimental grouping to considere  
+#' @param study An Reference classes object that contains data and metadata
+#' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
+#' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name.
+#' @return NULL
+#' @importFrom grDevices adjustcolor
+#' @importFrom graphics abline
+#' @importFrom graphics layout
+#' @importFrom stats density
+#' @importFrom utils combn
+#' @importFrom beanplot beanplot
+#' @export
+plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname, ylim) {
+  if (missing(sample_names)) {
+    sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$ss),])
+  }
+  if (!missing(gene_pf_colname)) {
+    gene_name = study$platform[probe_name,][[gene_pf_colname]]
+  } else {
+    gene_name = ""
+  }
+  # graphicals
+  if (missing(anova_mw_res)) {
+    design=study$exp_grp
+    model=as.formula(paste("val~", exp_grp_key))
+    data=study$data[probe_name,]    
+    anova_mw_res = epimedtools::perform_anova_gen(design=design, model=model, data=data)
+  }
+  anova_pval_leg = paste("p_anova=", signif(anova_mw_res[probe_name, paste("adj_pval", exp_grp_key, sep="_")],3), sep="")
+  bp = beanplot(study$data[probe_name,rownames(study$exp_grp)]~study$exp_grp[[exp_grp_key]], las=2, log="", ylim=range(study$data[probe_name,rownames(study$exp_grp)[!is.na(study$exp_grp[[exp_grp_key]])]]), 
+    main=paste(gene_name, "@", probe_name, " ", anova_pval_leg, sep=""), ylab="log2(exprs)")
+  mw_pval_colnames = colnames(anova_mw_res)[grep("mw_pval_adj", colnames(anova_mw_res))]
+  case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
+  
+  mtc = match(case_names, bp$names)
+  rng = rep(range(study$data)[2], length(mtc))
+  dup = duplicated(paste(mtc,rng, sep="_"))
+  while(sum(dup) > 0) {
+    rng = rng - dup/2
+    dup = duplicated(paste(mtc,rng, sep="_"))
+  }
+  duplicated(paste(mtc,rng, sep="_"))
+  if (length(mtc) > 0) {
+    text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))    
+  }
+  return(NULL)
+}
+
+
+
+
+
+
+
+
+#' A Function That Plots Survival Panel
+#'
+#' This function plots ...
+#' @param probe_name probe to consider
+#' @param sample_names index of samples to consider
+#' @param study An Reference classes object that contains data and metadata
+#' @param nb_q An integer specifying the number of quantile to initialize discretized expression data
+#' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
+#' @param ss_key A character string specifying the experimental grouping column to use for survival
+#' @return NULL
+#' @importFrom grDevices adjustcolor
+#' @importFrom graphics abline
+#' @importFrom graphics layout
+#' @importFrom stats density
+#' @importFrom utils combn
+#' @export
+plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname, ss_key="ss") {
+  if (missing(sample_names)) {
+    sample_names = rownames(study$exp_grp[!is.na(study$exp_grp[[ss_key]]),])
+  }
+  if (!missing(gene_pf_colname)) {
+    gene_name = study$platform[probe_name,][[gene_pf_colname]]
+  } else {
+    gene_name = ""
+  }
+  v = study$data[probe_name, sample_names]
+  dv = density(v)
+  pval_cox = coxres(study$exp_grp[sample_names,ss_key], v)[1]
+  # quantiles
+  vd_all = discr(v, nb_q)
+  b_all = attr(vd_all, "breaks")
+  # optimize quantiles
+  tbc = 2:(nb_q)
+  ibs = unlist(lapply( 1:length(tbc), function(n) {
+   as.list(as.data.frame(combn(tbc,n)))
+  }), recursive=FALSE)
+  pvcoxes = sapply(ibs, function(ib){
+   vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+   # scurve(ss, vd, main=paste(gene_name, probe_name, sep="@"))
+   coxres(study$exp_grp[sample_names,ss_key], vd_it)[1]
+  })
+  ib = ibs[[which(pvcoxes == min(pvcoxes))]]
+  vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+  b_opt = attr(vd_opt, "breaks")
+  # graphicals
+  layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE))
+  plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=paste(gene_name, "@", probe_name, " p_cox=", signif(as.numeric(pval_cox),3), sep=""))
+  abline(v=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
+  abline(v=b_opt, lty=2, lwd=1)
+  scurve(study$exp_grp[sample_names,ss_key], vd_all, main=paste(gene_name, probe_name, sep="@"))
+  scurve(study$exp_grp[sample_names,ss_key], vd_opt, main=paste(gene_name, probe_name, sep="@"))
+  return(NULL)
+}
+
 
 # exp_grp_key = "histo"
 # exp_grp_key = "histo.y"
@@ -355,57 +521,34 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 
 
 
-###### Genes are indexed by `g` in `G`.
-###### Conditions are indexed by `h` \in H$ (histology...).
-###### Samples are indexed by $i \in I$.
-###### For each gene $g$:
-######
-######   * we compute a linear model of the level of expression value according to histological groups: $log2(exprs_{g, i}) = \beta_{g, h} + \epsilon_{g, i}$.
-######   * we perform ANOVA test on this model and harvest corresponding p-value
-######   * we extract of each group: $\beta_{g, h} = \frac{\sum_{g \in G} mean(log2(exprs_{g,i}))}{|G|} - mean(log2(exprs_{g,i}))$
-######   * we compute corresponding logratio scores: $logratio_{g, h} = (1 + \frac{1}/{|H| - 1}) \beta_{g, h}$
-######   * we compute corresponding foldchange scores using `gtools::foldchange2logratio` function
-######
-###### This value are reported into the `anova_lung_res.csv` matrix file which fields are:
-######
-######   * probename:            the name of the corresponding probe
-######   * ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)
-######   * intercept:            the mean of means of each group
-######   * beta_histo_ADC:       the previously describe beta value for the group `ADC` of the experimental grouping field `histo`
-######   * logratio_histo_ADC :  the previously describe logratio value for the group `ADC` of the experimental grouping field `histo`
-######   * foldchange_histo_ADC: the previously describe foldchange value for the group `ADC` of the experimental grouping field `histo`
-######   * pval_histo:           the p-value associated to the ANOVA test
-######   * adj_pval_histo :      the adjusted p-value associated to the ANOVA test using Benjamini–Hochberg procedure
-######   * lower_gs:             the name of the associated gene in lower case
-
 
 
 #' A Function Performs Differential Expression Analysis Based On ANOVA
 #'
 #' This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix. 
-#' Its return a dataframe that includes many metrics as a results (beta, pval...).
-#' Genes are indexed by `g` in `G`.
-#' Conditions are indexed by `h` in `H` (histology, sex...).
-#' Samples are indexed by `i` in `I`.
+#' It returns a dataframe that includes many metrics as a results (betas, p-values, ...).
+#' Genes are indexed by `g` in `G`, 
+#' conditions are indexed by `h` in `H` (histology, sex...) and
+#' samples are indexed by `i` in `I`.
 #' For each gene `g`: 
-#' 
-#'   * we compute a linear model of the level of expression value according to histological groups: `log2(exprs_{g, i}) = beta_{g, h} + epsilon_{g, i}`.
-#'   * we perform ANOVA test on this model and harvest corresponding p-value
-#'   * we extract of each group: `beta_{g, h} = frac{sum_{g in G} mean(log2(exprs_{g,i}))}{|G|} - mean(log2(exprs_{g,i}))`
-#'   * we compute corresponding logratio scores: `logratio_{g, h} = (1 + frac{1}/{|H| - 1}) beta_{g, h}`
-#'   * we compute corresponding foldchange scores using `gtools::foldchange2logratio` function
-#' 
-#' This value are reported into the `anova_lung_res.csv` matrix file which fields are: 
-#' 
-#'   * probename:            the name of the corresponding probe      
-#'   * ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)  
-#'   * intercept:            the mean of means of each group 
-#'   * beta_histo_ADC:       the previously describe beta value for the group `ADC` of the experimental grouping field `histo`
-#'   * logratio_histo_ADC :  the previously describe logratio value for the group `ADC` of the experimental grouping field `histo`   
-#'   * foldchange_histo_ADC: the previously describe foldchange value for the group `ADC` of the experimental grouping field `histo`
-#'   * pval_histo:           the p-value associated to the ANOVA test   
-#'   * adj_pval_histo:       the adjusted p-value associated to the ANOVA test using Benjamini-Hochberg procedure
-#'   * lower_gs:             the name of the associated gene in lower case
+#' \itemize{
+#'   \item we compute a linear model of the level of expression value according to histological groups: `log2(exprs_{g, i}) = beta_{g, h} + epsilon_{g, i}`.
+#'   \item we perform ANOVA test on this model and harvest corresponding p-value
+#'   \item we extract of each group: `beta_{g, h} = frac{sum_{g in G} mean(log2(exprs_{g,i}))}{|G|} - mean(log2(exprs_{g,i}))`
+#'   \item we compute corresponding logratio scores: `logratio_{g, h} = (1 + frac{1}/{|H| - 1}) beta_{g, h}`
+#'   \item we compute corresponding foldchange scores using `gtools::foldchange2logratio` function
+#' }
+#' These values are retruned as a dataframe which fields are: 
+#' \itemize{
+#'   \item probename:            the name of the corresponding probe      
+#'   \item ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)  
+#'   \item intercept:            the mean of means of each group 
+#'   \item beta_hhh_FFF:         the previously describe beta value for the factor `FFF` of the experimental grouping field `hhh`
+#'   \item logratio_hhh_FFF :    the previously describe logratio value for the factor `FFF` of the experimental grouping field `hhh`   
+#'   \item foldchange_hhh_FFF:   the previously describe foldchange value for the factor `FFF` of the experimental grouping field `hhh`
+#'   \item pval_hhh:             the p-value associated to the ANOVA test   
+#'   \item adj_pval_hhh:         the adjusted p-value associated to the ANOVA test using Benjamini-Hochberg procedure to the threshold of 0.05.
+#' }
 #' @param design A dataframe that describes the design of the experiment.
 #' @param model A model describe the test to apply.
 #' @param data A matrix of exrpression values for probe/gene (lines) and confditions (colums).
@@ -422,28 +565,25 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 #' @export
 perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALSE, AD_TEST=TRUE) {
   options(contrasts=c("contr.sum", "contr.poly"))
-  anova_res = monitored_apply(data[, rownames(design)], 1, function(l) {
+  if (nrow(t(data)) == 1 ) {
+    data=t(data)
+    data = t(data[,rownames(design)])
+  } else {
+    data = data[,rownames(design)]
+  }
+  anova_res = monitored_apply(data, 1, function(l) {
     # print(l)
-    design$val = l
-    m = lm(model, data=design)
-    # Shapiro-Wilks (normality)
-    # sw = shapiro.test(residuals(m))
-    # sw_pval = sw$p.value
+    d = data.frame(val=l)
+    exp_grp_key = as.character(model)[3]
+    d[[exp_grp_key]] = as.factor(design[[exp_grp_key]])
+    m = lm(model, data=d)
     # Anderson-Darling (normality)
     if (AD_TEST) {
-      ad = ad.test(residuals(m))
+      ad = nortest::ad.test(residuals(m))
       ad_pval = ad$p.value
     } else {
       ad_pval = 1
     }
-    # Brown-Forsythe (homoskedasticity)
-    # if (length(grep("*", "a*a", fixed=TRUE) > 0)) {
-    #
-    # }
-    # bf = lawstat::levene.test(residuals(m), do.call(paste,design[,as.character(model[c(3:min(length(model), 4))])]))
-    # bf_pval = bf$p.value
-    # boxplot(val~sp, data=design)
-
     aov_coeff = c(intercept=m$coefficients[[1]])
     for (xlevels_name in names(m$xlevels)) {
       for (lev in m$xlevels[[xlevels_name]]) {

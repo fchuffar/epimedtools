@@ -22,29 +22,28 @@ perform_anova_gen(design, model, data, key = NULL, MONITORED_APPLY = FALSE,
 }
 \description{
 This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix. 
-Its return a dataframe that includes many metrics as a results (beta, pval...).
-Genes are indexed by `g` in `G`.
-Conditions are indexed by `h` in `H` (histology, sex...).
-Samples are indexed by `i` in `I`.
-For each gene `g`:
+It returns a dataframe that includes many metrics as a results (betas, p-values, ...).
+Genes are indexed by `g` in `G`, 
+conditions are indexed by `h` in `H` (histology, sex...) and
+samples are indexed by `i` in `I`.
+For each gene `g`: 
+\itemize{
+  \item we compute a linear model of the level of expression value according to histological groups: `log2(exprs_{g, i}) = beta_{g, h} + epsilon_{g, i}`.
+  \item we perform ANOVA test on this model and harvest corresponding p-value
+  \item we extract of each group: `beta_{g, h} = frac{sum_{g in G} mean(log2(exprs_{g,i}))}{|G|} - mean(log2(exprs_{g,i}))`
+  \item we compute corresponding logratio scores: `logratio_{g, h} = (1 + frac{1}/{|H| - 1}) beta_{g, h}`
+  \item we compute corresponding foldchange scores using `gtools::foldchange2logratio` function
 }
-\details{
-* we compute a linear model of the level of expression value according to histological groups: `log2(exprs_{g, i}) = beta_{g, h} + epsilon_{g, i}`.
-  * we perform ANOVA test on this model and harvest corresponding p-value
-  * we extract of each group: `beta_{g, h} = frac{sum_{g in G} mean(log2(exprs_{g,i}))}{|G|} - mean(log2(exprs_{g,i}))`
-  * we compute corresponding logratio scores: `logratio_{g, h} = (1 + frac{1}/{|H| - 1}) beta_{g, h}`
-  * we compute corresponding foldchange scores using `gtools::foldchange2logratio` function
-
-This value are reported into the `anova_lung_res.csv` matrix file which fields are:
-
-* probename:            the name of the corresponding probe      
-  * ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)  
-  * intercept:            the mean of means of each group 
-  * beta_histo_ADC:       the previously describe beta value for the group `ADC` of the experimental grouping field `histo`
-  * logratio_histo_ADC :  the previously describe logratio value for the group `ADC` of the experimental grouping field `histo`   
-  * foldchange_histo_ADC: the previously describe foldchange value for the group `ADC` of the experimental grouping field `histo`
-  * pval_histo:           the p-value associated to the ANOVA test   
-  * adj_pval_histo:       the adjusted p-value associated to the ANOVA test using Benjamini-Hochberg procedure
-  * lower_gs:             the name of the associated gene in lower case
+These values are retruned as a dataframe which fields are: 
+\itemize{
+  \item probename:            the name of the corresponding probe      
+  \item ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)  
+  \item intercept:            the mean of means of each group 
+  \item beta_hhh_FFF:         the previously describe beta value for the factor `FFF` of the experimental grouping field `hhh`
+  \item logratio_hhh_FFF :    the previously describe logratio value for the factor `FFF` of the experimental grouping field `hhh`   
+  \item foldchange_hhh_FFF:   the previously describe foldchange value for the factor `FFF` of the experimental grouping field `hhh`
+  \item pval_hhh:             the p-value associated to the ANOVA test   
+  \item adj_pval_hhh:         the adjusted p-value associated to the ANOVA test using Benjamini-Hochberg procedure to the threshold of 0.05.
+}
 }
 
