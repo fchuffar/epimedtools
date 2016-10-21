@@ -5,7 +5,7 @@
 \title{A Function That Plots Expression as Beanplots}
 \usage{
 plot_bean_expr(probe_name, sample_names, exp_grp_key, study, anova_mw_res,
-  gene_pf_colname, ylim)
+  gene_pf_colname)
 }
 \arguments{
 \item{probe_name}{probe to consider}

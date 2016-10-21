@@ -19,14 +19,14 @@
 #----------------------------------------------------------
 req = function(query, dbname="epimed_prod", host="epimed-db.imag.fr", port=5432, user="epimedtools", password="epimedtools") {
  # load the PostgreSQL driver
- drv = DBI::dbDriver("PostgreSQL")
+ drv = dbDriver("PostgreSQL")
  # create a connection to the postgres database
- con = RPostgreSQL::dbConnect(drv, dbname=dbname, host=host, port=port, user=user, password=password)
+ con = dbConnect(drv, dbname=dbname, host=host, port=port, user=user, password=password)
  # load data
- info = RPostgreSQL::dbGetQuery(con, query)
+ info = dbGetQuery(con, query)
  # close the connection
- RPostgreSQL::dbDisconnect(con)
- RPostgreSQL::dbUnloadDriver(drv)
+ dbDisconnect(con)
+ dbUnloadDriver(drv)
  return(info)  
 }
 
@@ -297,10 +297,11 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
 #' @importFrom graphics abline
 #' @importFrom graphics layout
 #' @importFrom stats density
+#' @importFrom stats as.formula
 #' @importFrom utils combn
 #' @importFrom beanplot beanplot
 #' @export
-plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname, ylim) {
+plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname) {
   if (missing(sample_names)) {
     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$ss),])
   }
