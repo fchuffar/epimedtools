@@ -5,7 +5,7 @@
 \title{A Function That Plots Expression as Beanplots}
 \usage{
 plot_bean_expr(probe_name, sample_names, exp_grp_key, study, anova_mw_res,
-  gene_pf_colname)
+  gene_pf_colname = "lower_gs", cex.axis = 0.7, ylim)
 }
 \arguments{
 \item{probe_name}{probe to consider}
@@ -19,6 +19,10 @@ plot_bean_expr(probe_name, sample_names, exp_grp_key, study, anova_mw_res,
 \item{anova_mw_res}{A dataframe with ANOVA and Mann-Whitney results}
 
 \item{gene_pf_colname}{A character string specifying the name of the platform column to use for the gene name.}
+
+\item{cex.axis}{A numeric specifying the size of axis text}
+
+\item{ylim}{A vector of 2 numeric specifying the y axis range}
 }
 \description{
 This function plots ...

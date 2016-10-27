@@ -1,3 +1,22 @@
+#' A Function That Overviews an Experiment Grouping
+#'
+#' This function overviews an experiment grouping.
+#' @param e An expriment grouping
+#' @param FULL A boolean to specifying if homogenous or fully heterogenous colums need to be reported
+#' @return Nothing
+#' @export
+overview = function(e, FULL=FALSE) {
+  invisible(sapply(colnames(e), function(cn) {
+    col = e[,cn]
+    if (length(unique(col)) > 1 & length(unique(col)) < length(col) & !FULL) {
+      print(paste("============= ", cn, " (", length(unique(col)), ") =============", sep=""))
+      if (length(unique(col)) < 100) {
+        print(unique(col))
+      }    
+    }
+  }))
+}
+
 #' A Function That Requests Epimed Database
 #'
 #' This function requests epimed database.
@@ -14,9 +33,6 @@
 #' @importFrom RPostgreSQL dbDisconnect
 #' @importFrom RPostgreSQL dbUnloadDriver
 #' @export
-#----------------------------------------------------------
-# function query on database
-#----------------------------------------------------------
 req = function(query, dbname="epimed_prod", host="epimed-db.imag.fr", port=5432, user="epimedtools", password="epimedtools") {
  # load the PostgreSQL driver
  drv = dbDriver("PostgreSQL")
@@ -292,6 +308,8 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
 #' @param study An Reference classes object that contains data and metadata
 #' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name.
+#' @param cex.axis A numeric specifying the size of axis text
+#' @param ylim A vector of 2 numeric specifying the y axis range
 #' @return NULL
 #' @importFrom grDevices adjustcolor
 #' @importFrom graphics abline
@@ -301,30 +319,31 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
 #' @importFrom utils combn
 #' @importFrom beanplot beanplot
 #' @export
-plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname) {
+plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname="lower_gs",cex.axis=0.7, ylim) {
   if (missing(sample_names)) {
-    sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$ss),])
+    sample_names = rownames(study$exp_grp)
   }
-  if (!missing(gene_pf_colname)) {
-    gene_name = study$platform[probe_name,][[gene_pf_colname]]
-  } else {
-    gene_name = ""
-  }
+  data = study$data[probe_name,sample_names] 
+  exp_grp = study$exp_grp[sample_names,]
+  gene_name = study$platform[probe_name,][[gene_pf_colname]]
   # graphicals
   if (missing(anova_mw_res)) {
-    design=study$exp_grp
+    design=exp_grp
     model=as.formula(paste("val~", exp_grp_key))
-    data=study$data[probe_name,]    
     anova_mw_res = epimedtools::perform_anova_gen(design=design, model=model, data=data)
+    rownames(anova_mw_res) = probe_name
+  }
+  if (missing(ylim)) {
+    ylim=range(data[rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]])
   }
   anova_pval_leg = paste("p_anova=", signif(anova_mw_res[probe_name, paste("adj_pval", exp_grp_key, sep="_")],3), sep="")
-  bp = beanplot(study$data[probe_name,rownames(study$exp_grp)]~study$exp_grp[[exp_grp_key]], las=2, log="", ylim=range(study$data[probe_name,rownames(study$exp_grp)[!is.na(study$exp_grp[[exp_grp_key]])]]), 
-    main=paste(gene_name, "@", probe_name, " ", anova_pval_leg, sep=""), ylab="log2(exprs)")
+  bp = beanplot(data~exp_grp[[exp_grp_key]], las=2, log="", ylim=ylim, 
+    main=paste(gene_name, "@", probe_name, " ", exp_grp_key, " ", anova_pval_leg, sep=""), ylab="log2(exprs)",cex.axis=cex.axis)
   mw_pval_colnames = colnames(anova_mw_res)[grep("mw_pval_adj", colnames(anova_mw_res))]
   case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
   
   mtc = match(case_names, bp$names)
-  rng = rep(range(study$data)[2], length(mtc))
+  rng = rep(range(data)[2], length(mtc))
   dup = duplicated(paste(mtc,rng, sep="_"))
   while(sum(dup) > 0) {
     rng = rng - dup/2
@@ -390,7 +409,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
   b_opt = attr(vd_opt, "breaks")
   # graphicals
   layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE))
-  plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=paste(gene_name, "@", probe_name, " p_cox=", signif(as.numeric(pval_cox),3), sep=""))
+  plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=paste(gene_name, "@", probe_name, " p_cox=", signif(as.numeric(pval_cox),3), " (", ss_key, ")", sep=""))
   abline(v=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
   abline(v=b_opt, lty=2, lwd=1)
   scurve(study$exp_grp[sample_names,ss_key], vd_all, main=paste(gene_name, probe_name, sep="@"))
