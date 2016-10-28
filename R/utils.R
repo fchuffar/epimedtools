@@ -90,7 +90,7 @@ plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5,
 #' @importFrom graphics points
 #' @export
 plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,  mw_pval="mw_pval_adj", gene_pf_colname="gene_name", key, PLOT_GS=FALSE, fc_thres = c(-1.5, -1.2, 1.2, 1.5), PLOT_PVAL=TRUE) {
-  lr_thres = foldchange2logratio(fc_thres)
+  lr_thres = gtools::foldchange2logratio(fc_thres)
   if (missing(main)) {main=""} 
   if (missing(ctrl_fctr)) {
     ctrl_fctr = "others"
@@ -139,14 +139,22 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
   #   # log2(2^l / mean(2^l))
   #   l - mean(l)
   # })[idx_samples,]
-  data_logratio = apply(t(study$data[idx_probes, idx_samples]), 2, function(l) {
+
+  tmp_data = study$data[idx_probes,idx_samples]
+  if (nrow(t(tmp_data)) == 1) {
+    tmp_data=t(tmp_data)
+    rownames(tmp_data) = idx_probes
+  }
+  data_logratio = apply(t(tmp_data), 2, function(l) {
     # 2^l / mean(2^l)
     # log2(2^l / mean(2^l))
     l - mean(l)
   })
+  if (nrow(t(data_logratio)) == 1) {
+    data_logratio=t(data_logratio)
+    rownames(data_logratio) = idx_probes
+  }
 
-  ## ordering samples
-  # data_logratio_mean = apply(data_logratio, 1, function(l) {mean(abs(l))})
   data_logratio_mean = apply(t(data_logratio[,idx_1]), 2, mean)
   mean_idx = names(data_logratio_mean)[rev(order(data_logratio_mean))]
   # mean_idx = names(data_logratio_mean)
