@@ -839,7 +839,7 @@ discr = function(v, nd=5, breaks){
   vd1 = as.vector(vd1)
   vd = v
   vd[ind] = vd1
-  vd = as.numeric(vd)
+  vd = as.factor(sprintf("%05d",vd))
   return(structure(vd, breaks=b))
 }
 
