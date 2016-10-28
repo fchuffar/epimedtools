@@ -836,9 +836,10 @@ discr = function(v, nd=5, breaks){
   b = unique(b)
   vd1 = cut(v1, b, include.lowest=TRUE, right=FALSE, labels=(1:(length(b)-1)))
   vd1 = as.vector(vd1)
+  vd1 = as.vector(vd1)
   vd = v
   vd[ind] = vd1
-  vd = as.factor(vd)
+  vd = as.numeric(vd)
   return(structure(vd, breaks=b))
 }
 
