@@ -6,7 +6,7 @@
 
 The __epimedtools__ package provides set of useful statistical functions. This package rely on 'GEOquery' and 'affy' packages, R Reference Classes, caching features and memoisation to simplify, homogenize and speed up multi-omic analysis.
 
-## Data Struture
+## Data Structure
 
 The __epimedtools__ package aims to manage a `study` object composed of the three data structure: the `data` matrix and the two `exp_grp` and `platform` dataframes.
 
