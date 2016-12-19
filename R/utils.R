@@ -217,6 +217,9 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
 #' @param nb_q An integer specifying the number of quantile to initialize discretized expression data
 #' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name.
+#' @param ss_key A character string specifying the experimental grouping column to use for survival
+#' @param ylim A vector of 2 numeric specifying the y axis range
+#' @param cex.axis interger specifying the size of the axis decorations
 #' @return NULL
 #' @importFrom grDevices adjustcolor
 #' @importFrom graphics abline
@@ -225,15 +228,65 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
 #' @importFrom utils combn
 #' @importFrom beanplot beanplot
 #' @export
-plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_q=5, anova_mw_res, gene_pf_colname) {
+# plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname="lower_gs",cex.axis=0.7, ylim) {
+#   data = study$data[probe_name,sample_names]
+#   exp_grp = study$exp_grp[sample_names,]
+#   gene_name = study$platform[probe_name,][[gene_pf_colname]]
+#   # graphicals
+#   if (missing(anova_mw_res)) {
+#     design=exp_grp
+#     model=as.formula(paste("val~", exp_grp_key))
+#     anova_mw_res = epimedtools::perform_anova_gen(design=design, model=model, data=data)
+#     rownames(anova_mw_res) = probe_name
+#   }
+#   if (missing(ylim)) {
+#     ylim=range(data[rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]])
+#   }
+#   anova_pval_leg = paste("p_anova=", signif(anova_mw_res[probe_name, paste("adj_pval", exp_grp_key, sep="_")],3), sep="")
+#   bp = beanplot(data~exp_grp[[exp_grp_key]], las=2, log="", ylim=ylim,
+#     main=paste(gene_name, "@", probe_name, " ", exp_grp_key, " ", anova_pval_leg, sep=""), ylab="log2(exprs)",cex.axis=cex.axis)
+#   mw_pval_colnames = colnames(anova_mw_res)[grep("mw_pval_adj", colnames(anova_mw_res))]
+#   case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
+#
+#   mtc = match(case_names, bp$names)
+#   rng = rep(range(data)[2], length(mtc))
+#   dup = duplicated(paste(mtc,rng, sep="_"))
+#   while(sum(dup) > 0) {
+#     rng = rng - dup/2
+#     dup = duplicated(paste(mtc,rng, sep="_"))
+#   }
+#   duplicated(paste(mtc,rng, sep="_"))
+#   if (length(mtc) > 0) {
+#     text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))
+#   }
+#   return(NULL)
+# }
+# plot_bean_expr =             function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname="lower_gs",cex.axis=0.7, ylim) {
+# plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname="lower_gs", ss_key="os") {
+plot_survival_panel =        function(probe_name, sample_names, exp_grp_key, study, nb_q=5, anova_mw_res, gene_pf_colname="lower_gs", ss_key="os",cex.axis=0.7, ylim) {
   if (missing(sample_names)) {
-    sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$ss),])
+    sample_names = rownames(study$exp_grp[!is.na(study$exp_grp[[ss_key]]),])
   }
+  data = study$data[probe_name,sample_names] 
+  exp_grp = study$exp_grp[sample_names,]
   if (!missing(gene_pf_colname)) {
     gene_name = study$platform[probe_name,][[gene_pf_colname]]
   } else {
     gene_name = ""
   }
+  # graphicals
+  if (missing(anova_mw_res)) {
+    design=exp_grp
+    model=as.formula(paste("val~", exp_grp_key))
+    anova_mw_res = epimedtools::perform_anova_gen(design=design, model=model, data=data)
+    rownames(anova_mw_res) = probe_name
+  }
+  if (missing(ylim)) {
+    ylim=range(data[rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]])
+  }
+
+
+
   v = study$data[probe_name, sample_names]
   dv = density(v)
   fact = study$exp_grp[sample_names, exp_grp_key]
@@ -380,6 +433,7 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
 #' @param nb_q An integer specifying the number of quantile to initialize discretized expression data
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
 #' @param ss_key A character string specifying the experimental grouping column to use for survival
+#' @param colors Colors to interpolate; must be a valid argument to col2rgb().
 #' @return NULL
 #' @importFrom grDevices adjustcolor
 #' @importFrom graphics abline
@@ -387,18 +441,44 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
 #' @importFrom stats density
 #' @importFrom utils combn
 #' @export
-plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname, ss_key="ss") {
+plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname="lower_gs", ss_key="os", colors=c("deepskyblue", "black", "red")) {
   if (missing(sample_names)) {
     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp[[ss_key]]),])
   }
-  if (!missing(gene_pf_colname)) {
+  main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")
+  if (gene_pf_colname %in% colnames(study$platform)) {
     gene_name = study$platform[probe_name,][[gene_pf_colname]]
   } else {
     gene_name = ""
-  }
+  }  
   v = study$data[probe_name, sample_names]
+  ss = study$exp_grp[sample_names,ss_key]
+  plot_survival_panel_simple2(ss, v, nb_q=5, gene_pf_colname=gene_pf_colname, colors=colors)
+  return(NULL)
+}
+
+
+
+#' A Function That Plots Survival Panel
+#'
+#' This function plots ...
+#' @param ss A survival structure such as produced by function Surv of package survival.
+#' @param v A (discretized) vector indexed as ss.
+#' @param nb_q An integer specifying the number of quantile to initialize discretized expression data
+#' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
+#' @param colors Colors to interpolate; must be a valid argument to col2rgb().
+#' @param main A character string to explicit the title of the plot
+#' @return NULL
+#' @importFrom grDevices adjustcolor
+#' @importFrom graphics abline
+#' @importFrom graphics layout
+#' @importFrom stats density
+#' @importFrom utils combn
+#' @export
+plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs", colors=c("deepskyblue", "black", "red"), main) {
+
   dv = density(v)
-  pval_cox = coxres(study$exp_grp[sample_names,ss_key], v)[1]
+  pval_cox = coxres(ss, v)[1]
   # quantiles
   vd_all = discr(v, nb_q)
   b_all = attr(vd_all, "breaks")
@@ -409,21 +489,22 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
   }), recursive=FALSE)
   pvcoxes = sapply(ibs, function(ib){
    vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
-   # scurve(ss, vd, main=paste(gene_name, probe_name, sep="@"))
-   coxres(study$exp_grp[sample_names,ss_key], vd_it)[1]
+   coxres(ss, vd_it)[1]
   })
   ib = ibs[[which(pvcoxes == min(pvcoxes))]]
   vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
   b_opt = attr(vd_opt, "breaks")
   # graphicals
   layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE))
-  plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=paste(gene_name, "@", probe_name, " p_cox=", signif(as.numeric(pval_cox),3), " (", ss_key, ")", sep=""))
+  main2 = paste(main, " p_cox=", signif(as.numeric(pval_cox),3), sep="")
+  plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=main2)
   abline(v=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
   abline(v=b_opt, lty=2, lwd=1)
-  scurve(study$exp_grp[sample_names,ss_key], vd_all, main=paste(gene_name, probe_name, sep="@"))
-  scurve(study$exp_grp[sample_names,ss_key], vd_opt, main=paste(gene_name, probe_name, sep="@"))
+  scurve(ss, vd_all, main=main, colors=colors)
+  scurve(ss, vd_opt, main=main, colors=colors)
   return(NULL)
 }
+
 
 
 # exp_grp_key = "histo"
@@ -593,7 +674,7 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 #' @export
 perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALSE, AD_TEST=TRUE) {
   options(contrasts=c("contr.sum", "contr.poly"))
-  if (nrow(t(data)) == 1 ) {
+  if (nrow(t(data)) == 1) {
     data=t(data)
     data = t(data[,rownames(design)])
   } else {
@@ -735,25 +816,29 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
 #' A Function That Plots Survival Curves.
 #'
 #' This function takes a survival structure such as produced by function Surv of
-#' package survival. Takes a (discretized) vector v, indexed as SS.
+#' package survival. Takes a (discretized) vector v, indexed as ss.
 #' Performs the Cox proportional hazard rate
-#' test of SS against v. It plots the survival curves for each
+#' test of ss against v. It plots the survival curves for each
 #' level of v. It also prints the p-value of the log-likelihood test.
 #'
-#' @param SS A survival structure such as produced by function Surv of package survival.
-#' @param v A (discretized) vector indexed as SS.
+#' @param ss A survival structure such as produced by function Surv of package survival.
+#' @param v A (discretized) vector indexed as ss.
 #' @param colors Colors to interpolate; must be a valid argument to col2rgb().
 #' @param main A character string to explicit the title of the plot
 #' @param legend A vector of character to explicit the legend of the plot
 #' @param nb_sign An integer  indicating the number of significant digits to be used
+#' @param legend_place A character string to specify where to put the legend
 #' @param ... Parameters passed to plot function.
 #' @importFrom survival survfit
 #' @importFrom stats na.omit
 #' @importFrom grDevices colorRampPalette
 #' @importFrom graphics plot
 #' @export
-scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, ...) {
-  cox_results = coxres(SS,v)
+scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",...) {
+  idx = !is.na(ss)
+  ss = ss[idx]
+  v = v[idx]
+  cox_results = coxres(ss,v)
   pv = cox_results[1]
   if (pv<1e-100) {
     pvt = "<1e-100"
@@ -761,7 +846,7 @@ scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival
     pvt = format(pv,
     digits=3,scientific=TRUE)
   }
-  sf=survfit(SS~v)
+  sf=survfit(ss~v)
   levels = length(na.omit(unique(v)))
   col = colorRampPalette(colors)(levels)
   main= paste(main, " p_cox=", signif(as.numeric(pvt), nb_sign), sep="")
@@ -776,15 +861,15 @@ scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival
     }
   }
   legend = paste(legend, " (", tab, ")", sep="")
-  legend("topright", legend=legend, col=col, pch=3, lty=1)
+  legend(legend_place, legend=legend, col=col, pch=3, lty=1)
   return(cox_results)
 }
 
 #' A Function That Fits the Cox Regression Model
 #'
 #' This function takes a survival structure such as produced by function Surv of
-#' package survival. Takes a (discretized) vector v, indexed as SS.
-#' Fits the Cox regression model of SS against v, and tests the
+#' package survival. Takes a (discretized) vector v, indexed as ss.
+#' Fits the Cox regression model of ss against v, and tests the
 #' proportional hazards assumption.
 #' Returns as a named vector of length 5:
 #'      pvcox: the significance p-value (likelihood ratio test)
@@ -792,14 +877,14 @@ scurve = function(SS, v, colors=c("deepskyblue", "black", "red"), main="Survival
 #'      hrlb: the lower bound of the 95% confidence interval for hr
 #'      hr: the hazard ratio
 #'      hrub: the upper bound of the 95% confidence interval for hr
-#' @param SS A survival structure such as produced by function Surv of package survival.
-#' @param v A (discretized) vector indexed as SS.
+#' @param ss A survival structure such as produced by function Surv of package survival.
+#' @param v A (discretized) vector indexed as ss.
 #' @return A named vector of length 5.
 #' @importFrom survival coxph
 #' @importFrom survival cox.zph
 #' @export
-coxres = function(SS,v) {
-  f = suppressWarnings(coxph(SS~v))
+coxres = function(ss,v) {
+  f = suppressWarnings(coxph(ss~v))
   sf =  summary(f)
   pvcox = sf$logtest[3]
   tf = cox.zph(f)

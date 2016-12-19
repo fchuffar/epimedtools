@@ -322,10 +322,10 @@ Study_abstract = setRefClass(
       pf = .self$get_platform(...)
       if (ALL_PF_COL) {
         probes = unique(unlist(sapply(colnames(pf), function(cn) {
-          as.character(pf[grep(gene, pf[[cn]]), ]$ID)
+          rownames(pf[grep(gene, pf[[cn]]), ])
         })))
       } else {
-        probes = as.character(pf[grep(gene, pf[[pf_col_name]]), ]$ID)    
+        probes = rownames(pf[grep(gene, pf[[pf_col_name]]), ])    
         probes = sapply(probes, function(probe) {
           entry = as.character(pf[probe, pf_col_name])
           # print(entry)

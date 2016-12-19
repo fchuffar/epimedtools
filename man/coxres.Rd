@@ -4,20 +4,20 @@
 \alias{coxres}
 \title{A Function That Fits the Cox Regression Model}
 \usage{
-coxres(SS, v)
+coxres(ss, v)
 }
 \arguments{
-\item{SS}{A survival structure such as produced by function Surv of package survival.}
+\item{ss}{A survival structure such as produced by function Surv of package survival.}
 
-\item{v}{A (discretized) vector indexed as SS.}
+\item{v}{A (discretized) vector indexed as ss.}
 }
 \value{
 A named vector of length 5.
 }
 \description{
 This function takes a survival structure such as produced by function Surv of
-package survival. Takes a (discretized) vector v, indexed as SS.
-Fits the Cox regression model of SS against v, and tests the
+package survival. Takes a (discretized) vector v, indexed as ss.
+Fits the Cox regression model of ss against v, and tests the
 proportional hazards assumption.
 Returns as a named vector of length 5:
      pvcox: the significance p-value (likelihood ratio test)

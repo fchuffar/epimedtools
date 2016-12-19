@@ -4,13 +4,13 @@
 \alias{scurve}
 \title{A Function That Plots Survival Curves.}
 \usage{
-scurve(SS, v, colors = c("deepskyblue", "black", "red"), main = "Survival",
-  legend, nb_sign = 3, ...)
+scurve(ss, v, colors = c("deepskyblue", "black", "red"), main = "Survival",
+  legend, nb_sign = 3, legend_place = "topright", ...)
 }
 \arguments{
-\item{SS}{A survival structure such as produced by function Surv of package survival.}
+\item{ss}{A survival structure such as produced by function Surv of package survival.}
 
-\item{v}{A (discretized) vector indexed as SS.}
+\item{v}{A (discretized) vector indexed as ss.}
 
 \item{colors}{Colors to interpolate; must be a valid argument to col2rgb().}
 
@@ -20,13 +20,15 @@ scurve(SS, v, colors = c("deepskyblue", "black", "red"), main = "Survival",
 
 \item{nb_sign}{An integer  indicating the number of significant digits to be used}
 
+\item{legend_place}{A character string to specify where to put the legend}
+
 \item{...}{Parameters passed to plot function.}
 }
 \description{
 This function takes a survival structure such as produced by function Surv of
-package survival. Takes a (discretized) vector v, indexed as SS.
+package survival. Takes a (discretized) vector v, indexed as ss.
 Performs the Cox proportional hazard rate
-test of SS against v. It plots the survival curves for each
+test of ss against v. It plots the survival curves for each
 level of v. It also prints the p-value of the log-likelihood test.
 }
 

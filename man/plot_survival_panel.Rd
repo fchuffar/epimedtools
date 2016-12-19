@@ -5,7 +5,8 @@
 \title{A Function That Plots Survival Panel}
 \usage{
 plot_survival_panel(probe_name, sample_names, exp_grp_key, study, nb_q = 5,
-  anova_mw_res, gene_pf_colname)
+  anova_mw_res, gene_pf_colname = "lower_gs", ss_key = "os",
+  cex.axis = 0.7, ylim)
 }
 \arguments{
 \item{probe_name}{probe to consider}
@@ -21,6 +22,12 @@ plot_survival_panel(probe_name, sample_names, exp_grp_key, study, nb_q = 5,
 \item{anova_mw_res}{A dataframe with ANOVA and Mann-Whitney results}
 
 \item{gene_pf_colname}{A character string specifying the name of the platform column to use for the gene name.}
+
+\item{ss_key}{A character string specifying the experimental grouping column to use for survival}
+
+\item{cex.axis}{interger specifying the size of the axis decorations}
+
+\item{ylim}{A vector of 2 numeric specifying the y axis range}
 }
 \description{
 This function plots ...
