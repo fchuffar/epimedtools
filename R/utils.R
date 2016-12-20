@@ -453,7 +453,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
   main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")
   v = study$data[probe_name, sample_names]
   ss = study$exp_grp[sample_names,ss_key]
-  plot_survival_panel_simple2(ss, v, nb_q=5, gene_pf_colname=gene_pf_colname, colors=colors)
+  plot_survival_panel_simple2(ss, v, nb_q=5, gene_pf_colname=gene_pf_colname, colors=colors, main=main)
   return(NULL)
 }
 
@@ -476,7 +476,9 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
 #' @importFrom utils combn
 #' @export
 plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs", colors=c("deepskyblue", "black", "red"), main) {
-
+  if (missing(main)) {
+    main=""
+  }
   dv = density(v)
   pval_cox = coxres(ss, v)[1]
   # quantiles
