@@ -445,12 +445,12 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
   if (missing(sample_names)) {
     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp[[ss_key]]),])
   }
-  main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")
   if (gene_pf_colname %in% colnames(study$platform)) {
     gene_name = study$platform[probe_name,][[gene_pf_colname]]
   } else {
     gene_name = ""
   }  
+  main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")
   v = study$data[probe_name, sample_names]
   ss = study$exp_grp[sample_names,ss_key]
   plot_survival_panel_simple2(ss, v, nb_q=5, gene_pf_colname=gene_pf_colname, colors=colors)
