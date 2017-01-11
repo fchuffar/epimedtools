@@ -5,7 +5,7 @@
 \title{A Function That Plots Survival Curves.}
 \usage{
 scurve(ss, v, colors = c("deepskyblue", "black", "red"), main = "Survival",
-  legend, nb_sign = 3, legend_place = "topright", ...)
+  legend, nb_sign = 3, legend_place = "topright", PLOT_LEGEND, ...)
 }
 \arguments{
 \item{ss}{A survival structure such as produced by function Surv of package survival.}
@@ -21,6 +21,8 @@ scurve(ss, v, colors = c("deepskyblue", "black", "red"), main = "Survival",
 \item{nb_sign}{An integer  indicating the number of significant digits to be used}
 
 \item{legend_place}{A character string to specify where to put the legend}
+
+\item{PLOT_LEGEND}{A boolean to specifying if legend need to be plotted}
 
 \item{...}{Parameters passed to plot function.}
 }

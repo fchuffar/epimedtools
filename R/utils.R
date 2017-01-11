@@ -830,13 +830,14 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
 #' @param legend A vector of character to explicit the legend of the plot
 #' @param nb_sign An integer  indicating the number of significant digits to be used
 #' @param legend_place A character string to specify where to put the legend
+#' @param PLOT_LEGEND A boolean to specifying if legend need to be plotted
 #' @param ... Parameters passed to plot function.
 #' @importFrom survival survfit
 #' @importFrom stats na.omit
 #' @importFrom grDevices colorRampPalette
 #' @importFrom graphics plot
 #' @export
-scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",...) {
+scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",PLOT_LEGEND , ...) {
   idx = !is.na(ss)
   ss = ss[idx]
   v = v[idx]
@@ -854,16 +855,18 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
   main= paste(main, " p_cox=", signif(as.numeric(pvt), nb_sign), sep="")
   plot(sf, col=col, main=main, ...)
   tab = table(v)
-  if (missing(legend)) {
-    if ("breaks" %in% names(attributes(v))) {
-      b = signif(attr(v, "breaks"),3)
-      legend = paste("[", b[1:(length(b)-1)], ",", b[2:length(b)], c(rep("[", length(b)-2), "]"), sep="")      
-    } else {
-      legend = names(tab)      
+  if (PLOT_LEGEND) {    
+      if (missing(legend)) {
+      if ("breaks" %in% names(attributes(v))) {
+        b = signif(attr(v, "breaks"),3)
+        legend = paste("[", b[1:(length(b)-1)], ",", b[2:length(b)], c(rep("[", length(b)-2), "]"), sep="")      
+      } else {
+        legend = names(tab)      
+      }
     }
+    legend = paste(legend, " (", tab, ")", sep="")
+    legend(legend_place, legend=legend, col=col, pch=3, lty=1)
   }
-  legend = paste(legend, " (", tab, ")", sep="")
-  legend(legend_place, legend=legend, col=col, pch=3, lty=1)
   return(cox_results)
 }
 
