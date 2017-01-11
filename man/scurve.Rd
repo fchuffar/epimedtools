@@ -5,7 +5,7 @@
 \title{A Function That Plots Survival Curves.}
 \usage{
 scurve(ss, v, colors = c("deepskyblue", "black", "red"), main = "Survival",
-  legend, nb_sign = 3, legend_place = "topright", PLOT_LEGEND, ...)
+  legend, nb_sign = 3, legend_place = "topright", PLOT_LEGEND = TRUE, ...)
 }
 \arguments{
 \item{ss}{A survival structure such as produced by function Surv of package survival.}

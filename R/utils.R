@@ -837,7 +837,7 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
 #' @importFrom grDevices colorRampPalette
 #' @importFrom graphics plot
 #' @export
-scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",PLOT_LEGEND , ...) {
+scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",PLOT_LEGEND=TRUE , ...) {
   idx = !is.na(ss)
   ss = ss[idx]
   v = v[idx]
