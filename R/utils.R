@@ -479,6 +479,9 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
   if (missing(main)) {
     main=""
   }
+  idx = !is.na(ss)
+  ss = ss[idx]
+  v = v[idx]
   dv = density(v)
   pval_cox = coxres(ss, v)[1]
   # quantiles
@@ -504,7 +507,7 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
   abline(v=b_opt, lty=2, lwd=1)
   scurve(ss, vd_all, main=main, colors=colors)
   scurve(ss, vd_opt, main=main, colors=colors)
-  return(NULL)
+  return(b_all[c(1, ib, length(b_all))])
 }
 
 
