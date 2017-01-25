@@ -453,7 +453,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
   main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")
   v = study$data[probe_name, sample_names]
   ss = study$exp_grp[sample_names,ss_key]
-  plot_survival_panel_simple2(ss, v, nb_q=5, gene_pf_colname=gene_pf_colname, colors=colors, main=main)
+  plot_survival_panel_simple2(ss, v, nb_q=nb_q, gene_pf_colname=gene_pf_colname, colors=colors, main=main)
   return(NULL)
 }
 
@@ -859,7 +859,7 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
   plot(sf, col=col, main=main, ...)
   tab = table(v)
   if (PLOT_LEGEND) {    
-      if (missing(legend)) {
+    if (missing(legend)) {
       if ("breaks" %in% names(attributes(v))) {
         b = signif(attr(v, "breaks"),3)
         legend = paste("[", b[1:(length(b)-1)], ",", b[2:length(b)], c(rep("[", length(b)-2), "]"), sep="")      
