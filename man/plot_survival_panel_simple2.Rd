@@ -5,7 +5,7 @@
 \title{A Function That Plots Survival Panel}
 \usage{
 plot_survival_panel_simple2(ss, v, nb_q = 5, gene_pf_colname = "lower_gs",
-  colors = c("deepskyblue", "black", "red"), main)
+  colors = c("deepskyblue", "black", "red"), main, ...)
 }
 \arguments{
 \item{ss}{A survival structure such as produced by function Surv of package survival.}
@@ -19,6 +19,8 @@ plot_survival_panel_simple2(ss, v, nb_q = 5, gene_pf_colname = "lower_gs",
 \item{colors}{Colors to interpolate; must be a valid argument to col2rgb().}
 
 \item{main}{A character string to explicit the title of the plot}
+
+\item{...}{Parameters passed to pairs function.}
 }
 \description{
 This function plots ...

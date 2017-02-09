@@ -434,6 +434,7 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
 #' @param ss_key A character string specifying the experimental grouping column to use for survival
 #' @param colors Colors to interpolate; must be a valid argument to col2rgb().
+#' @param ... Parameters passed to pairs function.
 #' @return NULL
 #' @importFrom grDevices adjustcolor
 #' @importFrom graphics abline
@@ -441,7 +442,7 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
 #' @importFrom stats density
 #' @importFrom utils combn
 #' @export
-plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname="lower_gs", ss_key="os", colors=c("deepskyblue", "black", "red")) {
+plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname="lower_gs", ss_key="os", colors=c("deepskyblue", "black", "red"), ...) {
   if (missing(sample_names)) {
     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp[[ss_key]]),])
   }
@@ -453,8 +454,8 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
   main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")
   v = study$data[probe_name, sample_names]
   ss = study$exp_grp[sample_names,ss_key]
-  plot_survival_panel_simple2(ss, v, nb_q=nb_q, gene_pf_colname=gene_pf_colname, colors=colors, main=main)
-  return(NULL)
+  ret = plot_survival_panel_simple2(ss, v, nb_q=nb_q, gene_pf_colname=gene_pf_colname, colors=colors, main=main, ...)
+  return(ret)
 }
 
 
@@ -468,6 +469,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
 #' @param colors Colors to interpolate; must be a valid argument to col2rgb().
 #' @param main A character string to explicit the title of the plot
+#' @param ... Parameters passed to pairs function.
 #' @return NULL
 #' @importFrom grDevices adjustcolor
 #' @importFrom graphics abline
@@ -475,7 +477,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
 #' @importFrom stats density
 #' @importFrom utils combn
 #' @export
-plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs", colors=c("deepskyblue", "black", "red"), main) {
+plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs", colors=c("deepskyblue", "black", "red"), main, ...) {
   if (missing(main)) {
     main=""
   }
@@ -500,13 +502,14 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
   vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
   b_opt = attr(vd_opt, "breaks")
   # graphicals
-  layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE))
+  layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE), respect=TRUE)
   main2 = paste(main, " p_cox=", signif(as.numeric(pval_cox),3), sep="")
   plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=main2)
   abline(v=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
   abline(v=b_opt, lty=2, lwd=1)
-  scurve(ss, vd_all, main=main, colors=colors)
-  scurve(ss, vd_opt, main=main, colors=colors)
+  print(vd_all)
+  scurve(ss, vd_all, main=main, colors=colors, ...)
+  scurve(ss, vd_opt, main=main, colors=colors, ...)
   return(b_all[c(1, ib, length(b_all))])
 }
 
@@ -919,20 +922,17 @@ coxres = function(ss,v) {
 #' @importFrom stats quantile
 #' @export
 discr = function(v, nd=5, breaks){
-  ind = !is.na(v)
-  v1 = v[ind]
   if (missing(breaks)) {
-    b = quantile(v1,(0:nd)/nd)
+    b = quantile(v,(0:nd)/nd)
   } else {
-    b = c(min(c(v1,breaks)), breaks, max(c(v1, breaks)))
+    b = c(min(c(v,breaks)), breaks, max(c(v, breaks)))
   }
   b = unique(b)
-  vd1 = cut(v1, b, include.lowest=TRUE, right=FALSE, labels=(1:(length(b)-1)))
-  vd1 = as.vector(vd1)
-  vd1 = as.vector(vd1)
-  vd = v
-  vd[ind] = vd1
-  vd = as.factor(sprintf("%05d",as.numeric(vd)))
+  vd = cut(v, b, include.lowest=TRUE, right=FALSE, labels=(1:(length(b)-1)))
+  labels = paste("[", signif(b[-length(b)],2), ", ", signif(b[-1],2), "[", sep="")
+  labels[length(labels)] = paste(substr(labels[length(labels)], 1, nchar(labels[length(labels)],)-1), "]", sep="")
+  attributes(vd)$levels = labels
+  attributes(vd)$class = c("factor", "ordered")
   return(structure(vd, breaks=b))
 }
 
