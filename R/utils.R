@@ -434,6 +434,7 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
 #' @param ss_key A character string specifying the experimental grouping column to use for survival
 #' @param colors Colors to interpolate; must be a valid argument to col2rgb().
+#' @param main A character string to explicit the title of the plot
 #' @param ... Parameters passed to pairs function.
 #' @return NULL
 #' @importFrom grDevices adjustcolor
@@ -442,7 +443,7 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
 #' @importFrom stats density
 #' @importFrom utils combn
 #' @export
-plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname="lower_gs", ss_key="os", colors=c("deepskyblue", "black", "red"), ...) {
+plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname="lower_gs", ss_key="os", colors=c("deepskyblue", "black", "red"), main, ...) {
   if (missing(sample_names)) {
     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp[[ss_key]]),])
   }
@@ -451,7 +452,11 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
   } else {
     gene_name = ""
   }  
-  main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")
+  if (missing(main)) {
+    main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")    
+  } else {
+    main = paste(main, " ", gene_name, "@", probe_name, " (", ss_key, ")", sep="")        
+  }
   v = study$data[probe_name, sample_names]
   ss = study$exp_grp[sample_names,ss_key]
   ret = plot_survival_panel_simple2(ss, v, nb_q=nb_q, gene_pf_colname=gene_pf_colname, colors=colors, main=main, ...)
