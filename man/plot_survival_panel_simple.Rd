@@ -23,6 +23,8 @@ plot_survival_panel_simple(probe_name, sample_names, study, nb_q = 5,
 
 \item{colors}{Colors to interpolate; must be a valid argument to col2rgb().}
 
+\item{main}{A character string to explicit the title of the plot}
+
 \item{...}{Parameters passed to pairs function.}
 }
 \description{

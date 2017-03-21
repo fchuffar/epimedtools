@@ -5,7 +5,8 @@
 \title{A Function That Draws a Volcano Plot}
 \usage{
 plot_volcano(res_key_lr, res_key_pval, anova_mw_res, fc_thres = c(-1.5, -1.2,
-  1.2, 1.5), pval_thres = 0.05, ...)
+  1.2, 1.5), pval_thres = 0.05, legend_place = "bottomright",
+  LEGEND = TRUE, ...)
 }
 \arguments{
 \item{res_key_lr}{the column name of the result dataframe to considere as logratio}
@@ -18,7 +19,11 @@ plot_volcano(res_key_lr, res_key_pval, anova_mw_res, fc_thres = c(-1.5, -1.2,
 
 \item{pval_thres}{An integer corresponding to the p-value thresholds}
 
+\item{legend_place}{A character string to specify where to put the legend}
+
 \item{...}{Parameters passed to plot function}
+
+\item{PLOT_LEGEND}{A boolean to specifying if legend need to be plotted}
 }
 \description{
 This function draws volcano plot, logratio vs. p-value.

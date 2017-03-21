@@ -55,17 +55,21 @@ req = function(query, dbname="epimed_prod", host="epimed-db.imag.fr", port=5432,
 #' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
 #' @param fc_thres A vector of integer corresponding to the foldchange thresholds
 #' @param pval_thres An integer corresponding to the p-value thresholds
+#' @param legend_place A character string to specify where to put the legend
+#' @param PLOT_LEGEND A boolean to specifying if legend need to be plotted
 #' @param ... Parameters passed to plot function
 #' @return NULL
 #' @importFrom gtools foldchange2logratio
 #' @importFrom graphics plot
 #' @importFrom graphics legend
 #' @export
-plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5, -1.2, 1.2, 1.5), pval_thres=0.05, ...){
+plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5, -1.2, 1.2, 1.5), pval_thres=0.05, legend_place="bottomright", LEGEND=TRUE, ...){
   lr_thres = foldchange2logratio(fc_thres)
   plot(anova_mw_res[[res_key_lr]], -log10(anova_mw_res[[res_key_pval]]), xlab=res_key_lr , ylab=paste("-log10(", res_key_pval,")", sep=""), xlim=range(c(lr_thres, anova_mw_res[[res_key_lr]])), ...)
   abline(h=-log10(pval_thres), v=lr_thres, col=2, lty=3)
-  legend("bottomright", legend=paste("fc thres (", paste(fc_thres, collapse=","), ")", sep=""), col=2, lty=3, cex=0.5)
+  if (LEGEND) {
+    legend(legend_place, legend=paste("fc thres (", paste(fc_thres, collapse=","), ")", sep=""), col=2, lty=3, cex=0.5)
+  }
 }
 
 #' A Function That Plots Heatmaps of Differentialy Expressed Genes Accros Conditions
@@ -472,9 +476,10 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
 #' @param v A (discretized) vector indexed as ss.
 #' @param nb_q An integer specifying the number of quantile to initialize discretized expression data
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
-#' @param colors Colors to interpolate; must be a valid argument to col2rgb().
+#' @param colors Colors to interpolate; must be a valid argument to col2rgb()
 #' @param main A character string to explicit the title of the plot
-#' @param ... Parameters passed to pairs function.
+#' @param thresh A vector of integer used fopr thresholds
+#' @param ... Parameters passed to pairs function
 #' @return NULL
 #' @importFrom grDevices adjustcolor
 #' @importFrom graphics abline
@@ -482,7 +487,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
 #' @importFrom stats density
 #' @importFrom utils combn
 #' @export
-plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs", colors=c("deepskyblue", "black", "red"), main, ...) {
+plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs", colors=c("deepskyblue", "black", "red"), main, thresh, ...) {
   if (missing(main)) {
     main=""
   }
@@ -491,28 +496,37 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
   v = v[idx]
   dv = density(v)
   pval_cox = coxres(ss, v)[1]
-  # quantiles
-  vd_all = discr(v, nb_q)
+  if (missing(thresh)) {
+    # quantiles
+    vd_all = discr(v, nb_q)    
+  } else {
+    vd_all = discr(v, nb_q, thresh)    
+    nb_q = length(unique(vd_all))
+  }
   b_all = attr(vd_all, "breaks")
   # optimize quantiles
   tbc = 2:(nb_q)
-  ibs = unlist(lapply( 1:length(tbc), function(n) {
-   as.list(as.data.frame(combn(tbc,n)))
-  }), recursive=FALSE)
-  pvcoxes = sapply(ibs, function(ib){
-   vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
-   coxres(ss, vd_it)[1]
-  })
-  ib = ibs[[which(pvcoxes == min(pvcoxes))]]
-  vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
-  b_opt = attr(vd_opt, "breaks")
+  if (nb_q>2) {
+    ibs = unlist(lapply( 1:length(tbc), function(n) {
+     as.list(as.data.frame(combn(tbc,n)))
+    }), recursive=FALSE)
+    pvcoxes = sapply(ibs, function(ib){
+     vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+     coxres(ss, vd_it)[1]
+    })
+    ib = ibs[[which(pvcoxes == min(pvcoxes))]]
+    vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+  } else {
+    vd_opt = discr(v, breaks=b_all)    
+  }
+  b_opt = attr(vd_opt, "breaks")    
   # graphicals
   layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE), respect=TRUE)
   main2 = paste(main, " p_cox=", signif(as.numeric(pval_cox),3), sep="")
   plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=main2)
   abline(v=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
   abline(v=b_opt, lty=2, lwd=1)
-  print(vd_all)
+  # print(vd_all)
   scurve(ss, vd_all, main=main, colors=colors, ...)
   scurve(ss, vd_opt, main=main, colors=colors, ...)
   return(b_all[c(1, ib, length(b_all))])
