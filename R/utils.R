@@ -529,7 +529,7 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
   # print(vd_all)
   scurve(ss, vd_all, main=main, colors=colors, ...)
   scurve(ss, vd_opt, main=main, colors=colors, ...)
-  return(b_all[c(1, ib, length(b_all))])
+  return(b_opt)
 }
 
 
