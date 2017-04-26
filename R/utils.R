@@ -527,6 +527,7 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
   abline(v=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
   abline(v=b_opt, lty=2, lwd=1)
   # print(vd_all)
+  # vd_all <<- vd_all
   scurve(ss, vd_all, main=main, colors=colors, ...)
   scurve(ss, vd_opt, main=main, colors=colors, ...)
   return(b_opt)
@@ -865,8 +866,16 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
 scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",PLOT_LEGEND=TRUE , ...) {
   idx = !is.na(ss)
   ss = ss[idx]
-  v = v[idx]
-  cox_results = coxres(ss,v)
+  if (missing(v)) {
+    v = rep(1, sum(idx))
+  } else {
+    v = v[idx]    
+  }
+  if (length(unique(v)) == 1) {
+    cox_results = 1    
+  } else {
+    cox_results = coxres(ss,v)    
+  }
   pv = cox_results[1]
   if (pv<1e-100) {
     pvt = "<1e-100"
@@ -946,7 +955,7 @@ discr = function(v, nd=5, breaks){
   } else {
     b = c(min(c(v,breaks)), breaks, max(c(v, breaks)))
   }
-  b = unique(b)
+  b = sort(unique(b))
   vd = cut(v, b, include.lowest=TRUE, right=FALSE, labels=(1:(length(b)-1)))
   labels = paste("[", signif(b[-length(b)],2), ", ", signif(b[-1],2), "[", sep="")
   labels[length(labels)] = paste(substr(labels[length(labels)], 1, nchar(labels[length(labels)],)-1), "]", sep="")
