@@ -67,6 +67,7 @@ Study_abstract = setRefClass(
   fields = list(
     "dest_dir" = "character",
     cel_filedirs="character",
+    cel_files="character",
     "data" = "ANY",
     "exp_grp" = "ANY",
     "platform" = "ANY",
@@ -200,26 +201,34 @@ Study_abstract = setRefClass(
       if (missing(method_to_read_cel_files)) {
         method_to_read_cel_files = justRMA        
       }
-      cel_files = lapply(.self$cel_filedirs, get_cel_filenames)
-      orig = unlist(sapply(1:length(.self$cel_filedirs), function(i) {
-        split1 = unique(unlist(strsplit(.self$cel_filedirs[i], "/")))  
-        split2 = unique(unlist(strsplit(.self$cel_filedirs[-i], "/")))  
-        n = paste(split1[!(split1 %in% split2)], collapse="_")
-        n = gsub("[.]", "_", n)
-        n = gsub("__*", "_", n)
-        n = gsub("^_", "", n)
-        rep(n, length(cel_files[[i]]))
-      }))
-      cel_files = unlist(cel_files)
-      cel_files = sapply(cel_files, function(cel_file) {
+      if (length(.self$cel_files) == 0) {
+        .self$cel_files = lapply(.self$cel_filedirs, get_cel_filenames)
+        orig = unlist(sapply(1:length(.self$cel_filedirs), function(i) {
+          split1 = unique(unlist(strsplit(.self$cel_filedirs[i], "/")))  
+          split2 = unique(unlist(strsplit(.self$cel_filedirs[-i], "/")))  
+          n = paste(split1[!(split1 %in% split2)], collapse="_")
+          n = gsub("[.]", "_", n)
+          n = gsub("__*", "_", n)
+          n = gsub("^_", "", n)
+          rep(n, length(.self$cel_files[[i]]))
+        }))
+        .self$cel_files = unlist(.self$cel_files)        
+        cel_files_short = unlist(lapply(.self$cel_filedirs, get_cel_filenames, full.names=FALSE))
+      } else {
+        .self$cel_files = path.expand(.self$cel_files)
+        orig = .self$cel_files
+        cel_files_short = sapply(.self$cel_files, function(cel_file) {
+          rev(strsplit(cel_file, "/")[[1]])[1]
+        })
+      }
+      .self$cel_files = sapply(.self$cel_files, function(cel_file) {
         if (substr(cel_file, 1, 1) != "/") {
           return(paste(getwd(), "/", cel_file, sep=""))
         } else {
           return(cel_file)
         }
       })
-      cel_files_short = unlist(lapply(.self$cel_filedirs, get_cel_filenames, full.names=FALSE))
-      cel_files = cel_files[!duplicated(cel_files_short)]
+      .self$cel_files = .self$cel_files[!duplicated(cel_files_short)]
       orig = orig[!duplicated(cel_files_short)]
       sample_names = cel_files_short[!duplicated(cel_files_short)]
       tmp_exp_grp = data.frame(orig=orig)
@@ -228,7 +237,7 @@ Study_abstract = setRefClass(
         tmp_exp_grp = fuse_exp_grp(.self$get_exp_grp(), tmp_exp_grp)
       }
       .self$exp_grp = tmp_exp_grp 
-      .self$data = exprs(method_to_read_cel_files(filenames=cel_files, celfile.path=""))
+      .self$data = exprs(method_to_read_cel_files(filenames=.self$cel_files, celfile.path=""))
       colnames(.self$data) = simplify_sample_names(colnames(.self$data))
     },
     # Analysis method dealing with Study_abstract class intances...
