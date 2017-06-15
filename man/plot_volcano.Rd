@@ -21,9 +21,9 @@ plot_volcano(res_key_lr, res_key_pval, anova_mw_res, fc_thres = c(-1.5, -1.2,
 
 \item{legend_place}{A character string to specify where to put the legend}
 
-\item{...}{Parameters passed to plot function}
+\item{LEGEND}{A boolean to specifying if legend need to be plotted}
 
-\item{PLOT_LEGEND}{A boolean to specifying if legend need to be plotted}
+\item{...}{Parameters passed to plot function}
 }
 \description{
 This function draws volcano plot, logratio vs. p-value.

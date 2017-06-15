@@ -1,3 +1,98 @@
+#' A Function That Plots Heatmaps.
+#'
+#'
+#' This function plots heatmaps.
+#' @param study An epimedtools Study RC object
+#' @param pf_col A platform column name use to label gene axis
+#' @param exp_grp_col_label An exp_grp column name use to label sample
+#' @param sample_idx A vector indexing samples
+#' @param gene_idx A vector indexing genes
+#' @param method_hclust A string specifying hclust method to use
+#' @param nb_clust An interger specifying the number of cluster
+#' @param var A string defining the distance used to cluster data
+#' @param PLOT_HM_raw A boolean specifying if heatmap needs to be ploted
+#' @param USE_CLUST A boolean specifying if dendogram needs to be ploted
+#' @importFrom survival survfit
+#' @importFrom stats na.omit
+#' @importFrom grDevices colorRampPalette
+#' @importFrom graphics plot
+#' @importFrom gplots heatmap.2
+#' @export
+plot_hm2 = function(study, pf_col, exp_grp_col_label, sample_idx, gene_idx, method_hclust="complete", nb_clust=2, var="raw", PLOT_HM_raw=TRUE, USE_CLUST=FALSE) {
+  if (missing(pf_col)) {
+    pf_col = colnames(study$platform)[1]
+  }
+  if (missing(exp_grp_col_label)) {
+    exp_grp_col_label = colnames(study$exp_grp)[1]
+  }
+  if (missing(sample_idx)) {
+    sample_idx = rownames(study$exp_grp)
+  }
+  if (missing(gene_idx)) {
+    gene_idx = rownames(study$platform[!is.na(study$platform[[pf_col]]), ])
+    gene_idx = gene_idx[order(study$platform[gene_idx, pf_col])]
+  }
+  if (var=="samples") {
+    d = cor(study$data[gene_idx, sample_idx], method="sp")
+    hc = hclust(dist(1 - d), method=method_hclust)
+    if (USE_CLUST) {
+      Colv = Rowv = as.dendrogram(hc)
+      dendrogram="both"
+    } else {
+      Colv = Rowv = FALSE
+      dendrogram="none"
+    }
+    rownames(d) = study$exp_grp[sample_idx,exp_grp_col_label]
+  } else if (var=="genome") {
+    dat = study$data[gene_idx, sample_idx]
+    idx = apply(dat, 1, function(l){
+      length(unique(l)) > 1
+    })
+    dat = dat[idx,]
+    d = cor(t(dat), method="sp")
+    # sum(is.na(d))
+    # apply(!is.na(d), 1, sum) == 0
+    # length(d)
+    hc = hclust(dist(1 - d), method=method_hclust)
+    if (USE_CLUST) {
+      Colv = Rowv = as.dendrogram(hc)
+      dendrogram="both"
+    } else {
+      Colv = Rowv = FALSE
+      dendrogram="none"
+      colnames(d) = NULL
+      colnames(d)[!duplicated(study$platform[gene_idx[idx],pf_col])] = study$platform[gene_idx,pf_col][!duplicated(study$platform[gene_idx,pf_col])]
+    }
+  } else {
+    d = t(study$data[gene_idx, sample_idx])
+    colnames(d) = NULL
+    colnames(d)[!duplicated(study$platform[gene_idx,pf_col])] = study$platform[gene_idx,pf_col][!duplicated(study$platform[gene_idx,pf_col])]
+    hc = hclust(dist(d), method=method_hclust)
+    if (USE_CLUST) {
+      Rowv = as.dendrogram(hc)
+      Colv = FALSE
+      dendrogram="row"
+    } else {
+      Colv = Rowv = FALSE
+      dendrogram="none"
+    }
+    rownames(d) = study$exp_grp[[exp_grp_col_label]]
+  }
+  grps = cutree(hc, k = nb_clust)
+
+  if (PLOT_HM_raw) {
+    patientcolors = rainbow(length(unique(grps)))[grps]
+    q = sort(unique(quantile(d, probs=seq(0,1,length.out=20))))
+    q = q[ abs(diff(q)) > (max(q) - min(q)) / length(q) / 500]
+    cols = colorRampPalette(c("royalblue", "springgreen", "yellow", "red"))(length(q)-1)
+    gplots::heatmap.2(d, dendrogram=dendrogram, Rowv=Rowv, Colv=Colv, scale='none', trace="none", density.info="density", margin=c(5,10), col=cols, breaks=q, RowSideColors=patientcolors, symkey=FALSE, main=paste(dim(d), collapse="x"))
+  } else {
+    plot(as.dendrogram(hc))
+  }
+  return(list(grps=grps))
+}
+
+
 #' A Function That Overviews an Experiment Grouping
 #'
 #' This function overviews an experiment grouping.
@@ -56,7 +151,7 @@ req = function(query, dbname="epimed_prod", host="epimed-db.imag.fr", port=5432,
 #' @param fc_thres A vector of integer corresponding to the foldchange thresholds
 #' @param pval_thres An integer corresponding to the p-value thresholds
 #' @param legend_place A character string to specify where to put the legend
-#' @param PLOT_LEGEND A boolean to specifying if legend need to be plotted
+#' @param LEGEND A boolean to specifying if legend need to be plotted
 #' @param ... Parameters passed to plot function
 #' @return NULL
 #' @importFrom gtools foldchange2logratio
