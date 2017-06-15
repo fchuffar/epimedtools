@@ -130,7 +130,7 @@ Study_abstract = setRefClass(
           } else {
             readRDS_funcname = "readRDS"
           }
-          print("reifiyng study...")
+          print("reifying study...")
           s2 = get(readRDS_funcname)(.self$cache_filename)
           # print(.self)
           for (f in names(s2$getRefClass()$fields())) {
