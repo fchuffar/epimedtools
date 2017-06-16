@@ -5,35 +5,44 @@
 #' @param study An epimedtools Study RC object
 #' @param pf_col A platform column name use to label gene axis
 #' @param exp_grp_col_label An exp_grp column name use to label sample
-#' @param sample_idx A vector indexing samples
-#' @param gene_idx A vector indexing genes
+#' @param exp_grp_idx A vector indexing samples
+#' @param platform_idx A vector indexing genes
 #' @param method_hclust A string specifying hclust method to use
 #' @param nb_clust An interger specifying the number of cluster
 #' @param var A string defining the distance used to cluster data
 #' @param PLOT_HM_raw A boolean specifying if heatmap needs to be ploted
 #' @param USE_CLUST A boolean specifying if dendogram needs to be ploted
+#' @param BREAK_TOO_EXPENSIVE A boolean specifying if too expensive operation must be breaked.
 #' @importFrom survival survfit
 #' @importFrom stats na.omit
 #' @importFrom grDevices colorRampPalette
 #' @importFrom graphics plot
 #' @importFrom gplots heatmap.2
 #' @export
-plot_hm2 = function(study, pf_col, exp_grp_col_label, sample_idx, gene_idx, method_hclust="complete", nb_clust=2, var="raw", PLOT_HM_raw=TRUE, USE_CLUST=FALSE) {
+plot_hm2 = function(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx, method_hclust="complete", nb_clust=2, var="raw", PLOT_HM_raw=TRUE, USE_CLUST=FALSE, BREAK_TOO_EXPENSIVE=TRUE) {
   if (missing(pf_col)) {
     pf_col = colnames(study$platform)[1]
   }
   if (missing(exp_grp_col_label)) {
     exp_grp_col_label = colnames(study$exp_grp)[1]
   }
-  if (missing(sample_idx)) {
-    sample_idx = rownames(study$exp_grp)
+  if (missing(exp_grp_idx)) {
+    exp_grp_idx = rownames(study$exp_grp)
   }
-  if (missing(gene_idx)) {
-    gene_idx = rownames(study$platform[!is.na(study$platform[[pf_col]]), ])
-    gene_idx = gene_idx[order(study$platform[gene_idx, pf_col])]
+  if (missing(platform_idx)) {
+    platform_idx = rownames(study$platform[!is.na(study$platform[[pf_col]]), ])
+    platform_idx = platform_idx[order(study$platform[platform_idx, pf_col])]
   }
   if (var=="samples") {
-    d = cor(study$data[gene_idx, sample_idx], method="sp")
+    d = study$data[platform_idx, exp_grp_idx]
+    if (sum(sapply(apply(d, 2, unique), length) == 1) > 0) {
+      d = jitter(d)
+    }
+    if (dim(d)[2] > 1000 & BREAK_TOO_EXPENSIVE) {
+      warning(paste0("Can't correlate, matrix is too big: ", dim(d)[1], "x", dim(d)[2], "."))
+      return(NULL)
+    }
+    d = cor(d, method="sp")
     hc = hclust(dist(1 - d), method=method_hclust)
     if (USE_CLUST) {
       Colv = Rowv = as.dendrogram(hc)
@@ -42,14 +51,23 @@ plot_hm2 = function(study, pf_col, exp_grp_col_label, sample_idx, gene_idx, meth
       Colv = Rowv = FALSE
       dendrogram="none"
     }
-    rownames(d) = study$exp_grp[sample_idx,exp_grp_col_label]
+    rownames(d) = study$exp_grp[exp_grp_idx,exp_grp_col_label]
   } else if (var=="genome") {
-    dat = study$data[gene_idx, sample_idx]
-    idx = apply(dat, 1, function(l){
-      length(unique(l)) > 1
-    })
-    dat = dat[idx,]
-    d = cor(t(dat), method="sp")
+    # dat = study$data[platform_idx, exp_grp_idx]
+    # idx = apply(dat, 1, function(l){
+    #   length(unique(l)) > 1
+    # })
+    # d = dat[idx,]
+    d = study$data[platform_idx, exp_grp_idx]
+    if (sum(sapply(apply(d, 2, unique), length) == 1) > 0) {
+      d = jitter(d)
+    }
+    d = t(d)
+    if (dim(d)[2] > 1000 & BREAK_TOO_EXPENSIVE) {
+      warning(paste0("Can't correlate, matrix is too big: ", dim(d)[1], "x", dim(d)[2], "."))
+      return(NULL)
+    }
+    d = cor(d, method="sp")
     # sum(is.na(d))
     # apply(!is.na(d), 1, sum) == 0
     # length(d)
@@ -61,12 +79,12 @@ plot_hm2 = function(study, pf_col, exp_grp_col_label, sample_idx, gene_idx, meth
       Colv = Rowv = FALSE
       dendrogram="none"
       colnames(d) = NULL
-      colnames(d)[!duplicated(study$platform[gene_idx[idx],pf_col])] = study$platform[gene_idx,pf_col][!duplicated(study$platform[gene_idx,pf_col])]
+      colnames(d)[!duplicated(study$platform[platform_idx[idx],pf_col])] = study$platform[platform_idx,pf_col][!duplicated(study$platform[platform_idx,pf_col])]
     }
   } else {
-    d = t(study$data[gene_idx, sample_idx])
+    d = t(study$data[platform_idx, exp_grp_idx])
     colnames(d) = NULL
-    colnames(d)[!duplicated(study$platform[gene_idx,pf_col])] = study$platform[gene_idx,pf_col][!duplicated(study$platform[gene_idx,pf_col])]
+    colnames(d)[!duplicated(study$platform[platform_idx,pf_col])] = study$platform[platform_idx,pf_col][!duplicated(study$platform[platform_idx,pf_col])]
     hc = hclust(dist(d), method=method_hclust)
     if (USE_CLUST) {
       Rowv = as.dendrogram(hc)
@@ -85,6 +103,10 @@ plot_hm2 = function(study, pf_col, exp_grp_col_label, sample_idx, gene_idx, meth
     q = sort(unique(quantile(d, probs=seq(0,1,length.out=20))))
     q = q[ abs(diff(q)) > (max(q) - min(q)) / length(q) / 500]
     cols = colorRampPalette(c("royalblue", "springgreen", "yellow", "red"))(length(q)-1)
+    if ((dim(d)[1] > 1000 | dim(d)[2] > 1000) & BREAK_TOO_EXPENSIVE) {
+      warning(paste0("Can't draw heatmap, matrix is too big: ", dim(d)[1], "x", dim(d)[2], "."))
+      return(NULL)
+    }
     gplots::heatmap.2(d, dendrogram=dendrogram, Rowv=Rowv, Colv=Colv, scale='none', trace="none", density.info="density", margin=c(5,10), col=cols, breaks=q, RowSideColors=patientcolors, symkey=FALSE, main=paste(dim(d), collapse="x"))
   } else {
     plot(as.dendrogram(hc))
