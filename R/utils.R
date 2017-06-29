@@ -94,7 +94,7 @@ plot_hm2 = function(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx,
       Colv = Rowv = FALSE
       dendrogram="none"
     }
-    rownames(d) = study$exp_grp[[exp_grp_col_label]]
+    rownames(d) = study$exp_grp[rownames(d), exp_grp_col_label]
   }
   grps = cutree(hc, k = nb_clust)
 
@@ -384,7 +384,7 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
 # }
 # plot_bean_expr =             function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname="lower_gs",cex.axis=0.7, ylim) {
 # plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname="lower_gs", ss_key="os") {
-plot_survival_panel =        function(probe_name, sample_names, exp_grp_key, study, nb_q=5, anova_mw_res, gene_pf_colname="lower_gs", ss_key="os",cex.axis=0.7, ylim) {
+plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_q=5, anova_mw_res, gene_pf_colname="lower_gs", ss_key="os",cex.axis=0.7, ylim) {
   if (missing(sample_names)) {
     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp[[ss_key]]),])
   }
@@ -411,7 +411,7 @@ plot_survival_panel =        function(probe_name, sample_names, exp_grp_key, stu
   v = study$data[probe_name, sample_names]
   dv = density(v)
   fact = study$exp_grp[sample_names, exp_grp_key]
-  pval_cox = coxres(study$exp_grp[sample_names,]$ss, v)[1]
+  pval_cox = coxres(study$exp_grp[sample_names,ss_key], v)[1]
   # quantiles
   vd_all = discr(v, nb_q)
   b_all = attr(vd_all, "breaks")
@@ -423,7 +423,7 @@ plot_survival_panel =        function(probe_name, sample_names, exp_grp_key, stu
   pvcoxes = sapply(ibs, function(ib){
    vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
    # scurve(ss, vd, main=paste(gene_name, probe_name, sep="@"))
-   coxres(study$exp_grp[sample_names,]$ss, vd_it)[1]
+   coxres(study$exp_grp[sample_names,ss_key], vd_it)[1]
   })
   ib = ibs[[which(pvcoxes == min(pvcoxes))]]
   vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
@@ -467,8 +467,8 @@ plot_survival_panel =        function(probe_name, sample_names, exp_grp_key, stu
     , sep=""))  
   abline(h=b_all, lty=1, lwd=1, col="grey")
   abline(h=b_opt, lty=2, lwd=1)
-  scurve(study$exp_grp[sample_names,]$ss, vd_all, main=paste(gene_name, probe_name, sep="@"))
-  scurve(study$exp_grp[sample_names,]$ss, vd_opt, main=paste(gene_name, probe_name, sep="@"))
+  scurve(study$exp_grp[sample_names,ss_key], vd_all, main=paste(gene_name, probe_name, sep="@"))
+  scurve(study$exp_grp[sample_names,ss_key], vd_opt, main=paste(gene_name, probe_name, sep="@"))
   return(NULL)
 }
 

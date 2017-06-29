@@ -1,4 +1,8 @@
-plot_rna_sig = function(d_rna, pf, col=1, ylim, main="", ADD=FALSE, NORM=FALSE, PLOT_RAW=FALSE, PLOT_CI=FALSE, ALL_CURVE=FALSE, kern_dim=1, ...) {
+plot_rna_sig = function(d_rna, pf, col=1, ylim, main="", ADD=FALSE, NORM=FALSE, PLOT_RAW=FALSE, PLOT_CI=FALSE, ALL_CURVE=FALSE, kern_dim=1, BREAK_TOO_EXPENSIVE=TRUE, ...) {
+  if (dim(d_rna)[1] > 1000 & BREAK_TOO_EXPENSIVE) {
+    warning(paste0("Can't apply kernel, matrix is too big: ", dim(d_rna)[1], "x", dim(d_rna)[2], "."))
+    return(NULL)
+  }
   if (NORM) {
     main = paste(main, "density", sep=" ")
     d_rna  = t(t(d_rna)/apply(d_rna, 2, sum))
@@ -19,6 +23,8 @@ plot_rna_sig = function(d_rna, pf, col=1, ylim, main="", ADD=FALSE, NORM=FALSE, 
   }
   k =kernel("daniell", kern_dim)
   smooth_sig = raw_sig
+
+
   for(i in 1:nrow(raw_sig)) {
     smooth_sig_tmp = kernapply(raw_sig[i,], k)
     nb_na = (length(raw_sig[i,]) - length(smooth_sig_tmp)) / 2
@@ -147,14 +153,14 @@ get_hm_app = function(study, height="5000", var=c("samples", "raw", "genome"), U
       radioButtons("USE_CLUST", "use clustering", USE_CLUST),
       plotOutput("heatmap_raw"),
 
-      # plotOutput("survival_clust_raw"),
-      #
-      # checkboxInput("MEAN_SIG_raw", "mean signal",    FALSE),
-      # checkboxInput("PLOT_CI_raw", "conf. int.",      FALSE),
-      # checkboxInput("ALL_CURVE", "indiv. curves", ALL_CURVE),
-      # checkboxGroupInput("selected_clusters", "selected clusters:", 1:10),
-      # numericInput("kern_dim", "smoothing:", 1, min = 1, max = 50, value = kern_dim),
-      # plotOutput("rna_seq_clust_raw"),
+      plotOutput("survival_clust_raw"),
+
+      checkboxInput("MEAN_SIG_raw", "mean signal",    FALSE),
+      checkboxInput("PLOT_CI_raw", "conf. int.",      FALSE),
+      checkboxInput("ALL_CURVE", "indiv. curves", ALL_CURVE),
+      checkboxGroupInput("selected_clusters", "selected clusters:", 1:10),
+      numericInput("kern_dim", "smoothing:", 1, min = 1, max = 50, value = kern_dim),
+      plotOutput("rna_seq_clust_raw"),
 
       dataTableOutput("clusters")
 
@@ -298,7 +304,7 @@ get_hm_app = function(study, height="5000", var=c("samples", "raw", "genome"), U
 
             # plot
             d = study$data[platform_idx, exp_grp_idx]
-            xs = 1:nrow(study$platform[platform_idx, ])
+            xs = 1:length(platform_idx)
             ys = apply(d, 1, mean)
             layout(1)
             plot(0,0,col=0, xlim=range(xs), ylab="signal (au)", xlab="", main=paste0("signal over genome ", nrow(d), "x", ncol(d)), ylim=range(ys), xaxt="n")
