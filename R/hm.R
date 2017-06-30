@@ -243,8 +243,8 @@ get_hm_app = function(study, height="5000", var=c("samples", "raw", "genome"), U
               })
              ret = apply(ret,1,all)
             }
-            if (!all(react_vals[[paste0(key, "_idx")]] == ret)) {
-              react_vals[[paste0(key, "_idx")]] = ret                            
+            if (!all(react_vals[[paste0(key, "_idx")]] == rownames(study[[key]])[ret])) {
+              react_vals[[paste0(key, "_idx")]] = rownames(study[[key]])[ret]                            
             }
           }
         }
@@ -296,11 +296,14 @@ get_hm_app = function(study, height="5000", var=c("samples", "raw", "genome"), U
         if (!is.null(react_vals$exp_grp_idx) &
             !is.null(react_vals$platform_idx) &
             !is.null(input$pf_col_label)) {
-          if (sum(react_vals$exp_grp_idx )!=0 &
-              sum(react_vals$platform_idx)!=0) {
+          if (length(react_vals$exp_grp_idx )!=0 &
+              length(react_vals$platform_idx)!=0) {
             pf_col_label = input$pf_col_label
             platform_idx = react_vals$platform_idx
             exp_grp_idx = react_vals$exp_grp_idx
+
+            print(platform_idx[1:100])
+
 
             # plot
             d = study$data[platform_idx, exp_grp_idx]
@@ -332,8 +335,8 @@ get_hm_app = function(study, height="5000", var=c("samples", "raw", "genome"), U
         USE_CLUST = FALSE
         if (!is.null(react_vals$exp_grp_idx) &
             !is.null(react_vals$platform_idx)) {
-          if (sum(react_vals$exp_grp_idx )!=0 &
-              sum(react_vals$platform_idx)!=0) {
+          if (length(react_vals$exp_grp_idx )!=0 &
+              length(react_vals$platform_idx)!=0) {
             # MVC
             exp_grp_col = input$exp_grp_col
             exp_grp_col_label = input$exp_grp_col_label
