@@ -7,7 +7,7 @@
 get_hm_app(study, height = "5000", var = c("samples", "raw", "genome"),
   USE_CLUST = c(TRUE, FALSE), kern_dim = 1, ALL_CURVE = FALSE,
   nb_clust = 3, pf_col_label = "exon", exp_grp_col = "histo",
-  exp_grp_col_label, second, ...)
+  exp_grp_col_label, second, BREAK_TOO_EXPENSIVE = BREAK_TOO_EXPENSIVE, ...)
 }
 \arguments{
 \item{study}{An epimedtools Study RC object}
@@ -31,6 +31,8 @@ get_hm_app(study, height = "5000", var = c("samples", "raw", "genome"),
 \item{exp_grp_col_label}{exprimental}
 
 \item{second}{exprimental}
+
+\item{BREAK_TOO_EXPENSIVE}{A boolean specifying if too expensive operation must be breaked.}
 
 \item{...}{argument passed to plot_rna_sig function}
 }

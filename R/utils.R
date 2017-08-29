@@ -1,3 +1,29 @@
+#' A Function That Computes the Reverse Complement of a DNA Sequence
+#'
+#'
+#' This function returns the Reverse complement of a DNA sequence.
+#' @param x a string specifying the DNA sequence
+#' @importFrom seqinr comp
+#' @export
+revcomp=function(x){
+  toupper(paste(rev(seqinr::comp(strsplit(x, "")[[1]])), collapse=""))
+}
+
+#' A Function That Computes the Number of Line a a Text File
+#'
+#'
+#' This function returns the number of line a a text fileplots heatmaps.
+#' @param x a string specifying the text file
+#' @export
+get_nbline = function(x){
+  as.integer(system2("wc",
+    args = c("-l",
+    x,
+    " | awk '{print $1}'"),
+    stdout = TRUE))
+}
+
+
 #' A Function That Plots Heatmaps.
 #'
 #'

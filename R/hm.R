@@ -69,6 +69,7 @@ plot_rna_sig = function(d_rna, pf, col=1, ylim, main="", ADD=FALSE, NORM=FALSE, 
 #' @param pf_col_label A platform column name use to label gene axis
 #' @param exp_grp_col An exp_grp column name use to label sample
 #' @param exp_grp_col_label exprimental
+#' @param BREAK_TOO_EXPENSIVE A boolean specifying if too expensive operation must be breaked.
 #' @param second exprimental
 #' @param ... argument passed to plot_rna_sig function
 #' @importFrom grDevices rainbow
@@ -116,7 +117,7 @@ plot_rna_sig = function(d_rna, pf, col=1, ylim, main="", ADD=FALSE, NORM=FALSE, 
 #' @importFrom shiny uiOutput
 #' @importFrom shiny updateCheckboxGroupInput
 #' @export
-get_hm_app = function(study, height="5000", var=c("samples", "raw", "genome"), USE_CLUST=c(TRUE, FALSE), kern_dim=1, ALL_CURVE=FALSE, nb_clust=3, pf_col_label="exon", exp_grp_col="histo", exp_grp_col_label, second, ...) {
+get_hm_app = function(study, height="5000", var=c("samples", "raw", "genome"), USE_CLUST=c(TRUE, FALSE), kern_dim=1, ALL_CURVE=FALSE, nb_clust=3, pf_col_label="exon", exp_grp_col="histo", exp_grp_col_label, second, BREAK_TOO_EXPENSIVE=BREAK_TOO_EXPENSIVE, ...) {
   if (missing(second)) {
     second = exp_grp_col
   }
@@ -351,7 +352,7 @@ get_hm_app = function(study, height="5000", var=c("samples", "raw", "genome"), U
             PLOT_HM_raw = input$PLOT_HM_raw
 
             # Heatmap
-            hm = plot_hm2(study, pf_col=pf_col_label, exp_grp_col_label=exp_grp_col_label, exp_grp_idx=exp_grp_idx, platform_idx=platform_idx, method_hclust=method_hclust, nb_clust=nb_clust, var=var, PLOT_HM_raw=PLOT_HM_raw, USE_CLUST=USE_CLUST)
+            hm = plot_hm2(study, pf_col=pf_col_label, exp_grp_col_label=exp_grp_col_label, exp_grp_idx=exp_grp_idx, platform_idx=platform_idx, method_hclust=method_hclust, nb_clust=nb_clust, var=var, PLOT_HM_raw=PLOT_HM_raw, USE_CLUST=USE_CLUST, BREAK_TOO_EXPENSIVE=BREAK_TOO_EXPENSIVE)
 
             # MVC
             react_vals$grps = hm$grps
@@ -417,23 +418,23 @@ get_hm_app = function(study, height="5000", var=c("samples", "raw", "genome"), U
             layout(matrix(1:2, 1), respect=TRUE)
             for (NORM in c(FALSE, TRUE)) {
               col_mean_sig = ifelse(MEAN_SIG_raw, "black", "white")
-              plot_rna_sig(study$data[platform_idx, exp_grp_idx], study$platform[platform_idx, ], NORM=NORM, col=col_mean_sig,  PLOT_CI=PLOT_CI_raw, ALL_CURVE=ALL_CURVE, kern_dim=kern_dim)
+              plot_rna_sig(study$data[platform_idx, exp_grp_idx], study$platform[platform_idx, ], NORM=NORM, col=col_mean_sig,  PLOT_CI=PLOT_CI_raw, ALL_CURVE=ALL_CURVE, kern_dim=kern_dim, BREAK_TOO_EXPENSIVE=BREAK_TOO_EXPENSIVE)
               is = as.numeric(selected_clusters)
               if (ALL_CURVE) {
                 for (i in is) {
                   idx_tmp = names(grps)[grps==i]
-                  plot_rna_sig(study$data[platform_idx, idx_tmp], , study$platform[platform_idx, ], col=rainbow(length(unique(grps)))[i], ADD=TRUE, NORM=NORM, PLOT_CI=FALSE, ALL_CURVE=TRUE, kern_dim=kern_dim)
+                  plot_rna_sig(study$data[platform_idx, idx_tmp], , study$platform[platform_idx, ], col=rainbow(length(unique(grps)))[i], ADD=TRUE, NORM=NORM, PLOT_CI=FALSE, ALL_CURVE=TRUE, kern_dim=kern_dim, BREAK_TOO_EXPENSIVE=BREAK_TOO_EXPENSIVE)
                 }
               }
               if (PLOT_CI_raw) {
                 for (i in is) {
                   idx_tmp = names(grps)[grps==i]
-                  plot_rna_sig(study$data[platform_idx, idx_tmp], , study$platform[platform_idx, ], col=rainbow(length(unique(grps)))[i], ADD=TRUE, NORM=NORM, PLOT_CI=TRUE, ALL_CURVE=FALSE, kern_dim=kern_dim)
+                  plot_rna_sig(study$data[platform_idx, idx_tmp], , study$platform[platform_idx, ], col=rainbow(length(unique(grps)))[i], ADD=TRUE, NORM=NORM, PLOT_CI=TRUE, ALL_CURVE=FALSE, kern_dim=kern_dim, BREAK_TOO_EXPENSIVE=BREAK_TOO_EXPENSIVE)
                 }
               }
               for (i in is) {
                 idx_tmp = names(grps)[grps==i]
-                plot_rna_sig(study$data[platform_idx, idx_tmp], , study$platform[platform_idx, ], col=rainbow(length(unique(grps)))[i], ADD=TRUE, NORM=NORM, PLOT_CI=FALSE, ALL_CURVE=FALSE, kern_dim=kern_dim)
+                plot_rna_sig(study$data[platform_idx, idx_tmp], , study$platform[platform_idx, ], col=rainbow(length(unique(grps)))[i], ADD=TRUE, NORM=NORM, PLOT_CI=FALSE, ALL_CURVE=FALSE, kern_dim=kern_dim, BREAK_TOO_EXPENSIVE=BREAK_TOO_EXPENSIVE)
               }
             }
           }          

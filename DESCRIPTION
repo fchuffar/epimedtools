@@ -12,6 +12,7 @@ Maintainer: Florent Chuffart <florent.chuffart@gmail.com>
 License: CeCILL
 LazyData: TRUE
 Imports:
+    seqinr,
     gplots, 
     shiny,
     Biobase,
