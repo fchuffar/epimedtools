@@ -1,3 +1,16 @@
+#' A Function That Perform Intersection Between Sets.
+#'
+#'
+#' This function use recurssively intersect function
+#' @param x set: vectors (of the same mode) containing a sequence of items (conceptually) with no duplicated values.
+#' @param y set: vectors (of the same mode) containing a sequence of items (conceptually) with no duplicated values.
+#' @param ... set: vectors (of the same mode) containing a sequence of items (conceptually) with no duplicated values.
+#' @export
+intersect_rec = function(x, y, ...){
+  if (missing(...)) intersect(x, y)
+  else intersect(x, intersect_rec(y, ...))
+}
+
 #' A Function That Computes the Reverse Complement of a DNA Sequence
 #'
 #'
@@ -623,6 +636,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
 #' @param main A character string to explicit the title of the plot
 #' @param thresh A vector of integer used fopr thresholds
 #' @param ... Parameters passed to pairs function
+#' @param PLOT A boolean set to TRUE if data needs to be ploted.
 #' @return NULL
 #' @importFrom grDevices adjustcolor
 #' @importFrom graphics abline
@@ -630,7 +644,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
 #' @importFrom stats density
 #' @importFrom utils combn
 #' @export
-plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs", colors=c("deepskyblue", "black", "red"), main, thresh, ...) {
+plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs", colors=c("deepskyblue", "black", "red"), main, thresh, PLOT=TRUE, ...) {
   if (missing(main)) {
     main=""
   }
@@ -638,7 +652,9 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
   ss = ss[idx]
   v = v[idx]
   dv = density(v)
-  pval_cox = coxres(ss, v)[1]
+  hz_cox = coxres(ss, v)
+  pval_cox = hz_cox[1]
+  pval_glo = pval_cox
   if (missing(thresh)) {
     # quantiles
     vd_all = discr(v, nb_q)    
@@ -658,22 +674,27 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
      coxres(ss, vd_it)[1]
     })
     ib = ibs[[which(pvcoxes == min(pvcoxes))]]
+    pval_opt = min(pvcoxes)
     vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
   } else {
     vd_opt = discr(v, breaks=b_all)    
+    hz_opt = coxres(ss,vd_opt)
+    pval_opt = hz_opt[1]
   }
   b_opt = attr(vd_opt, "breaks")    
   # graphicals
-  layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE), respect=TRUE)
-  main2 = paste(main, " p_cox=", signif(as.numeric(pval_cox),3), sep="")
-  plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=main2)
-  abline(v=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
-  abline(v=b_opt, lty=2, lwd=1)
-  # print(vd_all)
-  # vd_all <<- vd_all
-  scurve(ss, vd_all, main=main, colors=colors, ...)
-  scurve(ss, vd_opt, main=main, colors=colors, ...)
-  return(b_opt)
+  if (PLOT) {  
+    layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE), respect=TRUE)
+    main2 = paste(main, " p_cox=", signif(as.numeric(pval_cox),3), sep="")
+    plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=main2)
+    abline(v=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
+    abline(v=b_opt, lty=2, lwd=1)
+    # print(vd_all)
+    # vd_all <<- vd_all
+    scurve(ss, vd_all, main=main, colors=colors, ...)
+    scurve(ss, vd_opt, main=main, colors=colors, ...)
+  }
+  return(list(boundaries=b_opt, pval_glo=pval_glo, pval_opt=pval_opt, hz_opt=hz_opt, card=table(vd_opt)))  
 }
 
 

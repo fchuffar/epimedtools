@@ -5,7 +5,7 @@
 \title{A Function That Plots Survival Panel}
 \usage{
 plot_survival_panel_simple2(ss, v, nb_q = 5, gene_pf_colname = "lower_gs",
-  colors = c("deepskyblue", "black", "red"), main, thresh, ...)
+  colors = c("deepskyblue", "black", "red"), main, thresh, PLOT = TRUE, ...)
 }
 \arguments{
 \item{ss}{A survival structure such as produced by function Surv of package survival.}
@@ -21,6 +21,8 @@ plot_survival_panel_simple2(ss, v, nb_q = 5, gene_pf_colname = "lower_gs",
 \item{main}{A character string to explicit the title of the plot}
 
 \item{thresh}{A vector of integer used fopr thresholds}
+
+\item{PLOT}{A boolean set to TRUE if data needs to be ploted.}
 
 \item{...}{Parameters passed to pairs function}
 }

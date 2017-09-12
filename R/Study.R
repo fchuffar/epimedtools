@@ -202,7 +202,7 @@ Study_abstract = setRefClass(
         method_to_read_cel_files = justRMA        
       }
       if (length(.self$cel_files) == 0) {
-        .self$cel_files = lapply(.self$cel_filedirs, get_cel_filenames)
+        tmp_self_cel_files = lapply(.self$cel_filedirs, get_cel_filenames)
         orig = unlist(sapply(1:length(.self$cel_filedirs), function(i) {
           split1 = unique(unlist(strsplit(.self$cel_filedirs[i], "/")))  
           split2 = unique(unlist(strsplit(.self$cel_filedirs[-i], "/")))  
@@ -210,9 +210,9 @@ Study_abstract = setRefClass(
           n = gsub("[.]", "_", n)
           n = gsub("__*", "_", n)
           n = gsub("^_", "", n)
-          rep(n, length(.self$cel_files[[i]]))
+          rep(n, length(tmp_self_cel_files[[i]]))
         }))
-        .self$cel_files = unlist(.self$cel_files)        
+        .self$cel_files = unlist(tmp_self_cel_files)        
         cel_files_short = unlist(lapply(.self$cel_filedirs, get_cel_filenames, full.names=FALSE))
       } else {
         .self$cel_files = path.expand(.self$cel_files)
