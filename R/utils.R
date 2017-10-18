@@ -674,16 +674,18 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
      coxres(ss, vd_it)[1]
     })
     ib = ibs[[which(pvcoxes == min(pvcoxes))]]
+    vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+    hz_opt = coxres(ss,vd_opt)
     pval_opt = min(pvcoxes)
     vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
   } else {
-    vd_opt = discr(v, breaks=b_all)    
+    vd_opt = discr(v, breaks=b_all)
     hz_opt = coxres(ss,vd_opt)
     pval_opt = hz_opt[1]
   }
-  b_opt = attr(vd_opt, "breaks")    
+  b_opt = attr(vd_opt, "breaks")
   # graphicals
-  if (PLOT) {  
+  if (PLOT) {
     layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE), respect=TRUE)
     main2 = paste(main, " p_cox=", signif(as.numeric(pval_cox),3), sep="")
     plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=main2)
@@ -694,7 +696,7 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
     scurve(ss, vd_all, main=main, colors=colors, ...)
     scurve(ss, vd_opt, main=main, colors=colors, ...)
   }
-  return(list(boundaries=b_opt, pval_glo=pval_glo, pval_opt=pval_opt, hz_opt=hz_opt, card=table(vd_opt)))  
+  return(list(boundaries=b_opt, pval_glo=pval_glo, pval_opt=pval_opt, hz_opt=hz_opt, card=table(vd_opt)))
 }
 
 
@@ -1121,7 +1123,9 @@ discr = function(v, nd=5, breaks){
   }
   b = sort(unique(b))
   vd = cut(v, b, include.lowest=TRUE, right=FALSE, labels=(1:(length(b)-1)))
-  labels = paste("[", signif(b[-length(b)],2), ", ", signif(b[-1],2), "[", sep="")
+  rnd = floor(log10(abs(b[-length(b)]-b[-1])))
+  # print(rnd)
+  labels = paste("[", round(b[-length(b)],-rnd), ", ", round(b[-1],-rnd), "[", sep="")
   labels[length(labels)] = paste(substr(labels[length(labels)], 1, nchar(labels[length(labels)],)-1), "]", sep="")
   attributes(vd)$levels = labels
   attributes(vd)$class = c("factor", "ordered")
