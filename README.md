@@ -73,6 +73,11 @@ To get the current development version from github, you need first to install fo
   * `affy`
   * `GEOquery`
 
+```R
+install.packages("devtools")
+devtools::install_github("fchuffar/epimedtools")
+```
+
 Then, install ``epimedtool``:
 
 ```R

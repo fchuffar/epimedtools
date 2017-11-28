@@ -83,7 +83,7 @@ Study_abstract = setRefClass(
     get_data = function(CACHE=FALSE, ...) {
       if (is.null(dim(.self$data))) {
         if (length(.self$gse) != 0) {
-          .self$get_gset()
+          .self$get_gset(...)
         } else {
           .self$set_data(...)          
         }
