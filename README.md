@@ -74,8 +74,8 @@ To get the current development version from github, you need first to install fo
   * `GEOquery`
 
 ```R
-install.packages("devtools")
-devtools::install_github("fchuffar/epimedtools")
+source("http://bioconductor.org/biocLite.R")
+biocLite(c("Biobase", "affy", "GEOquery"))
 ```
 
 Then, install ``epimedtool``:
