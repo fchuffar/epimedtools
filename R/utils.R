@@ -1,3 +1,112 @@
+#' Binding of deepTools `plotHeatmap` Function.
+#'
+#' This function binds deepTools `plotHeatmap` function.
+#' @param matrix_file           deepTools `plotHeatmap` parameter.  
+#' @param out_filename        deepTools `plotHeatmap` parameter.  
+#' @param y_max               deepTools `plotHeatmap` parameter.  
+#' @param y_min               deepTools `plotHeatmap` parameter.  
+#' @export
+dt_plot_heatmap = function (matrix_file, out_filename, y_max, y_min) {
+  command = "plotHeatmap"  
+  args = paste(
+    c(
+      "--matrixFile"                , matrix_file, 
+      "--outFileName"             , out_filename,     
+      "--colorMap"                , "bwr", 
+      "--sortRegions"             , "no"
+    ), 
+  collapse = " ")
+  if (!missing(y_max)) {
+    args = paste(c(args, "--yMax", y_max), collapse=" ")
+  }
+  if (!missing(y_min)) {
+    args = paste(c(args, "--yMin", y_min), collapse=" ")
+  }
+  print(paste(command, args))
+  if (substr(Sys.info()["nodename"],1,4)=="luke") {
+    system2(command=command, args=args)
+  } else {
+    print(paste("Skiping deep tools calls on ", Sys.info()["nodename"]))
+  }
+  return(out_filename)
+}
+
+#' Binding of deepTools `computeMatrix` Function.
+#'
+#' This function binds deepTools `computeMatrix` function.
+#' @param regions_filename           deepTools `computeMatrix` parameter.  
+#' @param score_filename             deepTools `computeMatrix` parameter.  
+#' @param out_filename               deepTools `computeMatrix` parameter.  
+#' @param bin_size=50                deepTools `computeMatrix` parameter.  
+#' @param before_region_start_length deepTools `computeMatrix` parameter.  
+#' @param after_region_start_length  deepTools `computeMatrix` parameter.  
+#' @param FORCE_EXEC a boolean that force call to deepTools `computeMatrix` function.
+#' @export
+dt_compute_matrix = function (regions_filename, score_filename, out_filename, bin_size=50, before_region_start_length=5000, after_region_start_length=5000, FORCE_EXEC=FALSE) {
+  command = "computeMatrix"  
+  args = paste(
+    c("reference-point", 
+      "-R"                        , regions_filename, 
+      "-S"                        , score_filename, 
+      "--outFileName"             , out_filename,     
+      "--referencePoint"          , "TSS", 
+      "--binSize"                 , bin_size,  
+      "--beforeRegionStartLength" , before_region_start_length,
+      "--afterRegionStartLength"  , after_region_start_length,
+      "--numberOfProcessors"      , "12",  
+      "--sortRegions"             , "keep" 
+
+    ), 
+  collapse = " ")
+  print(paste(command, args))
+  if (substr(Sys.info()["nodename"],1,4)=="luke" | FORCE_EXEC) {
+    system2(command=command, args=args)
+  } else {
+    print(paste("Skiping deep tools calls on ", Sys.info()["nodename"]))
+  }
+  return(out_filename)
+}
+
+#' A Function That Computes Transcriptogram of a Gene.
+#'
+#' This function computes  RNA-Seq signal matrix of a gene from coverage signal.
+#' @param exons_bed a bed-like dataframe of exons.
+#' @param coverage_bwfiles a vector of bigwig files.
+#' @param bin_size an integer specifying the bin to discretize RNA-Seq signal.
+#' @export
+get_transcriptogram = function(exons_bed, coverage_bwfiles, bin_size=5) {
+  bar = lapply(1:nrow(exons_bed), function(i) {
+    before_region_start_length = 0
+    after_region_start_length = exons_bed[i,3] - exons_bed[i,2]
+    nb_bin = ceiling((before_region_start_length + after_region_start_length) / bin_size)
+    after_region_start_length = nb_bin * bin_size
+    matrix_out_filename = paste0("tmp/matrix_", i, "_RNA.txt.gz")
+    if (!file.exists(matrix_out_filename)) {
+      regions_filename = paste0("tmp/exons_bed_", i, ".bed")
+      write.table(exons_bed[i,1:6], file=regions_filename, sep="\t", quote=FALSE,row.names=FALSE, col.names=FALSE)      
+      out_filename = matrix_out_filename
+      matrix_out_filename = dt_compute_matrix(regions_filename=regions_filename, coverage_bwfiles=coverage_bwfiles, out_filename=out_filename, bin_size=bin_size, before_region_start_length=before_region_start_length, after_region_start_length=after_region_start_length, FORCE_EXEC=TRUE)
+      # matrix_file = matrix_out_filename
+      # out_filename = "hm.png"
+      # dt_plot_heatmap(matrix_file, out_filename)    
+    }
+
+    foo = read.table(gzfile(matrix_out_filename), skip=1, stringsAsFactors=FALSE)
+    # head(foo)
+    # print(dim(foo))
+    data = matrix(as.numeric(unlist(t(foo[,-(1:6)]))), nb_bin*nrow(foo))
+    rownames(data) = paste0("exon_", rep(i, nb_bin), "_", 1:nb_bin)
+    colnames(data) = do.call(rbind, strsplit(do.call(rbind,lapply(strsplit(coverage_bwfiles, "/"), rev))[,1], "_"))[,1]
+  
+    return(data)
+  })
+  bar = do.call(rbind,bar)
+  return(bar)  
+}
+
+
+
+
 #' A Function That Perform Intersection Between Sets.
 #'
 #'
