@@ -73,19 +73,21 @@ dt_compute_matrix = function (regions_filename, score_filename, out_filename, bi
 #' @param exons_bed a bed-like dataframe of exons.
 #' @param coverage_bwfiles a vector of bigwig files.
 #' @param bin_size an integer specifying the bin to discretize RNA-Seq signal.
+#' @param tmp_dir a string specifying temporary directory.
 #' @export
-get_transcriptogram = function(exons_bed, coverage_bwfiles, bin_size=5) {
+get_transcriptogram = function(exons_bed, coverage_bwfiles, bin_size=5, tmp_dir="tmp") {
   bar = lapply(1:nrow(exons_bed), function(i) {
     before_region_start_length = 0
     after_region_start_length = exons_bed[i,3] - exons_bed[i,2]
     nb_bin = ceiling((before_region_start_length + after_region_start_length) / bin_size)
     after_region_start_length = nb_bin * bin_size
-    matrix_out_filename = paste0("tmp/matrix_", i, "_RNA.txt.gz")
+    dir.create(tmp_dir, recursive=TRUE, showWarnings=FALSE)
+    matrix_out_filename = paste0(tmp_dir, "/matrix_", i, "_RNA.txt.gz")
     if (!file.exists(matrix_out_filename)) {
       regions_filename = paste0("tmp/exons_bed_", i, ".bed")
       write.table(exons_bed[i,1:6], file=regions_filename, sep="\t", quote=FALSE,row.names=FALSE, col.names=FALSE)      
       out_filename = matrix_out_filename
-      matrix_out_filename = dt_compute_matrix(regions_filename=regions_filename, coverage_bwfiles=coverage_bwfiles, out_filename=out_filename, bin_size=bin_size, before_region_start_length=before_region_start_length, after_region_start_length=after_region_start_length, FORCE_EXEC=TRUE)
+      matrix_out_filename = dt_compute_matrix(regions_filename=regions_filename, score_filename=coverage_bwfiles, out_filename=out_filename, bin_size=bin_size, before_region_start_length=before_region_start_length, after_region_start_length=after_region_start_length, FORCE_EXEC=TRUE)
       # matrix_file = matrix_out_filename
       # out_filename = "hm.png"
       # dt_plot_heatmap(matrix_file, out_filename)    
