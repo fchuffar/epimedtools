@@ -6,7 +6,9 @@
 \usage{
 plot_hm2(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx,
   method_hclust = "complete", nb_clust = 2, var = "raw",
-  PLOT_HM_raw = TRUE, USE_CLUST = FALSE, BREAK_TOO_EXPENSIVE = TRUE)
+  PLOT_HM_raw = TRUE, USE_CLUST = FALSE, CLUST_ROW = FALSE,
+  CLUST_COL = FALSE, BREAK_TOO_EXPENSIVE = TRUE, colors = c("royalblue",
+  "springgreen", "yellow", "red"))
 }
 \arguments{
 \item{study}{An epimedtools Study RC object}
@@ -29,7 +31,13 @@ plot_hm2(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx,
 
 \item{USE_CLUST}{A boolean specifying if dendogram needs to be ploted}
 
+\item{CLUST_ROW}{A boolean specifying if row dendogram needs to be ploted}
+
+\item{CLUST_COL}{A boolean specifying if column dendogram needs to be ploted}
+
 \item{BREAK_TOO_EXPENSIVE}{A boolean specifying if too expensive operation must be breaked.}
+
+\item{colors}{Colors to interpolate; must be a valid argument to col2rgb().}
 }
 \description{
 This function plots heatmaps.

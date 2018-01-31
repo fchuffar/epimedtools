@@ -4,7 +4,8 @@
 \alias{get_transcriptogram}
 \title{A Function That Computes Transcriptogram of a Gene.}
 \usage{
-get_transcriptogram(exons_bed, coverage_bwfiles, bin_size = 5)
+get_transcriptogram(exons_bed, coverage_bwfiles, bin_size = 5,
+  tmp_dir = "tmp")
 }
 \arguments{
 \item{exons_bed}{a bed-like dataframe of exons.}
@@ -12,6 +13,8 @@ get_transcriptogram(exons_bed, coverage_bwfiles, bin_size = 5)
 \item{coverage_bwfiles}{a vector of bigwig files.}
 
 \item{bin_size}{an integer specifying the bin to discretize RNA-Seq signal.}
+
+\item{tmp_dir}{a string specifying temporary directory.}
 }
 \description{
 This function computes  RNA-Seq signal matrix of a gene from coverage signal.

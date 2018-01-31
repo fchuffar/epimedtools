@@ -162,14 +162,18 @@ get_nbline = function(x){
 #' @param var A string defining the distance used to cluster data
 #' @param PLOT_HM_raw A boolean specifying if heatmap needs to be ploted
 #' @param USE_CLUST A boolean specifying if dendogram needs to be ploted
+#' @param CLUST_COL A boolean specifying if column dendogram needs to be ploted
+#' @param CLUST_ROW A boolean specifying if row dendogram needs to be ploted
 #' @param BREAK_TOO_EXPENSIVE A boolean specifying if too expensive operation must be breaked.
+#' @param ... Parameters passed to gplots::heatmap.2 function
+#' @param colors Colors to interpolate; must be a valid argument to col2rgb().
 #' @importFrom survival survfit
 #' @importFrom stats na.omit
 #' @importFrom grDevices colorRampPalette
 #' @importFrom graphics plot
 #' @importFrom gplots heatmap.2
 #' @export
-plot_hm2 = function(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx, method_hclust="complete", nb_clust=2, var="raw", PLOT_HM_raw=TRUE, USE_CLUST=FALSE, BREAK_TOO_EXPENSIVE=TRUE) {
+plot_hm2 = function(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx, method_hclust="complete", nb_clust=2, var="raw", PLOT_HM_raw=TRUE, USE_CLUST=FALSE, CLUST_ROW=FALSE, CLUST_COL=FALSE, BREAK_TOO_EXPENSIVE=TRUE, colors=c("royalblue", "springgreen", "yellow", "red"), ...) {
   if (missing(pf_col)) {
     pf_col = colnames(study$platform)[1]
   }
@@ -244,6 +248,17 @@ plot_hm2 = function(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx,
       Colv = Rowv = FALSE
       dendrogram="none"
     }
+    if (CLUST_COL) {
+      tmp_d = study$data[platform_idx, exp_grp_idx]
+      if (sum(sapply(apply(tmp_d, 2, unique), length) == 1) > 0) {
+        tmp_d = jitter(tmp_d)
+      }
+      tmp_d = t(tmp_d)
+      tmp_d = cor(tmp_d, method="sp")
+      hc_row = hclust(dist(1 - tmp_d), method=method_hclust)
+      Colv = as.dendrogram(hc_row)
+      dendrogram="col"      
+    }
     rownames(d) = study$exp_grp[rownames(d), exp_grp_col_label]
   }
   grps = cutree(hc, k = nb_clust)
@@ -252,16 +267,16 @@ plot_hm2 = function(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx,
     patientcolors = rainbow(length(unique(grps)))[grps]
     q = sort(unique(quantile(d, probs=seq(0,1,length.out=20))))
     q = q[ abs(diff(q)) > (max(q) - min(q)) / length(q) / 500]
-    cols = colorRampPalette(c("royalblue", "springgreen", "yellow", "red"))(length(q)-1)
+    cols = colorRampPalette(colors)(length(q)-1)
     if ((dim(d)[1] > 1000 | dim(d)[2] > 1000) & BREAK_TOO_EXPENSIVE) {
       warning(paste0("Can't draw heatmap, matrix is too big: ", dim(d)[1], "x", dim(d)[2], "."))
       return(NULL)
     }
-    gplots::heatmap.2(d, dendrogram=dendrogram, Rowv=Rowv, Colv=Colv, scale='none', trace="none", density.info="density", margin=c(5,10), col=cols, breaks=q, RowSideColors=patientcolors, symkey=FALSE, main=paste(dim(d), collapse="x"))
+    hm = gplots::heatmap.2(d, dendrogram=dendrogram, Rowv=Rowv, Colv=Colv, scale='none', trace="none", density.info="density", margin=c(5,10), col=cols, breaks=q, RowSideColors=patientcolors, symkey=FALSE, main=paste(dim(d), collapse="x"), ...)
   } else {
     plot(as.dendrogram(hc))
   }
-  return(list(grps=grps))
+  return(list(grps=grps,hm=hm,hc=hc))
 }
 
 
@@ -1134,13 +1149,14 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
 #' @param nb_sign An integer  indicating the number of significant digits to be used
 #' @param legend_place A character string to specify where to put the legend
 #' @param PLOT_LEGEND A boolean to specifying if legend need to be plotted
+#' @param cex.leg A numeric specifying the size of the legend
 #' @param ... Parameters passed to plot function.
 #' @importFrom survival survfit
 #' @importFrom stats na.omit
 #' @importFrom grDevices colorRampPalette
 #' @importFrom graphics plot
 #' @export
-scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",PLOT_LEGEND=TRUE , ...) {
+scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",PLOT_LEGEND=TRUE , cex.leg=1, ...) {
   idx = !is.na(ss)
   ss = ss[idx]
   if (missing(v)) {
@@ -1176,7 +1192,7 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
       }
     }
     legend = paste(legend, " (", tab, ")", sep="")
-    legend(legend_place, legend=legend, col=col, pch=3, lty=1)
+    legend(legend_place, legend=legend, col=col, pch=3, lty=1, cex=cex.leg)
   }
   return(cox_results)
 }
@@ -1658,17 +1674,13 @@ mtgetGEO = memoise(function(...) {
 # ' # foo = monitored_apply(matrix(rnorm(50), 10), 1, function(v) {print(length(v)); Sys.sleep(1); return(c(mean(v), sd(v)))}, mod = 1)
 #' @export
 monitored_apply = function(mat, marg=1, func, mod=100, ...) {
-  if (marg==1) {
-    nb_it = nrow(mat)
-    tmp_matrix = cbind(1:nb_it, mat)
-  } else {
-    nb_it = ncol(mat)
-    tmp_matrix = rbind(1:nb_it, mat)
-  }
+  epimedtools_global_cnt <<- 0
+  nb_it = dim(mat)[marg]
   d1 = as.numeric(Sys.time())
-  foo = apply(tmp_matrix, marg, function(vec, ...) {
-    id = as.numeric(vec[1])
-    ret = func(vec[-1], ...)
+  foo = apply(mat, marg, function(vec, ...) {
+    epimedtools_global_cnt <<- epimedtools_global_cnt+1
+    id = epimedtools_global_cnt
+    ret = func(vec, ...)
     # monitoring...
     if (id %% mod == 0) {
       d2 = Sys.time()
@@ -1681,7 +1693,6 @@ monitored_apply = function(mat, marg=1, func, mod=100, ...) {
     return(ret)
   }, ...)
 }
-
 #' A Monitored Version of `sapply`
 #'
 #' This function offer a monitored version of `sapply`.
