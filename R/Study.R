@@ -141,8 +141,11 @@ Study_abstract = setRefClass(
         }
       }
     },
-    save = function(cache_filename) {
+    save = function(cache_filename, FORCE=FALSE) {
       "Writes the study on the disk."
+      if (!FORCE) {
+        check_study(.self)        
+      }
       if (!missing(cache_filename)) {
         .self$cache_filename = cache_filename
       }

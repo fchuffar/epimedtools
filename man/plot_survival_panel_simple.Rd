@@ -25,7 +25,7 @@ plot_survival_panel_simple(probe_name, sample_names, study, nb_q = 5,
 
 \item{main}{A character string to explicit the title of the plot}
 
-\item{...}{Parameters passed to pairs function.}
+\item{...}{Parameters passed to plot_survival_panel_simple2 function.}
 }
 \description{
 This function plots ...

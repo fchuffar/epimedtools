@@ -22,7 +22,7 @@ plot_survival_panel_simple2(ss, v, nb_q = 5, gene_pf_colname = "lower_gs",
 
 \item{thresh}{A vector of integer used fopr thresholds}
 
-\item{PLOT}{A boolean set to TRUE if data needs to be ploted.}
+\item{PLOT}{A boolean set to TRUE if data needs to be plotted.}
 
 \item{...}{Parameters passed to pairs function}
 }

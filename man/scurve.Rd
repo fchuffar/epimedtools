@@ -6,7 +6,7 @@
 \usage{
 scurve(ss, v, colors = c("deepskyblue", "black", "red"), main = "Survival",
   legend, nb_sign = 3, legend_place = "topright", PLOT_LEGEND = TRUE,
-  cex.leg = 1, ...)
+  cex.leg = 1, censoring, ...)
 }
 \arguments{
 \item{ss}{A survival structure such as produced by function Surv of package survival.}
@@ -26,6 +26,8 @@ scurve(ss, v, colors = c("deepskyblue", "black", "red"), main = "Survival",
 \item{PLOT_LEGEND}{A boolean to specifying if legend need to be plotted}
 
 \item{cex.leg}{A numeric specifying the size of the legend}
+
+\item{censoring}{date at which data are censored}
 
 \item{...}{Parameters passed to plot function.}
 }

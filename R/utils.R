@@ -1,3 +1,277 @@
+#' gdc-client wrapperChecking data study properties
+#'
+#' This function wraps gdc-client.
+#' @param manifest_filename the path to the manifest file
+#' @param dest_dir the directory to put data
+#' @export
+gdc_client_wrapper = function(manifest_filename, dest_dir) {
+  manifest = read.table(manifest_filename, header=TRUE, sep="\t", stringsAsFactors=FALSE)
+  dir.create(dest_dir, recursive=TRUE, showWarnings=FALSE)
+  # Go
+  AGAIN = TRUE
+  while (AGAIN) {
+    foo = epimedtools::monitored_apply(mod=10, manifest, 1, function(l) {
+      # l = manifest[1,]
+      full_file_name = paste0(dest_dir, "/", l[["id"]], "/", l[["filename"]])
+      if (file.exists(full_file_name)) {
+        # full_file_name = "../data/count_data/7da031d1-04f3-407b-af7b-61bf4edd38e7/9f0897a4-db0c-43f8-9d75-8debe9b6c847.htseq.counts.gz"
+        # if (tools::md5sum(full_file_name) != l[["md5"]]) {
+        #   print(full_file_name)
+        #   return(TRUE)
+        # } else
+          {
+            return(FALSE)          
+        }
+      }  else {
+        print(full_file_name)
+        return(TRUE)
+      }
+    })
+    manifest[foo,]
+    command="gdc-client"
+    if (sum(foo) > 0) {
+      write.table(manifest[foo,], "tmp_manifest.txt", col.names=TRUE, row.names=FALSE, sep="\t", quote=FALSE)
+      args=paste0("download -m tmp_manifest.txt -d ", dest_dir)
+      paste(command, args)
+      system2(command, args)
+    } else {
+      AGAIN = FALSE 
+    }
+  }
+}
+
+#' Checking data study properties
+#'
+#' This function checks study properties.
+#' @param study The study to be checked.
+#' @export
+check_study =function (study) {
+  if (!is.matrix(study$data)) {
+    stop("$data is not a matrix.")
+  }
+  if (!is.data.frame(study$platform)) {
+    stop("$platform is not a data.frame.")
+  }
+  if (!is.data.frame(study$exp_grp)) {
+    stop("$exp_grp is not a data.frame.")
+  }
+  if (sum(!rownames(study$platform) %in% rownames(study$data))) {
+    stop("$platform rownames are not all included in $data rownames.")    
+  }
+  if (sum(!rownames(study$exp_grp) %in% colnames(study$data))) {
+    stop("$exp_grp rownames are not all included in $data colnames.")    
+  }
+  if (sum(rownames(study$data) != rownames(study$platform))) {
+    warning("$platform rownames are not strictly equal to $data rownames.")    
+  }
+  if (sum(colnames(study$data) != rownames(study$exp_grp))) {
+    warning("$exp_grp rownames are not strictly equal to $data colnames.")    
+  }
+  print("study checked.")
+}
+
+
+#' Fuming data
+#'
+#' This function fums data.
+#' @param data           data.frame extracted from json  
+#' @param colname        column name to flat.  
+#' @export
+tcga_fum_data = function(data, colname) {
+  # data_json_file = "data.project-TCGA-BRCA.2018-03-02.json"
+  # data = jsonlite::fromJSON(txt=data_json_file, flatten=TRUE)
+  data_orig = data 
+  # filter row with empty col named colname
+  len = sapply(data_orig[[colname]], length)
+  data = data_orig[len==max(len),]
+  # flat col named colname
+  foo = data_orig[len==max(len),colname]
+  sapply(foo, dim)
+  diagnoses = do.call(rbind, data_orig[len==max(len),colname])  
+  colnames(diagnoses) = paste0(colname, "_", colnames(diagnoses))
+  if (dim(diagnoses)[1] == nrow(data)) {
+    data = cbind(data, diagnoses)
+    data[[colname]] = NULL  
+  } else {
+    stop(paste0("can't fum ", colname, " in data."))
+  }  
+  # insert filtered rows
+  for (i in which(len!=max(len))){
+    keys = colnames(data)[colnames(data) %in% colnames(data_orig)]
+    data[nrow(data)+1,] = NA
+    data[nrow(data), keys] = data_orig[i,keys]
+  }
+  return(data)
+}
+
+#' Exploring data
+#'
+#' This function explores data
+#' @param df           data.frame extracted from json  
+#' @param lev        level of explorer, increased when recursiv call  
+#' @export
+tcga_explore_data = function(df, lev=0) {
+  unlist(sapply(names(df), function(n) {
+    # print(n)
+    l = length(df[[1,n]])
+    if (l > 1) {
+      print(paste(paste(rep(" ", lev*2), collapse=""), ">>>", n))
+      tcga_explore_data(df[[1,n]], lev = lev+1)
+      return(n)
+    } else {
+      print(paste(paste(rep(" ", lev*2), collapse=""), n))
+      return(NULL)      
+    }
+  }))[1]
+}
+
+#' Merging metadata cart and clinicals data
+#'
+#' This function merge metadata cart and clinicals data
+#' @param metadata_json_file        json filename for metadata cart
+#' @param clinical_json_file        json filename for for clinical data
+#' @export
+#' @importFrom utils read.table
+#' @importFrom utils head
+tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_json_file) {
+  # clinical
+  # clinical_json_file = "clinical.project-TCGA-BRCA.2018-03-02.json"
+  clinical = jsonlite::fromJSON(txt=clinical_json_file, flatten=TRUE)
+  foo = tcga_explore_data(clinical[1,])
+  while (!is.null(foo)) {
+    # metadata_cart_json_450k = tcga_fum_data(metadata_cart_json_450k, "annotations")
+    clinical = tcga_fum_data(clinical, foo)
+    foo = tcga_explore_data(clinical[1,])
+  }
+  head(clinical)
+  rownames(clinical) = clinical$case_id
+  dim(clinical)
+
+  # metadata_cart_json_450k
+  metadata_cart_json_450k = jsonlite::fromJSON(txt=metadata_json_file, flatten=TRUE)
+  dim(metadata_cart_json_450k)
+  foo = tcga_explore_data(metadata_cart_json_450k[1,])
+  while (!is.null(foo)) {
+    # metadata_cart_json_450k = tcga_fum_data(metadata_cart_json_450k, "annotations")
+    metadata_cart_json_450k = tcga_fum_data(metadata_cart_json_450k, foo)
+    foo = tcga_explore_data(metadata_cart_json_450k[1,])
+  }
+  head(metadata_cart_json_450k)
+  rownames(metadata_cart_json_450k) = metadata_cart_json_450k$file_name
+  dim(metadata_cart_json_450k)
+
+  # add clinical to metadata_cart_json_450k
+  foo = clinical[metadata_cart_json_450k$associated_entities_case_id,]
+  sum(colnames(foo) %in% colnames(metadata_cart_json_450k))
+  metadata_cart_json_450k = cbind(metadata_cart_json_450k, foo)
+  dim(metadata_cart_json_450k)
+
+  # which king of data ?
+  metadata_cart_json_450k$diagnoses_site_of_resection_or_biopsy
+  metadata_cart_json_450k$diagnoses_days_to_death
+  metadata_cart_json_450k$diagnoses_tumor_stage
+  metadata_cart_json_450k$diagnoses_days_to_death
+  metadata_cart_json_450k$diagnoses_days_to_last_follow_up # fut
+  metadata_cart_json_450k$diagnoses_vital_status #dead
+
+  # deal with metadata_cart_json_450k$associated_entities_entity_submitter_id
+  metadata_cart_json_450k$project     = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 1, 4)
+  metadata_cart_json_450k$tss         = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 6, 7)
+  metadata_cart_json_450k$participant = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 9, 12)
+  metadata_cart_json_450k$sample      = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 14, 15)
+  metadata_cart_json_450k$vial        = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 16, 16)
+  metadata_cart_json_450k$portion     = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 18, 19)
+  metadata_cart_json_450k$analyte     = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 20, 20)
+  metadata_cart_json_450k$plate       = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 22, 25)
+  metadata_cart_json_450k$center      = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 27, 28)
+  head(metadata_cart_json_450k)
+  unique(metadata_cart_json_450k$sample)
+
+  # tissue_status
+  metadata_cart_json_450k$tissue_status = NA
+  metadata_cart_json_450k[metadata_cart_json_450k$sample %in% c("11"),]$tissue_status = "normal"
+  metadata_cart_json_450k[metadata_cart_json_450k$sample %in% c("01", "06"),]$tissue_status = "tumoral"
+
+  # annotations
+  metadata_cart_json_450k$annotations
+  idx =  sapply(metadata_cart_json_450k$annotations, is.null)
+  sum(!idx)
+  metadata_cart_json_450k = metadata_cart_json_450k[idx,]
+
+  # survival
+  # os_month
+  metadata_cart_json_450k$os_month = sapply(metadata_cart_json_450k$diagnoses_days_to_last_follow_up, function(fut){
+    if (is.na(fut)) {
+      return(NA)
+    } else {
+      fut / 365.25 * 12
+    }
+  })
+  # month_to_death
+  metadata_cart_json_450k$month_to_death = sapply(metadata_cart_json_450k$diagnoses_days_to_death, function(days_to_death){
+    if (is.na(days_to_death)) {
+      return(NA)
+    } else {
+      days_to_death / 365.25 * 12
+    }
+  })
+  # dead
+  metadata_cart_json_450k$dead = sapply(metadata_cart_json_450k$diagnoses_vital_status, function(da){
+    if (is.na(da)) {
+      return(NA)
+    }
+    if (da == "dead") {
+      return(TRUE)
+    } else if (da == "alive") {
+      return(FALSE)
+    } else {
+      return(NA)
+    }
+  })
+  # replace os_month by month_to_death when month_to_death is not NA
+  metadata_cart_json_450k[!is.na(metadata_cart_json_450k$month_to_death),]$os_month = metadata_cart_json_450k[!is.na(metadata_cart_json_450k$month_to_death),]$month_to_death
+  # survival in day
+  metadata_cart_json_450k$os_day = sapply(metadata_cart_json_450k$diagnoses_days_to_last_follow_up, function(fut){
+    if (is.na(fut)) {
+      return(NA)
+    } else {
+      fut 
+    }
+  })
+  # month_to_death
+  metadata_cart_json_450k$day_to_death = sapply(metadata_cart_json_450k$diagnoses_days_to_death, function(days_to_death){
+    if (is.na(days_to_death)) {
+      return(NA)
+    } else {
+      days_to_death 
+    }
+  })
+  # replace os_day by day_to_death when day_to_death is not NA
+  metadata_cart_json_450k[!is.na(metadata_cart_json_450k$day_to_death),]$os_day = metadata_cart_json_450k[!is.na(metadata_cart_json_450k$day_to_death),]$day_to_death
+  # check
+  foo = metadata_cart_json_450k[,c("diagnoses_days_to_last_follow_up", "diagnoses_days_to_death", "os_month", "month_to_death", "diagnoses_vital_status", "dead")]
+  # foo = metadata_cart_json_450k[,c("diagnoses_days_to_last_follow_up", "diagnoses_vital_status")]
+  rownames(foo) = colnames(foo) = NULL
+  foo[is.na(foo[,1]),]
+  foo[is.na(foo[,2]),]
+  # survival to NA for NTL
+  metadata_cart_json_450k[metadata_cart_json_450k$case_id %in% metadata_cart_json_450k$case_id[duplicated(metadata_cart_json_450k$case_id)][1],]
+  metadata_cart_json_450k[metadata_cart_json_450k$case_id %in% metadata_cart_json_450k$case_id[duplicated(metadata_cart_json_450k$case_id)][2],]
+  metadata_cart_json_450k[metadata_cart_json_450k$sample == "11",]$os_month = NA
+  metadata_cart_json_450k[metadata_cart_json_450k$sample == "11",]$dead = NA
+  # # sensoring to 120 month
+  # idx = !is.na(metadata_cart_json_450k$os_month) & metadata_cart_json_450k$os_month > 120
+  # metadata_cart_json_450k[idx,]$os_month = 120
+  # metadata_cart_json_450k[idx,]$dead = FALSE
+  # build survival
+  metadata_cart_json_450k$os = survival::Surv(metadata_cart_json_450k$os_month, metadata_cart_json_450k$dead)
+  metadata_cart_json_450k$osd = survival::Surv(metadata_cart_json_450k$os_day, metadata_cart_json_450k$dead)
+  return(metadata_cart_json_450k)
+}
+
+
+
+
 #' Binding of deepTools `plotHeatmap` Function.
 #'
 #' This function binds deepTools `plotHeatmap` function.
@@ -5,8 +279,9 @@
 #' @param out_filename        deepTools `plotHeatmap` parameter.  
 #' @param y_max               deepTools `plotHeatmap` parameter.  
 #' @param y_min               deepTools `plotHeatmap` parameter.  
+#' @param FORCE_EXEC a boolean that force call to deepTools `computeMatrix` function.
 #' @export
-dt_plot_heatmap = function (matrix_file, out_filename, y_max, y_min) {
+dt_plot_heatmap = function (matrix_file, out_filename, y_max, y_min, FORCE_EXEC=FALSE) {
   command = "plotHeatmap"  
   args = paste(
     c(
@@ -23,7 +298,7 @@ dt_plot_heatmap = function (matrix_file, out_filename, y_max, y_min) {
     args = paste(c(args, "--yMin", y_min), collapse=" ")
   }
   print(paste(command, args))
-  if (substr(Sys.info()["nodename"],1,4)=="luke") {
+  if (substr(Sys.info()["nodename"],1,4)=="luke" | FORCE_EXEC) {
     system2(command=command, args=args)
   } else {
     print(paste("Skiping deep tools calls on ", Sys.info()["nodename"]))
@@ -37,12 +312,14 @@ dt_plot_heatmap = function (matrix_file, out_filename, y_max, y_min) {
 #' @param regions_filename           deepTools `computeMatrix` parameter.  
 #' @param score_filename             deepTools `computeMatrix` parameter.  
 #' @param out_filename               deepTools `computeMatrix` parameter.  
-#' @param bin_size=50                deepTools `computeMatrix` parameter.  
+#' @param bin_size                   deepTools `computeMatrix` parameter.  
 #' @param before_region_start_length deepTools `computeMatrix` parameter.  
 #' @param after_region_start_length  deepTools `computeMatrix` parameter.  
+#' @param number_of_processors       deepTools `computeMatrix` parameter.  
+#' @param blacklist_filename         deepTools `computeMatrix` parameter.  
 #' @param FORCE_EXEC a boolean that force call to deepTools `computeMatrix` function.
 #' @export
-dt_compute_matrix = function (regions_filename, score_filename, out_filename, bin_size=50, before_region_start_length=5000, after_region_start_length=5000, FORCE_EXEC=FALSE) {
+dt_compute_matrix = function (regions_filename, score_filename, out_filename, bin_size=50, before_region_start_length=5000, after_region_start_length=5000, number_of_processors=12, blacklist_filename=NULL, FORCE_EXEC=FALSE) {
   command = "computeMatrix"  
   args = paste(
     c("reference-point", 
@@ -53,11 +330,14 @@ dt_compute_matrix = function (regions_filename, score_filename, out_filename, bi
       "--binSize"                 , bin_size,  
       "--beforeRegionStartLength" , before_region_start_length,
       "--afterRegionStartLength"  , after_region_start_length,
-      "--numberOfProcessors"      , "12",  
+      "--numberOfProcessors"      , number_of_processors,  
       "--sortRegions"             , "keep" 
 
     ), 
   collapse = " ")
+  if (!is.null(blacklist_filename)) {
+    args = paste(args, "--blackListFileName" , blacklist_filename) 
+  }
   print(paste(command, args))
   if (substr(Sys.info()["nodename"],1,4)=="luke" | FORCE_EXEC) {
     system2(command=command, args=args)
@@ -67,6 +347,52 @@ dt_compute_matrix = function (regions_filename, score_filename, out_filename, bi
   return(out_filename)
 }
 
+
+#' Binding of deepTools `computeMatrix` Function.
+#'
+#' This function binds deepTools `computeMatrix` function.
+#' @param regions_filename           deepTools `computeMatrix` parameter.  
+#' @param score_filename             deepTools `computeMatrix` parameter.  
+#' @param out_filename               deepTools `computeMatrix` parameter.  
+#' @param bin_size                deepTools `computeMatrix` parameter.  
+#' @param before_region_start_length deepTools `computeMatrix` parameter.  
+#' @param after_region_start_length  deepTools `computeMatrix` parameter.  
+#' @param region_body_length         deepTools `computeMatrix` parameter.  
+#' @param number_of_processors       deepTools `computeMatrix` parameter.  
+#' @param blacklist_filename         deepTools `computeMatrix` parameter.  
+#' @param FORCE_EXEC a boolean that force call to deepTools `computeMatrix` function.
+#' @export
+dt_compute_matrix_scale = function (regions_filename, score_filename, out_filename, bin_size=50, before_region_start_length=0, after_region_start_length=0, region_body_length, number_of_processors=12, blacklist_filename=NULL, FORCE_EXEC=FALSE) {
+  command = "computeMatrix"  
+  args = paste(
+    c("scale-regions", 
+      "-R"                        , regions_filename, 
+      "-S"                        , score_filename, 
+      "--outFileName"             , out_filename,     
+      "--startLabel"              , "win_start", 
+      "--endLabel"                , "win_end", 
+      "--regionBodyLength"        , region_body_length,  
+      "--binSize"                 , bin_size,  
+      "--beforeRegionStartLength" , before_region_start_length,
+      "--afterRegionStartLength"  , after_region_start_length,
+      "--numberOfProcessors"      , number_of_processors,  
+      "--sortRegions"             , "keep" 
+
+    ), 
+  collapse = " ")
+  if (!is.null(blacklist_filename)) {
+    args = paste(args, "--blackListFileName" , blacklist_filename) 
+  }
+  print(paste(command, args))
+  if (substr(Sys.info()["nodename"],1,4)=="luke" | FORCE_EXEC) {
+    system2(command=command, args=args)
+  } else {
+    print(paste("Skiping deep tools calls on ", Sys.info()["nodename"]))
+  }
+  return(out_filename)
+}
+
+
 #' A Function That Computes Transcriptogram of a Gene.
 #'
 #' This function computes  RNA-Seq signal matrix of a gene from coverage signal.
@@ -75,6 +401,7 @@ dt_compute_matrix = function (regions_filename, score_filename, out_filename, bi
 #' @param bin_size an integer specifying the bin to discretize RNA-Seq signal.
 #' @param tmp_dir a string specifying temporary directory.
 #' @export
+#' @importFrom utils write.table
 get_transcriptogram = function(exons_bed, coverage_bwfiles, bin_size=5, tmp_dir="tmp") {
   bar = lapply(1:nrow(exons_bed), function(i) {
     before_region_start_length = 0
@@ -233,7 +560,7 @@ plot_hm2 = function(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx,
       Colv = Rowv = FALSE
       dendrogram="none"
       colnames(d) = NULL
-      colnames(d)[!duplicated(study$platform[platform_idx[idx],pf_col])] = study$platform[platform_idx,pf_col][!duplicated(study$platform[platform_idx,pf_col])]
+      colnames(d)[!duplicated(study$platform[platform_idx,pf_col])] = study$platform[platform_idx,pf_col][!duplicated(study$platform[platform_idx,pf_col])]
     }
   } else {
     d = t(study$data[platform_idx, exp_grp_idx])
@@ -514,41 +841,6 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
 #' @importFrom utils combn
 #' @importFrom beanplot beanplot
 #' @export
-# plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname="lower_gs",cex.axis=0.7, ylim) {
-#   data = study$data[probe_name,sample_names]
-#   exp_grp = study$exp_grp[sample_names,]
-#   gene_name = study$platform[probe_name,][[gene_pf_colname]]
-#   # graphicals
-#   if (missing(anova_mw_res)) {
-#     design=exp_grp
-#     model=as.formula(paste("val~", exp_grp_key))
-#     anova_mw_res = epimedtools::perform_anova_gen(design=design, model=model, data=data)
-#     rownames(anova_mw_res) = probe_name
-#   }
-#   if (missing(ylim)) {
-#     ylim=range(data[rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]])
-#   }
-#   anova_pval_leg = paste("p_anova=", signif(anova_mw_res[probe_name, paste("adj_pval", exp_grp_key, sep="_")],3), sep="")
-#   bp = beanplot(data~exp_grp[[exp_grp_key]], las=2, log="", ylim=ylim,
-#     main=paste(gene_name, "@", probe_name, " ", exp_grp_key, " ", anova_pval_leg, sep=""), ylab="log2(exprs)",cex.axis=cex.axis)
-#   mw_pval_colnames = colnames(anova_mw_res)[grep("mw_pval_adj", colnames(anova_mw_res))]
-#   case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
-#
-#   mtc = match(case_names, bp$names)
-#   rng = rep(range(data)[2], length(mtc))
-#   dup = duplicated(paste(mtc,rng, sep="_"))
-#   while(sum(dup) > 0) {
-#     rng = rng - dup/2
-#     dup = duplicated(paste(mtc,rng, sep="_"))
-#   }
-#   duplicated(paste(mtc,rng, sep="_"))
-#   if (length(mtc) > 0) {
-#     text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))
-#   }
-#   return(NULL)
-# }
-# plot_bean_expr =             function(probe_name, sample_names, exp_grp_key, study, anova_mw_res, gene_pf_colname="lower_gs",cex.axis=0.7, ylim) {
-# plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, gene_pf_colname="lower_gs", ss_key="os") {
 plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_q=5, anova_mw_res, gene_pf_colname="lower_gs", ss_key="os",cex.axis=0.7, ylim) {
   if (missing(sample_names)) {
     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp[[ss_key]]),])
@@ -721,7 +1013,7 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
 #' @param ss_key A character string specifying the experimental grouping column to use for survival
 #' @param colors Colors to interpolate; must be a valid argument to col2rgb().
 #' @param main A character string to explicit the title of the plot
-#' @param ... Parameters passed to pairs function.
+#' @param ... Parameters passed to plot_survival_panel_simple2 function.
 #' @return NULL
 #' @importFrom grDevices adjustcolor
 #' @importFrom graphics abline
@@ -762,7 +1054,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
 #' @param main A character string to explicit the title of the plot
 #' @param thresh A vector of integer used fopr thresholds
 #' @param ... Parameters passed to pairs function
-#' @param PLOT A boolean set to TRUE if data needs to be ploted.
+#' @param PLOT A boolean set to TRUE if data needs to be plotted.
 #' @return NULL
 #' @importFrom grDevices adjustcolor
 #' @importFrom graphics abline
@@ -1149,6 +1441,7 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
 #' @param nb_sign An integer  indicating the number of significant digits to be used
 #' @param legend_place A character string to specify where to put the legend
 #' @param PLOT_LEGEND A boolean to specifying if legend need to be plotted
+#' @param censoring date at which data are censored
 #' @param cex.leg A numeric specifying the size of the legend
 #' @param ... Parameters passed to plot function.
 #' @importFrom survival survfit
@@ -1156,7 +1449,8 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
 #' @importFrom grDevices colorRampPalette
 #' @importFrom graphics plot
 #' @export
-scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",PLOT_LEGEND=TRUE , cex.leg=1, ...) {
+scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival", legend, nb_sign=3, legend_place="topright",PLOT_LEGEND=TRUE , cex.leg=1, censoring, ...) {
+
   idx = !is.na(ss)
   ss = ss[idx]
   if (missing(v)) {
@@ -1164,6 +1458,17 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
   } else {
     v = v[idx]    
   }
+
+  if (!missing(censoring)) {
+    date = ss[,1]
+    state = ss[,2]
+    # censoring to 120 month
+    idx = !is.na(date) & date > censoring
+    date[idx] = censoring
+    state[idx] = 0
+    ss =  survival::Surv(date, state)
+  }
+
   if (length(unique(v)) == 1) {
     cox_results = 1    
   } else {

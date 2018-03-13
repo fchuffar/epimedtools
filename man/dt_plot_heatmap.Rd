@@ -4,7 +4,7 @@
 \alias{dt_plot_heatmap}
 \title{Binding of deepTools `plotHeatmap` Function.}
 \usage{
-dt_plot_heatmap(matrix_file, out_filename, y_max, y_min)
+dt_plot_heatmap(matrix_file, out_filename, y_max, y_min, FORCE_EXEC = FALSE)
 }
 \arguments{
 \item{matrix_file}{deepTools `plotHeatmap` parameter.}
@@ -14,6 +14,8 @@ dt_plot_heatmap(matrix_file, out_filename, y_max, y_min)
 \item{y_max}{deepTools `plotHeatmap` parameter.}
 
 \item{y_min}{deepTools `plotHeatmap` parameter.}
+
+\item{FORCE_EXEC}{a boolean that force call to deepTools `computeMatrix` function.}
 }
 \description{
 This function binds deepTools `plotHeatmap` function.

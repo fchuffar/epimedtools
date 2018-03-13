@@ -74,7 +74,7 @@ study. It an abstract class.
   for_each_line_process_groups_func = "for_each_line_process_groups_two_by_two_func",
   ...)}}{Perform a pretreatment on data, according to `probe_names` and `exp_grp` keys and factors, before processing the dataset.}
 
-\item{\code{save(cache_filename)}}{Writes the study on the disk.}
+\item{\code{save(cache_filename, FORCE = FALSE)}}{Writes the study on the disk.}
 
 \item{\code{set_data(hook, method_to_read_cel_files, ...)}}{Set the data field and update experiment grouping.}
 }}
