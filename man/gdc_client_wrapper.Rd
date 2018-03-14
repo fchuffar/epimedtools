@@ -4,7 +4,7 @@
 \alias{gdc_client_wrapper}
 \title{gdc-client wrapperChecking data study properties}
 \usage{
-gdc_client_wrapper(manifest_filename, dest_dir)
+gdc_client_wrapper(manifest_filename, dest_dir, files)
 }
 \arguments{
 \item{manifest_filename}{the path to the manifest file}

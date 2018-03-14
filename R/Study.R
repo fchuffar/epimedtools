@@ -88,7 +88,7 @@ Study_abstract = setRefClass(
           .self$set_data(...)          
         }
         if (CACHE) {
-          .self$save()
+          .self$save(FORCE=TRUE)
         }
       }
       return(data)
@@ -123,7 +123,7 @@ Study_abstract = setRefClass(
           )[-1]), collapse = "/")
           dir.create(cache_dir, showWarnings = FALSE, recursive =
                        TRUE)
-          .self$save()
+          .self$save(FORCE=TRUE)
         } else {
           if (MEMOISATION) {
             readRDS_funcname = "mreadRDS"            
@@ -191,7 +191,7 @@ Study_abstract = setRefClass(
         .self$platform$ID = as.character(.self$platform$ID)
         rownames(.self$platform) = .self$platform$ID
         if (CACHE) {
-          .self$save()
+          .self$save(FORCE=TRUE)
         }
       }
       return(.self$platform)
@@ -313,7 +313,7 @@ Study_abstract = setRefClass(
         .self$exp_grp = .self$gset@phenoData@data
         .self$data = exprs(.self$gset)
         if (CACHE) {
-          .self$save()
+          .self$save(FORCE=TRUE)
         }
       }
       return(.self$gset)

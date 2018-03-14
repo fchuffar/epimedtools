@@ -4,12 +4,15 @@
 \alias{tcga_merge_metadata_cart_and_clinicals}
 \title{Merging metadata cart and clinicals data}
 \usage{
-tcga_merge_metadata_cart_and_clinicals(metadata_json_file, clinical_json_file)
+tcga_merge_metadata_cart_and_clinicals(metadata_json_file, clinical_json_file,
+  col_to_remove)
 }
 \arguments{
 \item{metadata_json_file}{json filename for metadata cart}
 
 \item{clinical_json_file}{json filename for for clinical data}
+
+\item{col_to_remove}{names of columns to be removed}
 }
 \description{
 This function merge metadata cart and clinicals data

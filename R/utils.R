@@ -4,8 +4,14 @@
 #' @param manifest_filename the path to the manifest file
 #' @param dest_dir the directory to put data
 #' @export
-gdc_client_wrapper = function(manifest_filename, dest_dir) {
+gdc_client_wrapper = function(manifest_filename, dest_dir, files) {
   manifest = read.table(manifest_filename, header=TRUE, sep="\t", stringsAsFactors=FALSE)
+  if (!missing(files)) {
+    head(manifest)
+    # sum(!files %in% manifest$filename)
+    idx = manifest$filename %in% files
+    manifest = manifest[idx,]
+  }
   dir.create(dest_dir, recursive=TRUE, showWarnings=FALSE)
   # Go
   AGAIN = TRUE
@@ -27,7 +33,6 @@ gdc_client_wrapper = function(manifest_filename, dest_dir) {
         return(TRUE)
       }
     })
-    manifest[foo,]
     command="gdc-client"
     if (sum(foo) > 0) {
       write.table(manifest[foo,], "tmp_manifest.txt", col.names=TRUE, row.names=FALSE, sep="\t", quote=FALSE)
@@ -130,16 +135,18 @@ tcga_explore_data = function(df, lev=0) {
 #' This function merge metadata cart and clinicals data
 #' @param metadata_json_file        json filename for metadata cart
 #' @param clinical_json_file        json filename for for clinical data
+#' @param col_to_remove             names of columns to be removed
 #' @export
 #' @importFrom utils read.table
 #' @importFrom utils head
-tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_json_file) {
+tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_json_file, col_to_remove) {
   # clinical
   # clinical_json_file = "clinical.project-TCGA-BRCA.2018-03-02.json"
   clinical = jsonlite::fromJSON(txt=clinical_json_file, flatten=TRUE)
+  print("Exploring clinical")
   foo = tcga_explore_data(clinical[1,])
   while (!is.null(foo)) {
-    # metadata_cart_json_450k = tcga_fum_data(metadata_cart_json_450k, "annotations")
+    # metadata_cart = tcga_fum_data(metadata_cart, "annotations")
     clinical = tcga_fum_data(clinical, foo)
     foo = tcga_explore_data(clinical[1,])
   }
@@ -147,76 +154,82 @@ tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_j
   rownames(clinical) = clinical$case_id
   dim(clinical)
 
-  # metadata_cart_json_450k
-  metadata_cart_json_450k = jsonlite::fromJSON(txt=metadata_json_file, flatten=TRUE)
-  dim(metadata_cart_json_450k)
-  foo = tcga_explore_data(metadata_cart_json_450k[1,])
-  while (!is.null(foo)) {
-    # metadata_cart_json_450k = tcga_fum_data(metadata_cart_json_450k, "annotations")
-    metadata_cart_json_450k = tcga_fum_data(metadata_cart_json_450k, foo)
-    foo = tcga_explore_data(metadata_cart_json_450k[1,])
+  # metadata_cart
+  metadata_cart = jsonlite::fromJSON(txt=metadata_json_file, flatten=TRUE)
+  print("Exploring metadata_cart")
+  foo = tcga_explore_data(metadata_cart[1,])
+  if (!missing(col_to_remove)) {
+    print(paste0("removing ", col_to_remove))
+    metadata_cart = metadata_cart[,-which(colnames(metadata_cart) %in% col_to_remove)]    
+    foo = tcga_explore_data(metadata_cart[1,])
   }
-  head(metadata_cart_json_450k)
-  rownames(metadata_cart_json_450k) = metadata_cart_json_450k$file_name
-  dim(metadata_cart_json_450k)
+  while (!is.null(foo)) {
+    # metadata_cart = tcga_fum_data(metadata_cart, "annotations")
+    metadata_cart = tcga_fum_data(metadata_cart, foo)
+    foo = tcga_explore_data(metadata_cart[1,])
+  }
+  head(metadata_cart)
+  rownames(metadata_cart) = metadata_cart$file_name
+  dim(metadata_cart)
 
-  # add clinical to metadata_cart_json_450k
-  foo = clinical[metadata_cart_json_450k$associated_entities_case_id,]
-  sum(colnames(foo) %in% colnames(metadata_cart_json_450k))
-  metadata_cart_json_450k = cbind(metadata_cart_json_450k, foo)
-  dim(metadata_cart_json_450k)
+  # add clinical to metadata_cart
+  foo = clinical[metadata_cart$associated_entities_case_id,]
+  sum(colnames(foo) %in% colnames(metadata_cart))
+  metadata_cart = cbind(metadata_cart, foo)
+  dim(metadata_cart)
 
-  # which king of data ?
-  metadata_cart_json_450k$diagnoses_site_of_resection_or_biopsy
-  metadata_cart_json_450k$diagnoses_days_to_death
-  metadata_cart_json_450k$diagnoses_tumor_stage
-  metadata_cart_json_450k$diagnoses_days_to_death
-  metadata_cart_json_450k$diagnoses_days_to_last_follow_up # fut
-  metadata_cart_json_450k$diagnoses_vital_status #dead
+  # # which king of data ?
+  # metadata_cart$diagnoses_site_of_resection_or_biopsy
+  # metadata_cart$diagnoses_days_to_death
+  # metadata_cart$diagnoses_tumor_stage
+  # metadata_cart$diagnoses_days_to_death
+  # metadata_cart$diagnoses_days_to_last_follow_up # fut
+  # metadata_cart$diagnoses_vital_status #dead
 
-  # deal with metadata_cart_json_450k$associated_entities_entity_submitter_id
-  metadata_cart_json_450k$project     = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 1, 4)
-  metadata_cart_json_450k$tss         = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 6, 7)
-  metadata_cart_json_450k$participant = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 9, 12)
-  metadata_cart_json_450k$sample      = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 14, 15)
-  metadata_cart_json_450k$vial        = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 16, 16)
-  metadata_cart_json_450k$portion     = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 18, 19)
-  metadata_cart_json_450k$analyte     = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 20, 20)
-  metadata_cart_json_450k$plate       = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 22, 25)
-  metadata_cart_json_450k$center      = substr(metadata_cart_json_450k$associated_entities_entity_submitter_id, 27, 28)
-  head(metadata_cart_json_450k)
-  unique(metadata_cart_json_450k$sample)
+  # deal with metadata_cart$associated_entities_entity_submitter_id
+  metadata_cart$project     = substr(metadata_cart$associated_entities_entity_submitter_id, 1, 4)
+  metadata_cart$tss         = substr(metadata_cart$associated_entities_entity_submitter_id, 6, 7)
+  metadata_cart$participant = substr(metadata_cart$associated_entities_entity_submitter_id, 9, 12)
+  metadata_cart$sample      = substr(metadata_cart$associated_entities_entity_submitter_id, 14, 15)
+  metadata_cart$vial        = substr(metadata_cart$associated_entities_entity_submitter_id, 16, 16)
+  metadata_cart$portion     = substr(metadata_cart$associated_entities_entity_submitter_id, 18, 19)
+  metadata_cart$analyte     = substr(metadata_cart$associated_entities_entity_submitter_id, 20, 20)
+  metadata_cart$plate       = substr(metadata_cart$associated_entities_entity_submitter_id, 22, 25)
+  metadata_cart$center      = substr(metadata_cart$associated_entities_entity_submitter_id, 27, 28)
+  head(metadata_cart)
+  unique(metadata_cart$sample)
 
   # tissue_status
-  metadata_cart_json_450k$tissue_status = NA
-  metadata_cart_json_450k[metadata_cart_json_450k$sample %in% c("11"),]$tissue_status = "normal"
-  metadata_cart_json_450k[metadata_cart_json_450k$sample %in% c("01", "06"),]$tissue_status = "tumoral"
+  metadata_cart$tissue_status = NA
+  metadata_cart[metadata_cart$sample %in% c("11"),]$tissue_status = "normal"
+  metadata_cart[metadata_cart$sample %in% c("01", "06"),]$tissue_status = "tumoral"
 
   # annotations
-  metadata_cart_json_450k$annotations
-  idx =  sapply(metadata_cart_json_450k$annotations, is.null)
-  sum(!idx)
-  metadata_cart_json_450k = metadata_cart_json_450k[idx,]
+  if (!is.null(metadata_cart$annotations)) {
+    idx =  sapply(metadata_cart$annotations, is.null)
+    sum(!idx)
+    metadata_cart = metadata_cart[idx,]    
+  }
 
   # survival
   # os_month
-  metadata_cart_json_450k$os_month = sapply(metadata_cart_json_450k$diagnoses_days_to_last_follow_up, function(fut){
+  metadata_cart$os_month = sapply(metadata_cart$diagnoses_days_to_last_follow_up, function(fut){
     if (is.na(fut)) {
       return(NA)
     } else {
-      fut / 365.25 * 12
+      fut / 30
     }
   })
   # month_to_death
-  metadata_cart_json_450k$month_to_death = sapply(metadata_cart_json_450k$diagnoses_days_to_death, function(days_to_death){
+  metadata_cart$month_to_death = sapply(metadata_cart$diagnoses_days_to_death, function(days_to_death){
     if (is.na(days_to_death)) {
       return(NA)
     } else {
-      days_to_death / 365.25 * 12
+      days_to_death / 30
     }
   })
   # dead
-  metadata_cart_json_450k$dead = sapply(metadata_cart_json_450k$diagnoses_vital_status, function(da){
+  metadata_cart$dead = sapply(metadata_cart$diagnoses_vital_status, function(da){
     if (is.na(da)) {
       return(NA)
     }
@@ -229,9 +242,9 @@ tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_j
     }
   })
   # replace os_month by month_to_death when month_to_death is not NA
-  metadata_cart_json_450k[!is.na(metadata_cart_json_450k$month_to_death),]$os_month = metadata_cart_json_450k[!is.na(metadata_cart_json_450k$month_to_death),]$month_to_death
+  metadata_cart[!is.na(metadata_cart$month_to_death),]$os_month = metadata_cart[!is.na(metadata_cart$month_to_death),]$month_to_death
   # survival in day
-  metadata_cart_json_450k$os_day = sapply(metadata_cart_json_450k$diagnoses_days_to_last_follow_up, function(fut){
+  metadata_cart$os_day = sapply(metadata_cart$diagnoses_days_to_last_follow_up, function(fut){
     if (is.na(fut)) {
       return(NA)
     } else {
@@ -239,7 +252,7 @@ tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_j
     }
   })
   # month_to_death
-  metadata_cart_json_450k$day_to_death = sapply(metadata_cart_json_450k$diagnoses_days_to_death, function(days_to_death){
+  metadata_cart$day_to_death = sapply(metadata_cart$diagnoses_days_to_death, function(days_to_death){
     if (is.na(days_to_death)) {
       return(NA)
     } else {
@@ -247,26 +260,26 @@ tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_j
     }
   })
   # replace os_day by day_to_death when day_to_death is not NA
-  metadata_cart_json_450k[!is.na(metadata_cart_json_450k$day_to_death),]$os_day = metadata_cart_json_450k[!is.na(metadata_cart_json_450k$day_to_death),]$day_to_death
+  metadata_cart[!is.na(metadata_cart$day_to_death),]$os_day = metadata_cart[!is.na(metadata_cart$day_to_death),]$day_to_death
   # check
-  foo = metadata_cart_json_450k[,c("diagnoses_days_to_last_follow_up", "diagnoses_days_to_death", "os_month", "month_to_death", "diagnoses_vital_status", "dead")]
-  # foo = metadata_cart_json_450k[,c("diagnoses_days_to_last_follow_up", "diagnoses_vital_status")]
+  foo = metadata_cart[,c("diagnoses_days_to_last_follow_up", "diagnoses_days_to_death", "os_month", "month_to_death", "diagnoses_vital_status", "dead")]
+  # foo = metadata_cart[,c("diagnoses_days_to_last_follow_up", "diagnoses_vital_status")]
   rownames(foo) = colnames(foo) = NULL
   foo[is.na(foo[,1]),]
   foo[is.na(foo[,2]),]
   # survival to NA for NTL
-  metadata_cart_json_450k[metadata_cart_json_450k$case_id %in% metadata_cart_json_450k$case_id[duplicated(metadata_cart_json_450k$case_id)][1],]
-  metadata_cart_json_450k[metadata_cart_json_450k$case_id %in% metadata_cart_json_450k$case_id[duplicated(metadata_cart_json_450k$case_id)][2],]
-  metadata_cart_json_450k[metadata_cart_json_450k$sample == "11",]$os_month = NA
-  metadata_cart_json_450k[metadata_cart_json_450k$sample == "11",]$dead = NA
+  metadata_cart[metadata_cart$case_id %in% metadata_cart$case_id[duplicated(metadata_cart$case_id)][1],]
+  metadata_cart[metadata_cart$case_id %in% metadata_cart$case_id[duplicated(metadata_cart$case_id)][2],]
+  metadata_cart[metadata_cart$sample == "11",]$os_month = NA
+  metadata_cart[metadata_cart$sample == "11",]$dead = NA
   # # sensoring to 120 month
-  # idx = !is.na(metadata_cart_json_450k$os_month) & metadata_cart_json_450k$os_month > 120
-  # metadata_cart_json_450k[idx,]$os_month = 120
-  # metadata_cart_json_450k[idx,]$dead = FALSE
+  # idx = !is.na(metadata_cart$os_month) & metadata_cart$os_month > 120
+  # metadata_cart[idx,]$os_month = 120
+  # metadata_cart[idx,]$dead = FALSE
   # build survival
-  metadata_cart_json_450k$os = survival::Surv(metadata_cart_json_450k$os_month, metadata_cart_json_450k$dead)
-  metadata_cart_json_450k$osd = survival::Surv(metadata_cart_json_450k$os_day, metadata_cart_json_450k$dead)
-  return(metadata_cart_json_450k)
+  metadata_cart$os = survival::Surv(metadata_cart$os_month, metadata_cart$dead)
+  metadata_cart$osd = survival::Surv(metadata_cart$os_day, metadata_cart$dead)
+  return(metadata_cart)
 }
 
 
