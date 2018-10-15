@@ -10,6 +10,8 @@ coxres(ss, v)
 \item{ss}{A survival structure such as produced by function Surv of package survival.}
 
 \item{v}{A (discretized) vector indexed as ss.}
+
+\item{censoring}{date at which data are censored}
 }
 \value{
 A named vector of length 5.

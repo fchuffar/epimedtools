@@ -1,3 +1,42 @@
+#' Retrieve exp_grp of a given TCGA project from epimeddb
+#'
+#' This function retrieves exp_grp of a given TCGA project from epimeddb
+#' @param tcga_project the name of the TCGA project to retrieve
+#' @export
+get_tcga_exp_grp = function(tcga_project) {
+  url = paste0("http://epimed.univ-grenoble-alpes.fr/database/parameters/",tcga_project)
+  df1 = read.csv2(url, header=TRUE, sep=";", stringsAsFactors=FALSE, dec=".", na.strings="")
+  url = paste0("http://epimed.univ-grenoble-alpes.fr/database/expgroup/",tcga_project)
+  df2 = read.csv2(url, header=TRUE, sep=";", stringsAsFactors=FALSE, dec=".", na.strings="")
+  df = merge(df2,df1,by=1)
+  # identify rownames 
+  df$rn_id = substr(df[,1],1,15)
+  # dup rn
+  dup_rn_id = df$rn_id[duplicated(df$rn_id)]
+  dup_rn_id
+  foo = df[df$rn_id %in% dup_rn_id,]
+  idx = !is.na(foo[1,] == foo[2,]) & foo[1,] != foo[2,]
+  n = colnames(idx)[idx]
+  foo[,n]
+  # remove FFPE
+  df$is_ffpe = as.logical(df$is_ffpe)
+  sum(df$is_ffpe)
+  df = df[!df$is_ffpe,]
+  # dup rn
+  dup_rn_id = df$rn_id[duplicated(df$rn_id)]
+  dup_rn_id
+  # # dedup rn
+  # df = df[!duplicated(df$rn_id),]
+  # df$rn_id = NULL
+  rownames(df) = substr(df[,1],1,15)
+
+  # exp_grp
+  exp_grp = df
+  exp_grp$dead = as.logical(exp_grp$dead)
+  exp_grp$os = survival::Surv(exp_grp$os_month, exp_grp$dead)  
+  return(exp_grp)
+} 
+
 #' gdc-client wrapperChecking data study properties
 #'
 #' This function wraps gdc-client.
@@ -292,16 +331,17 @@ tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_j
 #' @param out_filename        deepTools `plotHeatmap` parameter.  
 #' @param y_max               deepTools `plotHeatmap` parameter.  
 #' @param y_min               deepTools `plotHeatmap` parameter.  
+#' @param sort_regions        deepTools `sortRegions` parameter.  
 #' @param FORCE_EXEC a boolean that force call to deepTools `computeMatrix` function.
 #' @export
-dt_plot_heatmap = function (matrix_file, out_filename, y_max, y_min, FORCE_EXEC=FALSE) {
+dt_plot_heatmap = function (matrix_file, out_filename, y_max, y_min, sort_regions="no", FORCE_EXEC=FALSE) {
   command = "plotHeatmap"  
   args = paste(
     c(
       "--matrixFile"                , matrix_file, 
       "--outFileName"             , out_filename,     
       "--colorMap"                , "bwr", 
-      "--sortRegions"             , "no"
+      "--sortRegions"             , sort_regions
     ), 
   collapse = " ")
   if (!missing(y_max)) {
@@ -1066,7 +1106,7 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
 #' @param colors Colors to interpolate; must be a valid argument to col2rgb()
 #' @param main A character string to explicit the title of the plot
 #' @param thresh A vector of integer used fopr thresholds
-#' @param ... Parameters passed to pairs function
+#' @param ... Parameters passed to scurve function
 #' @param PLOT A boolean set to TRUE if data needs to be plotted.
 #' @return NULL
 #' @importFrom grDevices adjustcolor
@@ -1101,10 +1141,14 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
      as.list(as.data.frame(combn(tbc,n)))
     }), recursive=FALSE)
     pvcoxes = sapply(ibs, function(ib){
-     vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
-     coxres(ss, vd_it)[1]
+      vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
+      if (length(unique(vd_it)) < 2) {
+        return(1)
+      } else {       
+        return(coxres(ss, vd_it)[1])
+      }
     })
-    ib = ibs[[which(pvcoxes == min(pvcoxes))]]
+    ib = ibs[[which(pvcoxes == min(pvcoxes))[1]]]
     vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
     hz_opt = coxres(ss,vd_opt)
     pval_opt = min(pvcoxes)
@@ -1485,7 +1529,7 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
   if (length(unique(v)) == 1) {
     cox_results = 1    
   } else {
-    cox_results = coxres(ss,v)    
+    cox_results = coxres(ss,as.character(v))    
   }
   pv = cox_results[1]
   if (pv<1e-100) {
@@ -1500,6 +1544,7 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
   main= paste(main, " p_cox=", signif(as.numeric(pvt), nb_sign), sep="")
   plot(sf, col=col, main=main, ...)
   tab = table(v)
+  tab=tab[tab!=0]
   if (PLOT_LEGEND) {    
     if (missing(legend)) {
       if ("breaks" %in% names(attributes(v))) {
@@ -1527,6 +1572,7 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
 #'      hrlb: the lower bound of the 95% confidence interval for hr
 #'      hr: the hazard ratio
 #'      hrub: the upper bound of the 95% confidence interval for hr
+#' @param censoring date at which data are censored
 #' @param ss A survival structure such as produced by function Surv of package survival.
 #' @param v A (discretized) vector indexed as ss.
 #' @return A named vector of length 5.
@@ -1568,9 +1614,9 @@ discr = function(v, nd=5, breaks){
   }
   b = sort(unique(b))
   vd = cut(v, b, include.lowest=TRUE, right=FALSE, labels=(1:(length(b)-1)))
-  rnd = floor(log10(abs(b[-length(b)]-b[-1])))
+  # rnd = floor(log10(abs(b[-length(b)]-b[-1])))
   # print(rnd)
-  labels = paste("[", round(b[-length(b)],-rnd), ", ", round(b[-1],-rnd), "[", sep="")
+  labels = paste("[", signif(b[-length(b)], 3), ", ", signif(b[-1],3), "[", sep="")
   labels[length(labels)] = paste(substr(labels[length(labels)], 1, nchar(labels[length(labels)],)-1), "]", sep="")
   attributes(vd)$levels = labels
   attributes(vd)$class = c("factor", "ordered")
@@ -1882,6 +1928,54 @@ fuse_exp_grp = function(exp_grp1, exp_grp2, by="row.names") {
   fused_exp_grp[,"Row.names"] = NULL
   return(fused_exp_grp)
 }
+
+
+
+#' Retrieving _RAW.tar archive from GEO.
+#'
+#' This function retrieves _RAW.tar archgive from GEO to the file system. 
+
+#' @param gse A GSE id
+#' @param datashare_dir A string describing the targeted directory.
+#' @export
+download_gse_raw_tar = function (gse, datashare_dir="~/projects/datashare") {
+  dest_dir = paste0(datashare_dir, "/", gse)
+  raw_dest_dir = paste0(dest_dir, "/raw")
+  if (!file.exists(raw_dest_dir)) {
+    command = "mkdir" 
+    args = paste("-p", raw_dest_dir)
+    print(paste(command, args))
+    system2(command, args)
+
+    # gse = "GSE6791"
+    gse_tar_filename = paste0(dest_dir, "/", gse, "_RAW.tar")
+    gse_pref = paste0(substr(gse, 1, nchar(gse) - 3), "nnn")
+    url = paste0("ftp://ftp.ncbi.nlm.nih.gov/geo/series/", gse_pref, "/", gse, "/suppl/", gse, "_RAW.tar")
+    command = "wget" 
+    args = paste(url, "-P", dest_dir)
+    print(paste(command, args))
+    if (!file.exists(gse_tar_filename)) {
+      system2(command, args)  
+    }
+
+    tar_filename = paste0(dest_dir, "/", gse, "_RAW.tar")
+    command = "tar" 
+    args = paste("xfv", tar_filename, "-C", raw_dest_dir)
+    print(paste(command, args))
+    system2(command, args)  
+
+    tar_filename = paste0(dest_dir, "/", gse, "_RAW.tar")
+    command = "rm" 
+    args = tar_filename
+    print(paste(command, args))
+    system2(command, args)    
+  } else {
+    print(paste(gse, " download ever done."))
+  }
+  return(dest_dir)
+}
+
+
 
 #' Retrieving .CEL.gz Files from GEO.
 #'

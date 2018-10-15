@@ -24,7 +24,7 @@ plot_survival_panel_simple2(ss, v, nb_q = 5, gene_pf_colname = "lower_gs",
 
 \item{PLOT}{A boolean set to TRUE if data needs to be plotted.}
 
-\item{...}{Parameters passed to pairs function}
+\item{...}{Parameters passed to scurve function}
 }
 \description{
 This function plots ...
