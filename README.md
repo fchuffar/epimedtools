@@ -13,8 +13,8 @@ The __epimedtools__ package aims to manage a `study` object composed of the thre
 Take care: 
 
   - study$data is a matrix of numerics
-  - `colnames(study$data)` contain `rownames(study$exp_grp)`
-  - `rownames(study$data)` contain   `rownames(study$platform)`
+  - `colnames(study$data)` contains `rownames(study$exp_grp)`
+  - `rownames(study$data)` contains   `rownames(study$platform)`
 
 ```R
 > study
@@ -74,14 +74,14 @@ To get the current development version from github, you need first to install fo
   * `GEOquery`
 
 ```R
-source("http://bioconductor.org/biocLite.R")
-biocLite(c("Biobase", "affy", "GEOquery"))
+# install.packages("BiocManager")
+BiocManager::install(c("Biobase", "affy", "GEOquery"))
 ```
 
 Then, install ``epimedtool``:
 
 ```R
-install.packages("devtools")
+# install.packages("devtools")
 devtools::install_github("fchuffar/epimedtools")
 ```
 
