@@ -514,34 +514,34 @@ overview = function(e, FULL=FALSE) {
   }))
 }
 
-#' A Function That Requests Epimed Database
-#'
-#' This function requests epimed database.
-#' @param query A character string indicating to SQL query to execute
-#' @param dbname A character string integer the nane of the database
-#' @param host A character string the host of the database 
-#' @param port An integer indicating the port for the connexion to the database
-#' @param user A character string indicating the user tuse for the connexion to the database
-#' @param password A character string indicating the password to use for the connexion to the database
-#' @return a dataframe corresponding to data requested
-#' @importFrom DBI dbDriver
-#' @importFrom RPostgreSQL dbConnect
-#' @importFrom RPostgreSQL dbGetQuery
-#' @importFrom RPostgreSQL dbDisconnect
-#' @importFrom RPostgreSQL dbUnloadDriver
-#' @export
-req = function(query, dbname="epimed_prod", host="epimed-db.imag.fr", port=5432, user="epimedtools", password="epimedtools") {
- # load the PostgreSQL driver
- drv = dbDriver("PostgreSQL")
- # create a connection to the postgres database
- con = dbConnect(drv, dbname=dbname, host=host, port=port, user=user, password=password)
- # load data
- info = dbGetQuery(con, query)
- # close the connection
- dbDisconnect(con)
- dbUnloadDriver(drv)
- return(info)  
-}
+# #' A Function That Requests Epimed Database
+# #'
+# #' This function requests epimed database.
+# #' @param query A character string indicating to SQL query to execute
+# #' @param dbname A character string integer the nane of the database
+# #' @param host A character string the host of the database
+# #' @param port An integer indicating the port for the connexion to the database
+# #' @param user A character string indicating the user tuse for the connexion to the database
+# #' @param password A character string indicating the password to use for the connexion to the database
+# #' @return a dataframe corresponding to data requested
+# #' @importFrom DBI dbDriver
+# #' @importFrom RPostgreSQL dbConnect
+# #' @importFrom RPostgreSQL dbGetQuery
+# #' @importFrom RPostgreSQL dbDisconnect
+# #' @importFrom RPostgreSQL dbUnloadDriver
+# #' @export
+# req = function(query, dbname="epimed_prod", host="epimed-db.imag.fr", port=5432, user="epimedtools", password="epimedtools") {
+#  # load the PostgreSQL driver
+#  drv = dbDriver("PostgreSQL")
+#  # create a connection to the postgres database
+#  con = dbConnect(drv, dbname=dbname, host=host, port=port, user=user, password=password)
+#  # load data
+#  info = dbGetQuery(con, query)
+#  # close the connection
+#  dbDisconnect(con)
+#  dbUnloadDriver(drv)
+#  return(info)
+# }
 
 
 #' A Function That Draws a Volcano Plot
