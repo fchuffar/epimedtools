@@ -22,7 +22,6 @@ Imports:
     survival,
     GEOquery,
     nortest,
-    RPostgreSQL,
     DBI,
     gtools
 Depends:
