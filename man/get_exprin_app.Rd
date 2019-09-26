@@ -4,11 +4,12 @@
 \alias{get_exprin_app}
 \title{A Function That runs Heatmap App}
 \usage{
-get_exprin_app(studies, gene_symbols, height = "5000", var = c("samples",
-  "raw", "genome"), USE_CLUST = c(TRUE, FALSE), kern_dim = 1,
-  ALL_CURVE = FALSE, nb_clust = 3, pf_col_label = "exo",
-  exp_grp_col = "tissue_status", exp_grp_col_label, second,
-  BREAK_TOO_EXPENSIVE = BREAK_TOO_EXPENSIVE, ...)
+get_exprin_app(studies, gene_symbols, height = "5000",
+  var = c("samples", "raw", "genome"), USE_CLUST = c(TRUE, FALSE),
+  kern_dim = 1, ALL_CURVE = FALSE, nb_clust = 3,
+  pf_col_label = "exo", exp_grp_col = "tissue_status",
+  exp_grp_col_label, second, BREAK_TOO_EXPENSIVE = BREAK_TOO_EXPENSIVE,
+  ...)
 }
 \arguments{
 \item{height}{string specifying the height oh the app}
@@ -40,4 +41,3 @@ get_exprin_app(studies, gene_symbols, height = "5000", var = c("samples",
 \description{
 This function runs heatmap app.
 }
-

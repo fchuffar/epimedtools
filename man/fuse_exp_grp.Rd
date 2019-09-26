@@ -19,4 +19,3 @@ The fused experimental grouping
 \description{
 This function tales two experimental grouping as parameter and merge them according to their row names.
 }
-

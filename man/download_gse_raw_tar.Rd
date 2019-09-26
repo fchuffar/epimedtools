@@ -14,4 +14,3 @@ download_gse_raw_tar(gse, datashare_dir = "~/projects/datashare")
 \description{
 This function retrieves _RAW.tar archgive from GEO to the file system.
 }
-

@@ -18,4 +18,3 @@ Compute the expected values of the broken-stick distribution for `p` pieces.
 \examples{
 broken_stick_out_20 = broken_stick(20)
 }
-

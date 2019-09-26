@@ -4,8 +4,8 @@
 \alias{perform_anova_gen}
 \title{A Function Performs Differential Expression Analysis Based On ANOVA}
 \usage{
-perform_anova_gen(design, model, data, key = NULL, MONITORED_APPLY = FALSE,
-  AD_TEST = TRUE)
+perform_anova_gen(design, model, data, key = NULL,
+  MONITORED_APPLY = FALSE, AD_TEST = TRUE)
 }
 \arguments{
 \item{design}{A dataframe that describes the design of the experiment.}
@@ -46,4 +46,3 @@ These values are retruned as a dataframe which fields are:
   \item adj_pval_hhh:         the adjusted p-value associated to the ANOVA test using Benjamini-Hochberg procedure to the threshold of 0.05.
 }
 }
-

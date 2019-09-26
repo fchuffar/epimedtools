@@ -17,4 +17,3 @@ A character vector of .CEL.gz files.
 \description{
 This function retrieves .CEL.gz files from GEO to the file system. It takes as parameters a character vector of GMSs to be retrived and a targeted directory. It returns a character vector of .CEL.gz files.
 }
-

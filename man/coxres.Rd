@@ -28,4 +28,3 @@ Returns as a named vector of length 5:
      hr: the hazard ratio
      hrub: the upper bound of the 95% confidence interval for hr
 }
-

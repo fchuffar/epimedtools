@@ -15,4 +15,3 @@ A character vector that describes simplified sample names.
 \description{
 This function simplyfies sample names.
 }
-

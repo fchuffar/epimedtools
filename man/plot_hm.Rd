@@ -6,7 +6,8 @@
 \usage{
 plot_hm(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
   mw_pval = "mw_pval_adj", gene_pf_colname = "gene_name", key,
-  PLOT_GS = FALSE, fc_thres = c(-1.5, -1.2, 1.2, 1.5), PLOT_PVAL = TRUE)
+  PLOT_GS = FALSE, fc_thres = c(-1.5, -1.2, 1.2, 1.5),
+  PLOT_PVAL = TRUE)
 }
 \arguments{
 \item{exp_grp_key}{the column name of the exprimental grouping to considere}
@@ -39,4 +40,3 @@ probes used to plot the heatmap
 \description{
 This function plots heatmaps of differentialy expressed genes across conditions.
 }
-

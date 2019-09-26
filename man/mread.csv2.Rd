@@ -15,4 +15,3 @@ csv file content.
 \description{
 This function offer a memoised version of read.csv2.
 }
-

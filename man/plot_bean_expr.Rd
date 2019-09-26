@@ -27,4 +27,3 @@ plot_bean_expr(probe_name, sample_names, exp_grp_key, study, anova_mw_res,
 \description{
 This function plots ...
 }
-

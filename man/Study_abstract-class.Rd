@@ -2,8 +2,8 @@
 % Please edit documentation in R/Study.R
 \docType{class}
 \name{Study_abstract-class}
-\alias{Study_abstract}
 \alias{Study_abstract-class}
+\alias{Study_abstract}
 \title{A Reference Class to represent a multi-omic study.}
 \description{
 This class allow to manipulate useful concepts involved in a multi-omics
@@ -32,6 +32,7 @@ study. It an abstract class.
 
 \item{\code{cel_filedirs}}{A character string that describes the directory taht contain associated cel files.}
 }}
+
 \section{Methods}{
 
 \describe{

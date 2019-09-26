@@ -14,4 +14,3 @@ tcga_fum_data(data, colname)
 \description{
 This function fums data.
 }
-

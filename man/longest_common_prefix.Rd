@@ -16,4 +16,3 @@ longest_common_prefix(s, split = "", fixed = FALSE)
 \description{
 This function returns the longest common prefix.
 }
-

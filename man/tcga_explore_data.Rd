@@ -14,4 +14,3 @@ tcga_explore_data(df, lev = 0)
 \description{
 This function explores data
 }
-

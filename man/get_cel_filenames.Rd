@@ -20,4 +20,3 @@ It returns a string vector of the .CEL.gz files.
 This function takes a directory as parameter and return a string vector of the .CEL.gz files
 that it contains.
 }
-

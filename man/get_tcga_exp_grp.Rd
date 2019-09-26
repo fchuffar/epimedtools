@@ -12,4 +12,3 @@ get_tcga_exp_grp(tcga_project)
 \description{
 This function retrieves exp_grp of a given TCGA project from epimeddb
 }
-

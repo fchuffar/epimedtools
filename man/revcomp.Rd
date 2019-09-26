@@ -12,4 +12,3 @@ revcomp(x)
 \description{
 This function returns the Reverse complement of a DNA sequence.
 }
-

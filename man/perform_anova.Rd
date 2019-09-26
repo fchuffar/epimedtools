@@ -25,4 +25,3 @@ perform_anova(design, model, data, key, correction = 1,
 \description{
 This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix. Its return a dataframe that includes many metrics as a results (beta, pval...).
 }
-

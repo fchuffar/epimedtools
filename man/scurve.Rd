@@ -4,9 +4,9 @@
 \alias{scurve}
 \title{A Function That Plots Survival Curves.}
 \usage{
-scurve(ss, v, colors = c("deepskyblue", "black", "red"), main = "Survival",
-  legend, nb_sign = 3, legend_place = "topright", PLOT_LEGEND = TRUE,
-  cex.leg = 1, censoring, ...)
+scurve(ss, v, colors = c("deepskyblue", "black", "red"),
+  main = "Survival", legend, nb_sign = 3, legend_place = "topright",
+  PLOT_LEGEND = TRUE, cex.leg = 1, censoring, ...)
 }
 \arguments{
 \item{ss}{A survival structure such as produced by function Surv of package survival.}
@@ -38,4 +38,3 @@ Performs the Cox proportional hazard rate
 test of ss against v. It plots the survival curves for each
 level of v. It also prints the p-value of the log-likelihood test.
 }
-

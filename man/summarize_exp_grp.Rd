@@ -12,4 +12,3 @@ summarize_exp_grp(exp_grp)
 \description{
 This function summarizes expriment grouping.
 }
-

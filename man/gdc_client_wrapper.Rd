@@ -14,4 +14,3 @@ gdc_client_wrapper(manifest_filename, dest_dir, files)
 \description{
 This function wraps gdc-client.
 }
-

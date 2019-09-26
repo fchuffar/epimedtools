@@ -12,4 +12,3 @@ get_nbline(x)
 \description{
 This function returns the number of line a a text fileplots heatmaps.
 }
-

@@ -7,8 +7,8 @@
 plot_hm2(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx,
   method_hclust = "complete", nb_clust = 2, var = "raw",
   PLOT_HM_raw = TRUE, USE_CLUST = FALSE, CLUST_ROW = FALSE,
-  CLUST_COL = FALSE, BREAK_TOO_EXPENSIVE = TRUE, colors = c("royalblue",
-  "springgreen", "yellow", "red"), ...)
+  CLUST_COL = FALSE, BREAK_TOO_EXPENSIVE = TRUE,
+  colors = c("royalblue", "springgreen", "yellow", "red"), ...)
 }
 \arguments{
 \item{study}{An epimedtools Study RC object}
@@ -44,4 +44,3 @@ plot_hm2(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx,
 \description{
 This function plots heatmaps.
 }
-

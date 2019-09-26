@@ -19,4 +19,3 @@ from GEO portal or a local file.
 \examples{
 # foo = mreadRDS("GSE42707", getGPL=FALSE)
 }
-

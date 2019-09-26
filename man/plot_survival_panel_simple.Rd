@@ -5,8 +5,8 @@
 \title{A Function That Plots Survival Panel}
 \usage{
 plot_survival_panel_simple(probe_name, sample_names, study, nb_q = 5,
-  gene_pf_colname = "lower_gs", ss_key = "os", colors = c("deepskyblue",
-  "black", "red"), main, ...)
+  gene_pf_colname = "lower_gs", ss_key = "os",
+  colors = c("deepskyblue", "black", "red"), main, ...)
 }
 \arguments{
 \item{probe_name}{probe to consider}
@@ -30,4 +30,3 @@ plot_survival_panel_simple(probe_name, sample_names, study, nb_q = 5,
 \description{
 This function plots ...
 }
-

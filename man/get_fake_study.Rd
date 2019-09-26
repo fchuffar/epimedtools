@@ -17,4 +17,3 @@ a fake study.
 \description{
 This function builds a fake study.
 }
-

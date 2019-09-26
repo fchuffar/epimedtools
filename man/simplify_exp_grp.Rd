@@ -15,4 +15,3 @@ a simplified experimental grouping.
 \description{
 This function simplyfies expriment grouping.
 }
-

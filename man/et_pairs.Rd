@@ -12,4 +12,3 @@ et_pairs(...)
 \description{
 This function enhances pairs fucntion by adding decoration in classic pairs graphic.
 }
-

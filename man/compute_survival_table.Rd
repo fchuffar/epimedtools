@@ -29,4 +29,3 @@ A dataframe taht contains survival infirmations
 This function computes the false discovery rate from a vector of independent p-values.
 It extracts the cutoff corresponding to the specified FDR. See Benjamini & Hochberg 1995 paper.
 }
-

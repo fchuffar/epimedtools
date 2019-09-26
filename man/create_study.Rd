@@ -43,4 +43,3 @@ study$save("/tmp/tmp_cached_study.rds")
 # load a cached study
 study = create_study("/tmp/tmp_cached_study.rds")
 }
-

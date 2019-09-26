@@ -15,4 +15,3 @@ A character vector that describes simplified column names.
 \description{
 This function simplyfies column names.
 }
-

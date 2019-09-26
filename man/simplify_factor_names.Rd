@@ -19,4 +19,3 @@ A character vector that describes simplified factor names.
 \description{
 This function simplyfies factor names.
 }
-

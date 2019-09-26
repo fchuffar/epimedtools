@@ -20,4 +20,3 @@ from GEO portal or a local file.
 \examples{
 # foo = mgetGEO("GPL13534", getGPL=FALSE)
 }
-

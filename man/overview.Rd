@@ -17,4 +17,3 @@ Nothing
 \description{
 This function overviews an experiment grouping.
 }
-

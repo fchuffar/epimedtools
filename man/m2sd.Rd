@@ -15,4 +15,3 @@ m2sd(ctrl)
 \description{
 This function computes `mean` + 2 * `sd` on a numeric vector.
 }
-

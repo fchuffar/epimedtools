@@ -4,8 +4,9 @@
 \alias{plot_survival_panel_simple2}
 \title{A Function That Plots Survival Panel}
 \usage{
-plot_survival_panel_simple2(ss, v, nb_q = 5, gene_pf_colname = "lower_gs",
-  colors = c("deepskyblue", "black", "red"), main, thresh, PLOT = TRUE, ...)
+plot_survival_panel_simple2(ss, v, nb_q = 5,
+  gene_pf_colname = "lower_gs", colors = c("deepskyblue", "black",
+  "red"), main, thresh, PLOT = TRUE, ...)
 }
 \arguments{
 \item{ss}{A survival structure such as produced by function Surv of package survival.}
@@ -29,4 +30,3 @@ plot_survival_panel_simple2(ss, v, nb_q = 5, gene_pf_colname = "lower_gs",
 \description{
 This function plots ...
 }
-

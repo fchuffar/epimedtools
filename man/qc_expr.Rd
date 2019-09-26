@@ -16,4 +16,3 @@ qc_expr(data, USE_LOG2_FOR_EXPR = TRUE, ...)
 \description{
 This function plots a boxplot for each sample in an expression data matrix.
 }
-

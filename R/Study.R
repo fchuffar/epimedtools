@@ -151,7 +151,11 @@ Study_abstract = setRefClass(
       }
       if (length(.self$cache_filename) == 1) {
         print("caching study...")
-        saveRDS(.self, .self$cache_filename)
+        tmp_list = list()        
+        for (f in names(.self$getRefClass()$fields())) {
+           tmp_list[[f]] = .self[[f]]
+        }
+        saveRDS(tmp_list, .self$cache_filename)
         print("done.")
       }
     },

@@ -4,8 +4,8 @@
 \alias{plot_volcano}
 \title{A Function That Draws a Volcano Plot}
 \usage{
-plot_volcano(res_key_lr, res_key_pval, anova_mw_res, fc_thres = c(-1.5, -1.2,
-  1.2, 1.5), pval_thres = 0.05, legend_place = "bottomright",
+plot_volcano(res_key_lr, res_key_pval, anova_mw_res, fc_thres = c(-1.5,
+  -1.2, 1.2, 1.5), pval_thres = 0.05, legend_place = "bottomright",
   LEGEND = TRUE, ...)
 }
 \arguments{
@@ -28,4 +28,3 @@ plot_volcano(res_key_lr, res_key_pval, anova_mw_res, fc_thres = c(-1.5, -1.2,
 \description{
 This function draws volcano plot, logratio vs. p-value.
 }
-

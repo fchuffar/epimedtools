@@ -16,4 +16,3 @@ intersect_rec(x, y, ...)
 \description{
 This function use recurssively intersect function
 }
-

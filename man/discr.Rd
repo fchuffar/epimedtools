@@ -21,4 +21,3 @@ Takes a vector v of numeric. Replaces the values of v by integers
 in (1:nd), according to values of breaks (increasing vector of numeric).
 If breaks is missing, nd regular quantiles are taken.
 }
-

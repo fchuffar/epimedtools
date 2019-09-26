@@ -12,4 +12,3 @@ check_study(study)
 \description{
 This function checks study properties.
 }
-

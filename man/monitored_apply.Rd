@@ -23,4 +23,3 @@ A vector of the application of the `func` function to each element of the `vec` 
 \description{
 This function offer a monitored version of `apply`.
 }
-

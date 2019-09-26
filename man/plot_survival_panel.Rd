@@ -4,9 +4,9 @@
 \alias{plot_survival_panel}
 \title{A Function That Plots Survival Panel}
 \usage{
-plot_survival_panel(probe_name, sample_names, exp_grp_key, study, nb_q = 5,
-  anova_mw_res, gene_pf_colname = "lower_gs", ss_key = "os",
-  cex.axis = 0.7, ylim)
+plot_survival_panel(probe_name, sample_names, exp_grp_key, study,
+  nb_q = 5, anova_mw_res, gene_pf_colname = "lower_gs",
+  ss_key = "os", cex.axis = 0.7, ylim)
 }
 \arguments{
 \item{probe_name}{probe to consider}
@@ -32,4 +32,3 @@ plot_survival_panel(probe_name, sample_names, exp_grp_key, study, nb_q = 5,
 \description{
 This function plots ...
 }
-
