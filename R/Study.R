@@ -31,10 +31,12 @@
 #' @return It returns an object that extends the Study_abstract class.
 #' @export
 create_study = function(cache_filename, ...) {
-  if (missing(cache_filename)) {
-    study = Study_abstract()
-  } else {
-    study = Study_abstract(cache_filename, ...)
+  study = Study_abstract()
+  if (!missing(cache_filename)) {
+    s = readRDS(cache_filename)
+    study$plaform = s$plaform
+    study$data    = s$data   
+    study$exp_grp = s$exp_grp
   }
   return(study)
 }

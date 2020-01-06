@@ -21,12 +21,12 @@ perform_anova_gen(design, model, data, key = NULL,
 \item{AD_TEST}{A boolean set to TRUE if we want to perform normality test.}
 }
 \description{
-This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix. 
+This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix.
 It returns a dataframe that includes many metrics as a results (betas, p-values, ...).
-Genes are indexed by `g` in `G`, 
+Genes are indexed by `g` in `G`,
 conditions are indexed by `h` in `H` (histology, sex...) and
 samples are indexed by `i` in `I`.
-For each gene `g`: 
+For each gene `g`:
 \itemize{
   \item we compute a linear model of the level of expression value according to histological groups: `log2(exprs_{g, i}) = beta_{g, h} + epsilon_{g, i}`.
   \item we perform ANOVA test on this model and harvest corresponding p-value
@@ -34,15 +34,15 @@ For each gene `g`:
   \item we compute corresponding logratio scores: `logratio_{g, h} = (1 + frac{1}/{|H| - 1}) beta_{g, h}`
   \item we compute corresponding foldchange scores using `gtools::foldchange2logratio` function
 }
-These values are retruned as a dataframe which fields are: 
+These values are retruned as a dataframe which fields are:
 \itemize{
-  \item probename:            the name of the corresponding probe      
-  \item ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)  
-  \item intercept:            the mean of means of each group 
+  \item probename:            the name of the corresponding probe
+  \item ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)
+  \item intercept:            the mean of means of each group
   \item beta_hhh_FFF:         the previously describe beta value for the factor `FFF` of the experimental grouping field `hhh`
-  \item logratio_hhh_FFF :    the previously describe logratio value for the factor `FFF` of the experimental grouping field `hhh`   
+  \item logratio_hhh_FFF :    the previously describe logratio value for the factor `FFF` of the experimental grouping field `hhh`
   \item foldchange_hhh_FFF:   the previously describe foldchange value for the factor `FFF` of the experimental grouping field `hhh`
-  \item pval_hhh:             the p-value associated to the ANOVA test   
+  \item pval_hhh:             the p-value associated to the ANOVA test
   \item adj_pval_hhh:         the adjusted p-value associated to the ANOVA test using Benjamini-Hochberg procedure to the threshold of 0.05.
 }
 }

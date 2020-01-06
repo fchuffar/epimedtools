@@ -23,6 +23,8 @@ Imports:
     GEOquery,
     nortest,
     DBI,
+    jsonlite,
+    httr,  
     gtools
 Depends:
     methods

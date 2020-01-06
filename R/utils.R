@@ -1,3 +1,38 @@
+#' Update vector of genes using epimed API
+#'
+#' This function ppdates vector of genes using epimed API
+#' @param genes_to_update a vector of genes to be updated
+#' @param jobid the id of the job if job exists
+#' @param taxid the name of the TCGA project to retrieve (9606 for homo spaiens, 10090 for mus musculus)
+#' @param WAIT a bolean indicating if call to service is synchrone or assynchrone
+#' @importFrom httr POST
+#' @importFrom jsonlite fromJSON
+#' @export
+epimed_api_update = function(genes_to_update, jobid, taxid=9606, WAIT=TRUE) {
+  if (missing(jobid)) {
+    url = "http://epimed.univ-grenoble-alpes.fr/database/query/jobid"
+    jobid = jsonlite::fromJSON(url)    
+    print(paste0("create job ", jobid))
+    url = "http://epimed.univ-grenoble-alpes.fr/database/query/genes/update"
+    body = list(jobid=jobid, symbols=paste(genes_to_update, collapse=", "), taxid=taxid)
+    response = httr::POST(url, body = body, encode = "form")
+  }
+
+  url = paste0("http://epimed.univ-grenoble-alpes.fr/database/query/jobstatus?jobid=", jobid)
+  job = jsonlite::fromJSON(url)
+  while (job$status != "success" & WAIT) {
+    print(paste0("job:", job$jobid, " ", job$status, " ", job$current, "/", job$total))
+    system("sleep 2")
+    job = jsonlite::fromJSON(url)
+  }
+  print(paste0("job:", job$jobid, " ", job$status, " ", job$current, "/", job$total))
+
+  url = paste0("http://epimed.univ-grenoble-alpes.fr/database/query/jobs?jobid=", jobid)
+  foo = read.csv2(url, header=TRUE, sep=";", stringsAsFactors=FALSE)
+  return(foo)
+}
+
+
 #' Retrieve exp_grp of a given TCGA project from epimeddb
 #'
 #' This function retrieves exp_grp of a given TCGA project from epimeddb
@@ -9,7 +44,7 @@ get_tcga_exp_grp = function(tcga_project) {
   url = paste0("http://epimed.univ-grenoble-alpes.fr/database/expgroup/",tcga_project)
   df2 = read.csv2(url, header=TRUE, sep=";", stringsAsFactors=FALSE, dec=".", na.strings="")
   df = merge(df2,df1,by=1)
-  # identify rownames 
+  # identify rownames
   df$rn_id = substr(df[,1],1,15)
   # dup rn
   dup_rn_id = df$rn_id[duplicated(df$rn_id)]
@@ -33,9 +68,9 @@ get_tcga_exp_grp = function(tcga_project) {
   # exp_grp
   exp_grp = df
   exp_grp$dead = as.logical(exp_grp$dead)
-  exp_grp$os = survival::Surv(exp_grp$os_month, exp_grp$dead)  
+  exp_grp$os = survival::Surv(exp_grp$os_month, exp_grp$dead)
   return(exp_grp)
-} 
+}
 
 #' gdc-client wrapperChecking data study properties
 #'
@@ -65,7 +100,7 @@ gdc_client_wrapper = function(manifest_filename, dest_dir, files) {
         #   return(TRUE)
         # } else
           {
-            return(FALSE)          
+            return(FALSE)
         }
       }  else {
         print(full_file_name)
@@ -79,7 +114,7 @@ gdc_client_wrapper = function(manifest_filename, dest_dir, files) {
       paste(command, args)
       system2(command, args)
     } else {
-      AGAIN = FALSE 
+      AGAIN = FALSE
     }
   }
 }
@@ -100,16 +135,16 @@ check_study =function (study) {
     stop("$exp_grp is not a data.frame.")
   }
   if (sum(!rownames(study$platform) %in% rownames(study$data))) {
-    stop("$platform rownames are not all included in $data rownames.")    
+    stop("$platform rownames are not all included in $data rownames.")
   }
   if (sum(!rownames(study$exp_grp) %in% colnames(study$data))) {
-    stop("$exp_grp rownames are not all included in $data colnames.")    
+    stop("$exp_grp rownames are not all included in $data colnames.")
   }
   if (sum(rownames(study$data) != rownames(study$platform))) {
-    warning("$platform rownames are not strictly equal to $data rownames.")    
+    warning("$platform rownames are not strictly equal to $data rownames.")
   }
   if (sum(colnames(study$data) != rownames(study$exp_grp))) {
-    warning("$exp_grp rownames are not strictly equal to $data colnames.")    
+    warning("$exp_grp rownames are not strictly equal to $data colnames.")
   }
   print("study checked.")
 }
@@ -118,27 +153,27 @@ check_study =function (study) {
 #' Fuming data
 #'
 #' This function fums data.
-#' @param data           data.frame extracted from json  
-#' @param colname        column name to flat.  
+#' @param data           data.frame extracted from json
+#' @param colname        column name to flat.
 #' @export
 tcga_fum_data = function(data, colname) {
   # data_json_file = "data.project-TCGA-BRCA.2018-03-02.json"
   # data = jsonlite::fromJSON(txt=data_json_file, flatten=TRUE)
-  data_orig = data 
+  data_orig = data
   # filter row with empty col named colname
   len = sapply(data_orig[[colname]], length)
   data = data_orig[len==max(len),]
   # flat col named colname
   foo = data_orig[len==max(len),colname]
   sapply(foo, dim)
-  diagnoses = do.call(rbind, data_orig[len==max(len),colname])  
+  diagnoses = do.call(rbind, data_orig[len==max(len),colname])
   colnames(diagnoses) = paste0(colname, "_", colnames(diagnoses))
   if (dim(diagnoses)[1] == nrow(data)) {
     data = cbind(data, diagnoses)
-    data[[colname]] = NULL  
+    data[[colname]] = NULL
   } else {
     stop(paste0("can't fum ", colname, " in data."))
-  }  
+  }
   # insert filtered rows
   for (i in which(len!=max(len))){
     keys = colnames(data)[colnames(data) %in% colnames(data_orig)]
@@ -151,8 +186,8 @@ tcga_fum_data = function(data, colname) {
 #' Exploring data
 #'
 #' This function explores data
-#' @param df           data.frame extracted from json  
-#' @param lev        level of explorer, increased when recursiv call  
+#' @param df           data.frame extracted from json
+#' @param lev        level of explorer, increased when recursiv call
 #' @export
 tcga_explore_data = function(df, lev=0) {
   unlist(sapply(names(df), function(n) {
@@ -164,7 +199,7 @@ tcga_explore_data = function(df, lev=0) {
       return(n)
     } else {
       print(paste(paste(rep(" ", lev*2), collapse=""), n))
-      return(NULL)      
+      return(NULL)
     }
   }))[1]
 }
@@ -199,7 +234,7 @@ tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_j
   foo = tcga_explore_data(metadata_cart[1,])
   if (!missing(col_to_remove)) {
     print(paste0("removing ", col_to_remove))
-    metadata_cart = metadata_cart[,-which(colnames(metadata_cart) %in% col_to_remove)]    
+    metadata_cart = metadata_cart[,-which(colnames(metadata_cart) %in% col_to_remove)]
     foo = tcga_explore_data(metadata_cart[1,])
   }
   while (!is.null(foo)) {
@@ -247,7 +282,7 @@ tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_j
   if (!is.null(metadata_cart$annotations)) {
     idx =  sapply(metadata_cart$annotations, is.null)
     sum(!idx)
-    metadata_cart = metadata_cart[idx,]    
+    metadata_cart = metadata_cart[idx,]
   }
 
   # survival
@@ -287,7 +322,7 @@ tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_j
     if (is.na(fut)) {
       return(NA)
     } else {
-      fut 
+      fut
     }
   })
   # month_to_death
@@ -295,7 +330,7 @@ tcga_merge_metadata_cart_and_clinicals = function(metadata_json_file, clinical_j
     if (is.na(days_to_death)) {
       return(NA)
     } else {
-      days_to_death 
+      days_to_death
     }
   })
   # replace os_day by day_to_death when day_to_death is not NA
@@ -472,7 +507,7 @@ plot_hm2 = function(study, pf_col, exp_grp_col_label, exp_grp_idx, platform_idx,
       tmp_d = cor(tmp_d, method="sp")
       hc_row = hclust(dist(1 - tmp_d), method=method_hclust)
       Colv = as.dendrogram(hc_row)
-      dendrogram="col"      
+      dendrogram="col"
     }
     rownames(d) = study$exp_grp[rownames(d), exp_grp_col_label]
   }
@@ -509,7 +544,7 @@ overview = function(e, FULL=FALSE) {
       print(paste("============= ", cn, " (", length(unique(col)), ") =============", sep=""))
       if (length(unique(col)) < 100) {
         print(unique(col))
-      }    
+      }
     }
   }))
 }
@@ -547,8 +582,8 @@ overview = function(e, FULL=FALSE) {
 #' A Function That Draws a Volcano Plot
 #'
 #' This function draws volcano plot, logratio vs. p-value.
-#' @param res_key_lr the column name of the result dataframe to considere as logratio  
-#' @param res_key_pval the column name of the result dataframe to considere as logratio  
+#' @param res_key_lr the column name of the result dataframe to considere as logratio
+#' @param res_key_pval the column name of the result dataframe to considere as logratio
 #' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
 #' @param fc_thres A vector of integer corresponding to the foldchange thresholds
 #' @param pval_thres An integer corresponding to the p-value thresholds
@@ -572,13 +607,13 @@ plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5,
 #' A Function That Plots Heatmaps of Differentialy Expressed Genes Accros Conditions
 #'
 #' This function plots heatmaps of differentialy expressed genes across conditions.
-#' @param exp_grp_key the column name of the exprimental grouping to considere  
+#' @param exp_grp_key the column name of the exprimental grouping to considere
 #' @param case_fctr The label of the group that we considere as differentialy expressed
 #' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
 #' @param study An Reference classes object that contains data and metadata
 #' @param ctrl_fctr The label of the group that we considere as the reference
 #' @param main A character string to explicit the title of the plot
-#' @param mw_pval the the suffix the column name corresponding to the Mann-Whitney p-value used to 
+#' @param mw_pval the the suffix the column name corresponding to the Mann-Whitney p-value used to
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name
 #' @param PLOT_GS A boolean set to TRUE if genes names to be ploted
 #' @param PLOT_PVAL A boolean set to TRUE if ANOVA and Mann-Whitney need to be ploted
@@ -592,7 +627,7 @@ plot_volcano = function(res_key_lr, res_key_pval, anova_mw_res, fc_thres=c(-1.5,
 #' @export
 plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,  mw_pval="mw_pval_adj", gene_pf_colname="gene_name", key, PLOT_GS=FALSE, fc_thres = c(-1.5, -1.2, 1.2, 1.5), PLOT_PVAL=TRUE) {
   lr_thres = gtools::foldchange2logratio(fc_thres)
-  if (missing(main)) {main=""} 
+  if (missing(main)) {main=""}
   if (missing(ctrl_fctr)) {
     ctrl_fctr = "others"
     key_lr_an = paste("logratio_", exp_grp_key, "_", case_fctr, sep="")
@@ -601,7 +636,7 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
     key_lr_mw = key_lr_an
     key_fc_mw = key_fc_an
     key_pval_mw = key_pval_an
-    main = paste(main, " ", case_fctr, sep="") 
+    main = paste(main, " ", case_fctr, sep="")
   } else {
     mw_key = paste(ctrl_fctr, case_fctr, sep=".")
     key_lr_an = paste("logratio_", exp_grp_key, "_", mw_key, sep="")
@@ -611,7 +646,7 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
     key_pval_an = paste("adj_pval_", exp_grp_key, sep="")
     key_pval_mw = paste(mw_key, ".", mw_pval, sep="")
     anova_mw_res[[key_lr_an]] = anova_mw_res[[paste("logratio_", exp_grp_key, "_", case_fctr, sep="")]] - anova_mw_res[[paste("logratio_", exp_grp_key, "_", ctrl_fctr, sep="")]]
-    anova_mw_res[[key_fc_an]] = gtools::logratio2foldchange(anova_mw_res[[key_lr_an]])    
+    anova_mw_res[[key_fc_an]] = gtools::logratio2foldchange(anova_mw_res[[key_lr_an]])
     main = paste(main, " ", mw_key, sep="")
   }
 
@@ -634,7 +669,7 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
   fact_vals = na.omit(unique(study$exp_grp[[exp_grp_key]]))
   idx_samples = rownames(study$exp_grp)[study$exp_grp[[exp_grp_key]] %in% fact_vals]
   # idx_samples = rownames(study$exp_grp)
-  
+
   ## data logratio?
   # data_logratio = apply(study$data[idx_probes,], 1, function(l) {
   #   # log2(2^l / mean(2^l))
@@ -698,9 +733,9 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
   )
   tab_fact = table(study$exp_grp[idx_samples,exp_grp_key])[fact_vals]
   abline(v=cumsum(tab_fact) + 0.5, h=length(idx_2) + 0.5, col=adjustcolor("white", alpha.f=0.7))
-  axis(1, tick=FALSE, at=cumsum(tab_fact) - tab_fact/2 + 0.5, labels=fact_vals)  
+  axis(1, tick=FALSE, at=cumsum(tab_fact) - tab_fact/2 + 0.5, labels=fact_vals)
   tab_idx = c(length(idx_2), length(idx_1))
-  axis(4, tick=FALSE, at=cumsum(tab_idx) - tab_idx/2 + 0.5, labels=c(paste(ctrl_fctr, ">>", case_fctr, " (", length(idx_2), ")", sep=""), paste(case_fctr, ">>", ctrl_fctr, " (", length(idx_1), ")", sep="")))  
+  axis(4, tick=FALSE, at=cumsum(tab_idx) - tab_idx/2 + 0.5, labels=c(paste(ctrl_fctr, ">>", case_fctr, " (", length(idx_2), ")", sep=""), paste(case_fctr, ">>", ctrl_fctr, " (", length(idx_1), ")", sep="")))
   if (PLOT_GS) {
     axis(2, tick=TRUE, at=1:length(idx_probes), labels=study$platform[idx_probes,gene_pf_colname], las=2, cex.axis=0.6)
   }
@@ -713,7 +748,7 @@ plot_hm = function(exp_grp_key, case_fctr, anova_mw_res, study, ctrl_fctr, main,
 #' This function plots ...
 #' @param probe_name probe to consider
 #' @param sample_names index of samples to consider
-#' @param exp_grp_key the column name of the exprimental grouping to considere  
+#' @param exp_grp_key the column name of the exprimental grouping to considere
 #' @param study An Reference classes object that contains data and metadata
 #' @param nb_q An integer specifying the number of quantile to initialize discretized expression data
 #' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
@@ -733,7 +768,7 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
   if (missing(sample_names)) {
     sample_names = rownames(study$exp_grp[!is.na(study$exp_grp[[ss_key]]),])
   }
-  data = study$data[probe_name,sample_names] 
+  data = study$data[probe_name,sample_names]
   exp_grp = study$exp_grp[sample_names,]
   if (!missing(gene_pf_colname)) {
     gene_name = study$platform[probe_name,][[gene_pf_colname]]
@@ -784,11 +819,11 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
   } else {
     anova_pval_leg = ""
   }
-  bp = beanplot(study$data[probe_name,rownames(study$exp_grp)]~study$exp_grp[[exp_grp_key]], las=2, log="", ylim=range(study$data), 
+  bp = beanplot(study$data[probe_name,rownames(study$exp_grp)]~study$exp_grp[[exp_grp_key]], las=2, log="", ylim=range(study$data),
     main=paste(gene_name, "@", probe_name, " ", anova_pval_leg, sep=""), ylab="log2(exprs)")
   mw_pval_colnames = colnames(anova_mw_res)[grep("mw_pval_adj", colnames(anova_mw_res))]
   case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
-  
+
   mtc = match(case_names, bp$names)
   rng = rep(range(study$data)[2], length(mtc))
   dup = duplicated(paste(mtc,rng, sep="_"))
@@ -798,7 +833,7 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
   }
   duplicated(paste(mtc,rng, sep="_"))
   if (length(mtc) > 0) {
-    text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))    
+    text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))
   }
   # sapply(case_names, function(case_name) {
   #   cn = colnames(anova_mw_res)[grep(paste(case_name, ".mw_pval_adj", sep=""), colnames(anova_mw_res))]
@@ -807,9 +842,9 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
   plot(dv$y, dv$x, ylim=range(v), xlim=rev(range(dv$y)), type='l', ylab="log2(exprs)")
   abline(h=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
   abline(h=b_opt, lty=2, lwd=1)
-  beanplot(v~fact, las=2, log="", ylim=range(v), main=paste(gene_name, "@", probe_name, " p_cox=", signif(as.numeric(pval_cox),3) 
-    # , " p_anova=", signif(as.numeric(pval_cox),3) 
-    , sep=""))  
+  beanplot(v~fact, las=2, log="", ylim=range(v), main=paste(gene_name, "@", probe_name, " p_cox=", signif(as.numeric(pval_cox),3)
+    # , " p_anova=", signif(as.numeric(pval_cox),3)
+    , sep=""))
   abline(h=b_all, lty=1, lwd=1, col="grey")
   abline(h=b_opt, lty=2, lwd=1)
   scurve(study$exp_grp[sample_names,ss_key], vd_all, main=paste(gene_name, probe_name, sep="@"))
@@ -831,7 +866,7 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
 #' This function plots ...
 #' @param probe_name probe to consider
 #' @param sample_names index of samples to consider
-#' @param exp_grp_key the column name of the exprimental grouping to considere  
+#' @param exp_grp_key the column name of the exprimental grouping to considere
 #' @param study An Reference classes object that contains data and metadata
 #' @param anova_mw_res A dataframe with ANOVA and Mann-Whitney results
 #' @param gene_pf_colname A character string specifying the name of the platform column to use for the gene name.
@@ -850,7 +885,7 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
   if (missing(sample_names)) {
     sample_names = rownames(study$exp_grp)
   }
-  data = study$data[probe_name,sample_names] 
+  data = study$data[probe_name,sample_names]
   exp_grp = study$exp_grp[sample_names,]
   gene_name = study$platform[probe_name,][[gene_pf_colname]]
   # graphicals
@@ -864,11 +899,11 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
     ylim=range(data[rownames(exp_grp)[!is.na(exp_grp[[exp_grp_key]])]])
   }
   anova_pval_leg = paste("p_anova=", signif(anova_mw_res[probe_name, paste("adj_pval", exp_grp_key, sep="_")],3), sep="")
-  bp = beanplot(data~exp_grp[[exp_grp_key]], las=2, log="", ylim=ylim, 
+  bp = beanplot(data~exp_grp[[exp_grp_key]], las=2, log="", ylim=ylim,
     main=paste(gene_name, "@", probe_name, " ", exp_grp_key, " ", anova_pval_leg, sep=""), ylab="log2(exprs)",cex.axis=cex.axis)
   mw_pval_colnames = colnames(anova_mw_res)[grep("mw_pval_adj", colnames(anova_mw_res))]
   case_names = do.call(rbind, strsplit(mw_pval_colnames, ".", fixed=TRUE))[,2]
-  
+
   mtc = match(case_names, bp$names)
   rng = rep(range(data)[2], length(mtc))
   dup = duplicated(paste(mtc,rng, sep="_"))
@@ -878,7 +913,7 @@ plot_bean_expr = function(probe_name, sample_names, exp_grp_key, study, anova_mw
   }
   duplicated(paste(mtc,rng, sep="_"))
   if (length(mtc) > 0) {
-    text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))    
+    text(mtc, rng, paste(mw_pval_colnames, "=", signif(anova_mw_res[probe_name,mw_pval_colnames],3), sep=""))
   }
   return(NULL)
 }
@@ -917,11 +952,11 @@ plot_survival_panel_simple = function(probe_name, sample_names, study, nb_q=5, g
     gene_name = study$platform[probe_name,][[gene_pf_colname]]
   } else {
     gene_name = ""
-  }  
+  }
   if (missing(main)) {
-    main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")    
+    main = paste(gene_name, "@", probe_name, " (", ss_key, ")", sep="")
   } else {
-    main = paste(main, " ", gene_name, "@", probe_name, " (", ss_key, ")", sep="")        
+    main = paste(main, " ", gene_name, "@", probe_name, " (", ss_key, ")", sep="")
   }
   v = study$data[probe_name, sample_names]
   ss = study$exp_grp[sample_names,ss_key]
@@ -963,9 +998,9 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
   pval_glo = pval_cox
   if (missing(thresh)) {
     # quantiles
-    vd_all = discr(v, nb_q)    
+    vd_all = discr(v, nb_q)
   } else {
-    vd_all = discr(v, nb_q, thresh)    
+    vd_all = discr(v, nb_q, thresh)
     nb_q = length(unique(vd_all))
   }
   b_all = attr(vd_all, "breaks")
@@ -979,7 +1014,7 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
       vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
       if (length(unique(vd_it)) < 2) {
         return(1)
-      } else {       
+      } else {
         return(coxres(ss, vd_it)[1])
       }
     })
@@ -1025,7 +1060,7 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
 #' It extracts the cutoff corresponding to the specified FDR. See Benjamini & Hochberg 1995 paper.
 #' @param probe_names index of probes to consider
 #' @param sample_names index of samples to consider
-#' @param exp_grp_key the column name of the exprimental grouping to considere  
+#' @param exp_grp_key the column name of the exprimental grouping to considere
 #' @param study An Reference classes object that contains data and metadata
 #' @param suffix A character string used to suffix the cache file nam
 #' @param USE_CACHE A boolean set to TRUE if cache could be used
@@ -1035,14 +1070,14 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
 compute_survival_table = function(probe_names, sample_names, exp_grp_key, study, suffix="", USE_CACHE=FALSE, PLOT_SCURVE=FALSE) {
   # ss
   ss = study$exp_grp[sample_names,]$ss
-  if (PLOT_SCURVE) { 
+  if (PLOT_SCURVE) {
     cox_results = scurve(ss, study$exp_grp[sample_names, exp_grp_key], main=paste("Survival on ", exp_grp_key, sep=""))
     print(cox_results)
   }
   # all probes
   survival_res_filename = paste("survival_", suffix, "_res.rds", sep="")
   if (!file.exists(survival_res_filename) | !USE_CACHE) {
-    survival_res = monitored_apply(t(probe_names), 2, function(probe_name) {  
+    survival_res = monitored_apply(t(probe_names), 2, function(probe_name) {
       v = study$data[probe_name, sample_names]
       return(coxres(ss, v))
     })
@@ -1056,7 +1091,7 @@ compute_survival_table = function(probe_names, sample_names, exp_grp_key, study,
   if (USE_CACHE) {
     survival_res = readRDS(survival_res_filename)
   }
-  return(survival_res)  
+  return(survival_res)
 }
 
 # suffix = "lung"
@@ -1086,24 +1121,24 @@ compute_survival_table = function(probe_names, sample_names, exp_grp_key, study,
 
 et_pairs = function(...) {
   panel.cor = function(x, y, digits=2, prefix="", cex.cor, ...) {
-      usr = par("usr"); on.exit(par(usr)) 
-      par(usr = c(0, 1, 0, 1)) 
-      r = abs(cor(x, y)) 
-      txt = format(c(r, 0.123456789), digits=digits)[1] 
-      txt = paste(prefix, txt, sep="") 
-      if(missing(cex.cor)) cex = 0.8/strwidth(txt) 
- 
-      test = cor.test(x,y) 
+      usr = par("usr"); on.exit(par(usr))
+      par(usr = c(0, 1, 0, 1))
+      r = abs(cor(x, y))
+      txt = format(c(r, 0.123456789), digits=digits)[1]
+      txt = paste(prefix, txt, sep="")
+      if(missing(cex.cor)) cex = 0.8/strwidth(txt)
+
+      test = cor.test(x,y)
       # borrowed from printCoefmat
-      Signif = symnum(test$p.value, corr = FALSE, na = FALSE, 
+      Signif = symnum(test$p.value, corr = FALSE, na = FALSE,
                     cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
-                    symbols = c("***", "**", "*", ".", " ")) 
- 
-      text(0.5, 0.5, txt, cex = cex * r) 
-      text(.8, .8, Signif, cex=cex, col=2) 
+                    symbols = c("***", "**", "*", ".", " "))
+
+      text(0.5, 0.5, txt, cex = cex * r)
+      text(.8, .8, Signif, cex=cex, col=2)
   }
   pairs(..., upper.panel=panel.cor)
-  
+
 }
 
 
@@ -1123,7 +1158,7 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
     ylab = "log2(expr)"
   } else {
     trans = identity
-    ylab = "expr_ratio"    
+    ylab = "expr_ratio"
   }
   plot(0,0, col=0, xlim=c(1,ncol(data)), ylim=range(trans(data)), xaxt="n", xlab="", ylab=ylab, ...)
   axis(1, at=1:ncol(data), labels=colnames(data), tick=TRUE, las=2)
@@ -1138,12 +1173,12 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 
 #' A Function Performs Differential Expression Analysis Based On ANOVA
 #'
-#' This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix. 
+#' This function peforms an ANOVA for each probe/gene (lines) across confditions (colums) of a data matrix.
 #' It returns a dataframe that includes many metrics as a results (betas, p-values, ...).
-#' Genes are indexed by `g` in `G`, 
+#' Genes are indexed by `g` in `G`,
 #' conditions are indexed by `h` in `H` (histology, sex...) and
 #' samples are indexed by `i` in `I`.
-#' For each gene `g`: 
+#' For each gene `g`:
 #' \itemize{
 #'   \item we compute a linear model of the level of expression value according to histological groups: `log2(exprs_{g, i}) = beta_{g, h} + epsilon_{g, i}`.
 #'   \item we perform ANOVA test on this model and harvest corresponding p-value
@@ -1151,15 +1186,15 @@ qc_expr = function(data, USE_LOG2_FOR_EXPR=TRUE, ...) {
 #'   \item we compute corresponding logratio scores: `logratio_{g, h} = (1 + frac{1}/{|H| - 1}) beta_{g, h}`
 #'   \item we compute corresponding foldchange scores using `gtools::foldchange2logratio` function
 #' }
-#' These values are retruned as a dataframe which fields are: 
+#' These values are retruned as a dataframe which fields are:
 #' \itemize{
-#'   \item probename:            the name of the corresponding probe      
-#'   \item ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)  
-#'   \item intercept:            the mean of means of each group 
+#'   \item probename:            the name of the corresponding probe
+#'   \item ad_pval:              the result of the Anderson-Darling normality test (hypothesis for ANOVA)
+#'   \item intercept:            the mean of means of each group
 #'   \item beta_hhh_FFF:         the previously describe beta value for the factor `FFF` of the experimental grouping field `hhh`
-#'   \item logratio_hhh_FFF :    the previously describe logratio value for the factor `FFF` of the experimental grouping field `hhh`   
+#'   \item logratio_hhh_FFF :    the previously describe logratio value for the factor `FFF` of the experimental grouping field `hhh`
 #'   \item foldchange_hhh_FFF:   the previously describe foldchange value for the factor `FFF` of the experimental grouping field `hhh`
-#'   \item pval_hhh:             the p-value associated to the ANOVA test   
+#'   \item pval_hhh:             the p-value associated to the ANOVA test
 #'   \item adj_pval_hhh:         the adjusted p-value associated to the ANOVA test using Benjamini-Hochberg procedure to the threshold of 0.05.
 #' }
 #' @param design A dataframe that describes the design of the experiment.
@@ -1204,17 +1239,17 @@ perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALS
         if (lev == rev(m$xlevels[[xlevels_name]])[1]) {
           aov_coeff[[paste("beta", xlevels_name, lev, sep="_")]] = -sum(m$coefficients[paste(xlevels_name, 1:(idx - 1), sep="")])
         } else {
-          aov_coeff[[paste("beta", xlevels_name, lev, sep="_")]] = m$coefficients[paste(xlevels_name, idx, sep="")]          
+          aov_coeff[[paste("beta", xlevels_name, lev, sep="_")]] = m$coefficients[paste(xlevels_name, idx, sep="")]
         }
       }
     }
 
     anov = anova(m)
     aov_pval = anov[names(m$xlevels),5]
-    names(aov_pval) = paste("pval", names(m$xlevels), sep="_")   
+    names(aov_pval) = paste("pval", names(m$xlevels), sep="_")
     ret = c(ad_pval=ad_pval, aov_coeff, aov_pval)
     if (!is.null(key)) {
-      names(ret) = paste(names(ret), key, sep="_")      
+      names(ret) = paste(names(ret), key, sep="_")
     }
     return(ret)
   })
@@ -1230,7 +1265,7 @@ perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALS
     suffix = substr(colname, 6, 10000)
     anova_res[[paste("logratio", suffix, sep="_")]] = anova_res[[colname]] * (1 + 1 / (nb_lev - 1))
     anova_res[[paste("foldchange", suffix, sep="_")]] = logratio2foldchange(anova_res[[paste("logratio", suffix, sep="_")]])
-  }  
+  }
   return(anova_res)
 }
 
@@ -1282,15 +1317,15 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
     m1 = aov(model, data=design)
     summ_aov = summary(m1)
     # model.tables(m1)
-    aov_coeff = m1$coefficients[-1] * correction  
+    aov_coeff = m1$coefficients[-1] * correction
     len = length(aov_coeff)
     aov_pval = summ_aov[[1]][1:len,5]
-    if (len > 1) {      
+    if (len > 1) {
       names(aov_coeff) = paste("beta_", key, 1:len, sep="")
       names(aov_pval) = paste("pval_", key, 1:len, sep="")
     } else {
       names(aov_coeff) = paste("beta", key, sep="_")
-      names(aov_pval) = paste("pval", key, sep="_")      
+      names(aov_pval) = paste("pval", key, sep="_")
     }
     # ret = c(ad_pval=ad_pval, bf_pval=bf_pval, aov_coeff, aov_pval)
     # names(ret)[1:2] = paste(names(ret)[1:2], key, sep="_")
@@ -1302,14 +1337,14 @@ perform_anova = function(design, model, data, key, correction = 1, MONITORED_APP
   })
   anova_res = data.frame(t(anova_res))
   len = length(grep("beta", names(anova_res)))
-  if (len > 1) {      
+  if (len > 1) {
     for (i in 1:len) {
-      anova_res[[paste("adj_pval_", key, i, sep="")]] = p.adjust(anova_res[[paste("pval_", key, i, sep="")]], method="BH")    
+      anova_res[[paste("adj_pval_", key, i, sep="")]] = p.adjust(anova_res[[paste("pval_", key, i, sep="")]], method="BH")
       anova_res[[paste("logratio_", key, i, sep="")]] = 2 * anova_res[[paste("beta_", key, i, sep="")]]
       anova_res[[paste("foldchange_", key, i, sep="")]] = logratio2foldchange(anova_res[[paste("logratio_", key, i, sep="")]])
     }
   } else {
-    anova_res[[paste("adj_pval_", key, sep="")]] = p.adjust(anova_res[[paste("pval_", key, sep="")]], method="BH")    
+    anova_res[[paste("adj_pval_", key, sep="")]] = p.adjust(anova_res[[paste("pval_", key, sep="")]], method="BH")
     anova_res[[paste("logratio_", key, sep="")]] = 2 * anova_res[[paste("beta_", key, sep="")]]
     anova_res[[paste("foldchange_", key, sep="")]] = logratio2foldchange(anova_res[[paste("logratio_", key, sep="")]])
   }
@@ -1348,7 +1383,7 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
   if (missing(v)) {
     v = rep(1, sum(idx))
   } else {
-    v = v[idx]    
+    v = v[idx]
   }
 
   if (!missing(censoring)) {
@@ -1362,9 +1397,9 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
   }
 
   if (length(unique(v)) == 1) {
-    cox_results = 1    
+    cox_results = 1
   } else {
-    cox_results = coxres(ss,as.character(v))    
+    cox_results = coxres(ss,as.character(v))
   }
   pv = cox_results[1]
   if (pv<1e-100) {
@@ -1380,13 +1415,13 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
   plot(sf, col=col, main=main, ...)
   tab = table(v)
   tab=tab[tab!=0]
-  if (PLOT_LEGEND) {    
+  if (PLOT_LEGEND) {
     if (missing(legend)) {
       if ("breaks" %in% names(attributes(v))) {
         b = signif(attr(v, "breaks"),3)
-        legend = paste("[", b[1:(length(b)-1)], ",", b[2:length(b)], c(rep("[", length(b)-2), "]"), sep="")      
+        legend = paste("[", b[1:(length(b)-1)], ",", b[2:length(b)], c(rep("[", length(b)-2), "]"), sep="")
       } else {
-        legend = names(tab)      
+        legend = names(tab)
       }
     }
     legend = paste(legend, " (", tab, ")", sep="")
@@ -1563,14 +1598,14 @@ get_fake_study = function(nb_samples = 12, nb_probes = 10) {
   data = signif(data,3)
   colnames(data) = c(paste(rep("ctrl", ceiling(nb_samples/2)), 1:ceiling(nb_samples/2), sep=""), paste(rep("case", floor(nb_samples/2)), 1:floor(nb_samples/2), sep=""))
   rownames(data) = paste(rep("prb", nb_probes), 1:nb_probes, sep="")
-  
+
   # generate exp_grp
   exp_grp = data.frame(
     sex=ifelse(runif(nb_samples)>0.5, "Male", "Female"),
     age=round(runif(nb_samples,20,30)),
     tabac=c(rep("Smoker", ceiling(ceiling(nb_samples/2)/2)), rep("Non_Smoker", floor(ceiling(nb_samples/2)/2)), rep("Smoker", ceiling(floor(nb_samples/2)/2)), rep("Non_Smoker", floor(floor(nb_samples/2)/2))),
     treatment = c(rep("0ug", ceiling(nb_samples/2)), rep("15ug", floor(nb_samples/2))),
-    histo=rep("lung", nb_samples), 
+    histo=rep("lung", nb_samples),
     fut = round(runif(nb_samples,20,120)),
     da = round(runif(nb_samples))
   )
@@ -1582,7 +1617,7 @@ get_fake_study = function(nb_samples = 12, nb_probes = 10) {
     gene_name = sapply(1:nb_probes, function(i) {
       paste(toupper(c(sample(letters[1:26],round(runif(1,2,4))),sample(0:9,1), sample(letters[1:26],round(runif(1,0,1))))), collapse="")
     }),
-    GOID = rep("...",nb_probes), 
+    GOID = rep("...",nb_probes),
     stringsAsFactors=FALSE
   )
   rownames(platform) = rownames(data)
@@ -1594,13 +1629,13 @@ get_fake_study = function(nb_samples = 12, nb_probes = 10) {
   idx_smoker_case = rownames(exp_grp)[exp_grp$tabac == "Smoker" & exp_grp$treatment == "15ug"]
   idx_nsmoker_case = rownames(exp_grp)[exp_grp$tabac == "Non_Smoker" & exp_grp$treatment == "15ug"]
   smoking_shift = runif(length(c(idx_probes_up, idx_probes_dwn)), 1.2,3)
-  smoking_shift = smoking_shift * c(rep(1, length(idx_probes_up)), rep(-1, length(idx_probes_dwn))) 
-    
+  smoking_shift = smoking_shift * c(rep(1, length(idx_probes_up)), rep(-1, length(idx_probes_dwn)))
+
   # update dta
   data[c(idx_probes_up, idx_probes_dwn), idx_smoker_ctrl] = data[c(idx_probes_up, idx_probes_dwn), idx_smoker_ctrl] + smoking_shift
   data[c(idx_probes_up, idx_probes_dwn), idx_smoker_case] = data[c(idx_probes_up, idx_probes_dwn), idx_smoker_case] + smoking_shift/2
   data[c(idx_probes_up, idx_probes_dwn), idx_nsmoker_case] = data[c(idx_probes_up, idx_probes_dwn), idx_nsmoker_case] - smoking_shift/8
-  data = data - min(data) + 1  
+  data = data - min(data) + 1
 
   # update exp_grp
   exp_grp[idx_smoker_ctrl,]$da = ifelse(runif(length(idx_smoker_ctrl))>0.75, 0, 1)
@@ -1768,7 +1803,7 @@ fuse_exp_grp = function(exp_grp1, exp_grp2, by="row.names") {
 
 #' Retrieving _RAW.tar archive from GEO.
 #'
-#' This function retrieves _RAW.tar archgive from GEO to the file system. 
+#' This function retrieves _RAW.tar archgive from GEO to the file system.
 
 #' @param gse A GSE id
 #' @param datashare_dir A string describing the targeted directory.
@@ -1777,7 +1812,7 @@ download_gse_raw_tar = function (gse, datashare_dir="~/projects/datashare") {
   dest_dir = paste0(datashare_dir, "/", gse)
   raw_dest_dir = paste0(dest_dir, "/raw")
   if (!file.exists(raw_dest_dir)) {
-    command = "mkdir" 
+    command = "mkdir"
     args = paste("-p", raw_dest_dir)
     print(paste(command, args))
     system2(command, args)
@@ -1786,24 +1821,24 @@ download_gse_raw_tar = function (gse, datashare_dir="~/projects/datashare") {
     gse_tar_filename = paste0(dest_dir, "/", gse, "_RAW.tar")
     gse_pref = paste0(substr(gse, 1, nchar(gse) - 3), "nnn")
     url = paste0("ftp://ftp.ncbi.nlm.nih.gov/geo/series/", gse_pref, "/", gse, "/suppl/", gse, "_RAW.tar")
-    command = "wget" 
+    command = "wget"
     args = paste(url, "-P", dest_dir)
     print(paste(command, args))
     if (!file.exists(gse_tar_filename)) {
-      system2(command, args)  
+      system2(command, args)
     }
 
     tar_filename = paste0(dest_dir, "/", gse, "_RAW.tar")
-    command = "tar" 
+    command = "tar"
     args = paste("xfv", tar_filename, "-C", raw_dest_dir)
     print(paste(command, args))
-    system2(command, args)  
+    system2(command, args)
 
     tar_filename = paste0(dest_dir, "/", gse, "_RAW.tar")
-    command = "rm" 
+    command = "rm"
     args = tar_filename
     print(paste(command, args))
-    system2(command, args)    
+    system2(command, args)
   } else {
     print(paste(gse, " download ever done."))
   }
@@ -1864,7 +1899,7 @@ return(result)
 
 #' A memoised version of read.csv2
 #'
-#' This function offer a memoised version of read.csv2. 
+#' This function offer a memoised version of read.csv2.
 #'
 #' @param ... parameters passed to read.csv2 function.
 #' @return csv file content.
