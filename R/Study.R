@@ -34,7 +34,7 @@ create_study = function(cache_filename, ...) {
   study = Study_abstract()
   if (!missing(cache_filename)) {
     s = readRDS(cache_filename)
-    study$plaform = s$plaform
+    study$platform = s$platform
     study$data    = s$data   
     study$exp_grp = s$exp_grp
   }
@@ -47,7 +47,7 @@ create_study = function(cache_filename, ...) {
 #' This class allow to manipulate useful concepts involved in a multi-omics
 #' study. It an abstract class.
 #' 
-#' @field plaform The Table version of the GEO platform description.
+#' @field platform The Table version of the GEO platform description.
 #' @field platform_filenames A character string that describes the platform file name.
 #' @field cache_filename A character string that describes the study cache file name.
 #' @field gset The GEO set of data as it is return by getGEO.

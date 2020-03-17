@@ -12,7 +12,7 @@ study. It an abstract class.
 \section{Fields}{
 
 \describe{
-\item{\code{plaform}}{The Table version of the GEO platform description.}
+\item{\code{platform}}{The Table version of the GEO platform description.}
 
 \item{\code{platform_filenames}}{A character string that describes the platform file name.}
 
