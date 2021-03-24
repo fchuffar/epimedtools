@@ -33,6 +33,7 @@ epimed_api_update = function(genes_to_update, jobid, taxid=9606, WAIT=TRUE) {
 }
 
 
+
 #' Retrieve exp_grp of a given TCGA project from epimeddb
 #'
 #' This function retrieves exp_grp of a given TCGA project from epimeddb
@@ -800,12 +801,12 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
   ibs = unlist(lapply( 1:length(tbc), function(n) {
    as.list(as.data.frame(combn(tbc,n)))
   }), recursive=FALSE)
-  pvcoxes = sapply(ibs, function(ib){
+  pv_logranks = sapply(ibs, function(ib){
    vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
    # scurve(ss, vd, main=paste(gene_name, probe_name, sep="@"))
    coxres(study$exp_grp[sample_names,ss_key], vd_it)[1]
   })
-  ib = ibs[[which(pvcoxes == min(pvcoxes))]]
+  ib = ibs[[which(pv_logranks == min(pv_logranks))]]
   vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
   b_opt = attr(vd_opt, "breaks")
   # graphicals
@@ -842,7 +843,7 @@ plot_survival_panel = function(probe_name, sample_names, exp_grp_key, study, nb_
   plot(dv$y, dv$x, ylim=range(v), xlim=rev(range(dv$y)), type='l', ylab="log2(exprs)")
   abline(h=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
   abline(h=b_opt, lty=2, lwd=1)
-  beanplot(v~fact, las=2, log="", ylim=range(v), main=paste(gene_name, "@", probe_name, " p_cox=", signif(as.numeric(pval_cox),3)
+  beanplot(v~fact, las=2, log="", ylim=range(v), main=paste(gene_name, "@", probe_name, " p_lrk=", signif(as.numeric(pval_cox),3)
     # , " p_anova=", signif(as.numeric(pval_cox),3)
     , sep=""))
   abline(h=b_all, lty=1, lwd=1, col="grey")
@@ -1010,7 +1011,7 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
     ibs = unlist(lapply( 1:length(tbc), function(n) {
      as.list(as.data.frame(combn(tbc,n)))
     }), recursive=FALSE)
-    pvcoxes = sapply(ibs, function(ib){
+    pv_logranks = sapply(ibs, function(ib){
       vd_it = discr(v, breaks=b_all[c(1,ib,length(b_all))])
       if (length(unique(vd_it)) < 2) {
         return(1)
@@ -1018,10 +1019,10 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
         return(coxres(ss, vd_it)[1])
       }
     })
-    ib = ibs[[which(pvcoxes == min(pvcoxes))[1]]]
+    ib = ibs[[which(pv_logranks == min(pv_logranks))[1]]]
     vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
     hz_opt = coxres(ss,vd_opt)
-    pval_opt = min(pvcoxes)
+    pval_opt = min(pv_logranks)
     vd_opt = discr(v, breaks=b_all[c(1,ib,length(b_all))])
   } else {
     vd_opt = discr(v, breaks=b_all)
@@ -1032,7 +1033,7 @@ plot_survival_panel_simple2 = function(ss, v, nb_q=5, gene_pf_colname="lower_gs"
   # graphicals
   if (PLOT) {
     layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, byrow=TRUE), respect=TRUE)
-    main2 = paste(main, " p_cox=", signif(as.numeric(pval_cox),3), sep="")
+    main2 = paste(main, " p_lrk=", signif(as.numeric(pval_cox),3), sep="")
     plot( dv$x, dv$y, xlim=range(v), ylim=range(dv$y), type='l', xlab="log2(exprs)", ylab="", main=main2)
     abline(v=b_all, lty=1, lwd=1, col=adjustcolor(1, alpha.f=0.1))
     abline(v=b_opt, lty=2, lwd=1)
@@ -1099,7 +1100,7 @@ compute_survival_table = function(probe_names, sample_names, exp_grp_key, study,
 # sample_names = rownames(study$exp_grp[!is.na(study$exp_grp$fut),])
 # probe_names = probe_gene_tab$probe
 # survival_lung_res = compute_survival_table(probe_names, sample_names, study, exp_grp_key, suffix, USE_CACHE=FALSE)
-# rownames(survival_lung_res[survival_lung_res$pvcox < 0.001,])
+# rownames(survival_lung_res[survival_lung_res$pv_logrank < 0.001,])
 
 
 
@@ -1411,7 +1412,7 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
   sf=survfit(ss~v)
   levels = length(na.omit(unique(v)))
   col = colorRampPalette(colors)(levels)
-  main= paste(main, " p_cox=", signif(as.numeric(pvt), nb_sign), sep="")
+  main= paste(main, " p_lrk=", signif(as.numeric(pvt), nb_sign), sep="")
   plot(sf, col=col, main=main, ...)
   tab = table(v)
   tab=tab[tab!=0]
@@ -1437,7 +1438,7 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
 #' Fits the Cox regression model of ss against v, and tests the
 #' proportional hazards assumption.
 #' Returns as a named vector of length 5:
-#'      pvcox: the significance p-value (likelihood ratio test)
+#'      pv_logrank: the significance p-value (logrank)
 #'      pvhz: the p-value for the validity of the model
 #'      hrlb: the lower bound of the 95% confidence interval for hr
 #'      hr: the hazard ratio
@@ -1452,15 +1453,15 @@ scurve = function(ss, v, colors=c("deepskyblue", "black", "red"), main="Survival
 coxres = function(ss,v) {
   f = suppressWarnings(coxph(ss~v))
   sf =  summary(f)
-  pvcox = sf$logtest[3]
+  pv_logrank = sf$sctest[3]
   tf = cox.zph(f)
   tf = tf$table
   pvhz = tf[dim(tf)[1],3]
   hr = sf$conf.int[1,1]
   hrlb = sf$conf.int[1,3]
   hrub = sf$conf.int[1,4]
-  res = c(pvcox,pvhz,hrlb,hr,hrub)
-  names(res) = c("pvcox","pvhz","hrlb","hr","hrub")
+  res = c(pv_logrank,pvhz,hrlb,hr,hrub)
+  names(res) = c("pv_logrank","pvhz","hrlb","hr","hrub")
   return(res)
 }
 
@@ -1946,16 +1947,19 @@ mtgetGEO = memoise(function(...) {
 #'
 #' This function offer a monitored version of `apply`.
 #'
-#' @param mat A matrix usualy gives as `apply` first parameter.
-#' @param marg An integer describing the marginal to use, usualy gives as  `apply` second parameter.
-#' @param func A function usualy gives as `sapply` third parameter.
+#' @param X A matrix usualy gives as `apply` first parameter.
+#' @param MARGIN An integer describing the marginal to use, usualy gives as  `apply` second parameter.
+#' @param FUN A function usualy gives as `sapply` third parameter.
 #' @param mod An integer that define the frequency of the monitoring.
 #' @param ... Parameters passed to `func` function.
 #' @return A vector of the application of the `func` function to each element of the `vec` vector.
 # ' @examples
 # ' # foo = monitored_apply(matrix(rnorm(50), 10), 1, function(v) {print(length(v)); Sys.sleep(1); return(c(mean(v), sd(v)))}, mod = 1)
 #' @export
-monitored_apply = function(mat, marg=1, func, mod=100, ...) {
+monitored_apply = function(X, MARGIN=1, FUN, mod=100, ...) {
+  mat = X
+  marg = MARGIN
+  func = FUN
   epimedtools_global_cnt <<- 0
   nb_it = dim(mat)[marg]
   d1 = as.numeric(Sys.time())

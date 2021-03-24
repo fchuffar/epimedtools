@@ -22,7 +22,7 @@ package survival. Takes a (discretized) vector v, indexed as ss.
 Fits the Cox regression model of ss against v, and tests the
 proportional hazards assumption.
 Returns as a named vector of length 5:
-     pvcox: the significance p-value (likelihood ratio test)
+     pv_logrank: the significance p-value (logrank)
      pvhz: the p-value for the validity of the model
      hrlb: the lower bound of the 95% confidence interval for hr
      hr: the hazard ratio

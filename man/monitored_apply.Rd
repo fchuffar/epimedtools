@@ -4,14 +4,14 @@
 \alias{monitored_apply}
 \title{A Monitored Version of `apply`}
 \usage{
-monitored_apply(mat, marg = 1, func, mod = 100, ...)
+monitored_apply(X, MARGIN = 1, FUN, mod = 100, ...)
 }
 \arguments{
-\item{mat}{A matrix usualy gives as `apply` first parameter.}
+\item{X}{A matrix usualy gives as `apply` first parameter.}
 
-\item{marg}{An integer describing the marginal to use, usualy gives as  `apply` second parameter.}
+\item{MARGIN}{An integer describing the marginal to use, usualy gives as  `apply` second parameter.}
 
-\item{func}{A function usualy gives as `sapply` third parameter.}
+\item{FUN}{A function usualy gives as `sapply` third parameter.}
 
 \item{mod}{An integer that define the frequency of the monitoring.}
 
