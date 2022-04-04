@@ -1248,7 +1248,10 @@ perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALS
     anov = anova(m)
     aov_pval = anov[names(m$xlevels),5]
     names(aov_pval) = paste("pval", names(m$xlevels), sep="_")
-    ret = c(ad_pval=ad_pval, aov_coeff, aov_pval)
+    # Mann Withney
+    wm = wilcox.test(model, data = d)
+    mw_pval = wm$p.value
+    ret = c(ad_pval=ad_pval, aov_coeff, aov_pval, mw_pval)
     if (!is.null(key)) {
       names(ret) = paste(names(ret), key, sep="_")
     }
@@ -1259,6 +1262,7 @@ perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALS
   for (colname in colnames(anova_res)[which(strtrim(colnames(anova_res), 5) == "pval_")]) {
     anova_res[[paste("adj", colname, sep="_")]] = p.adjust(anova_res[[colname]], method="BH")
   }
+  anova_res$mw_padj = p.adjust(anova_res$mw_pval) 
   # logratio and foldchange
   beta_colnames = colnames(anova_res)[which(strtrim(colnames(anova_res), 5) == "beta_")]
   nb_lev = length(beta_colnames)
