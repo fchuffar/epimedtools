@@ -1251,7 +1251,7 @@ perform_anova_gen = function(design, model, data, key=NULL, MONITORED_APPLY=FALS
     # Mann Withney
     wm = wilcox.test(model, data = d)
     mw_pval = wm$p.value
-    ret = c(ad_pval=ad_pval, aov_coeff, aov_pval, mw_pval)
+    ret = c(ad_pval=ad_pval, aov_coeff, aov_pval, mw_pval=mw_pval)
     if (!is.null(key)) {
       names(ret) = paste(names(ret), key, sep="_")
     }
