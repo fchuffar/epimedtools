@@ -1,0 +1,32 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "@type": "SoftwareSourceCode",
+    "license": "https://spdx.org/licenses/GPL-3.0",
+    "codeRepository": "https://github.com/fchuffar/epimedtools",
+    "dateCreated": "2016-01-26",
+    "name": "epimedtools",
+    "description": "Useful Tools Allowing Multi-Omics Analysis",
+    "applicationCategory": "Biology",
+    "programmingLanguage": [
+        "R"
+    ],
+    "author": [
+        {
+            "@type": "Person",
+            "givenName": "Florent",
+            "familyName": "Chuffart",
+            "email": "florent.chuffart@gmail.com",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "INSERM"
+            }
+        }
+    ],
+    "contributor": [
+        {
+            "@type": "Person",
+            "givenName": "Bernard",
+            "familyName": "Ycart"
+        }
+    ]
+}
