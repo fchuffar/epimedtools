@@ -1827,7 +1827,7 @@ download_gse_raw_tar = function (gse, datashare_dir="~/projects/datashare") {
     gse_pref = paste0(substr(gse, 1, nchar(gse) - 3), "nnn")
     url = paste0("ftp://ftp.ncbi.nlm.nih.gov/geo/series/", gse_pref, "/", gse, "/suppl/", gse, "_RAW.tar")
     command = "wget"
-    args = paste(url, "-P", dest_dir)
+    args = paste("-q", url, "-P", dest_dir)
     print(paste(command, args))
     if (!file.exists(gse_tar_filename)) {
       system2(command, args)
